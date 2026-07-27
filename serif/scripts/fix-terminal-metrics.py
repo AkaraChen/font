@@ -13,6 +13,15 @@ Why:
   size. We recompute head bounds from glyphs whose advance is half or full
   only (still honest for normal text; multi-em dashes keep their advances).
 
+  post.isFixedPitch is the flag hosts actually read to answer "is this a
+  monospaced font?" -- macOS Core Text (kCTFontTraitMonoSpace), fontconfig,
+  Chromium/VS Code font pickers, and most terminals' "monospace only" filters.
+  FontForge (and therefore the Nerd patcher) recomputes it from the advance
+  histogram, sees a dual-width font, and clears it to 0, so the patched build
+  stops being offered as a mono font even though upstream Sarasa ships
+  isFixedPitch=1 on exactly the same 2:1 grid. We restore it, and pin the
+  PANOSE proportion byte to 9 (Monospaced) for the hosts that read PANOSE.
+
 Does NOT change per-glyph advances (Nerd PUA, CJK, ASCII stay as built).
 """
 from __future__ import annotations
@@ -55,6 +64,22 @@ def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
         lines.append(
             f"{path.name}: OS/2.xAvgCharWidth {old_avg} → {half} (half-cell)"
         )
+
+        post = font["post"]
+        if post.isFixedPitch != 1:
+            lines.append(
+                f"{path.name}: post.isFixedPitch {post.isFixedPitch} → 1 "
+                "(dual-width 2:1 is still a fixed grid; matches upstream Sarasa)"
+            )
+            post.isFixedPitch = 1
+
+        # PANOSE byte 4 (bProportion) == 9 is "Monospaced" for family kind 2.
+        panose = os2.panose
+        if panose.bFamilyType == 2 and panose.bProportion != 9:
+            lines.append(
+                f"{path.name}: PANOSE bProportion {panose.bProportion} → 9 (Monospaced)"
+            )
+            panose.bProportion = 9
 
         if glyf is not None:
             x_min = y_min = 10**9
