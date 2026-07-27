@@ -12,6 +12,9 @@ Rules (default epsilon = 0):
   half_unit = advance('A')          # typically 500 at UPM 1000
   full_unit = 2 * half_unit         # typically 1000
 
+  Mono flags: post.isFixedPitch == 1 and PANOSE bProportion == 9, so hosts
+              list the font as monospaced (FontForge clears these on
+              dual-width fonts during the Nerd patch)
   MUST half:  ASCII printable, box drawing, block elements, halfwidth kana
   MUST full:  fullwidth forms, common CJK punctuation, CJK ideograph samples
   Nerd PUA:   when --check-nerd, present Nerd/PUA icons must be half_unit
@@ -264,6 +267,17 @@ def verify_font(
             if abs(adv - full) > epsilon:
                 failures.append(("full", cp, full, adv))
 
+        # Monospace advertisement: hosts answer "is this mono?" from
+        # post.isFixedPitch (macOS Core Text, fontconfig, Chromium/VS Code
+        # font pickers) and PANOSE bProportion. FontForge clears isFixedPitch
+        # on dual-width fonts during the Nerd patch, which drops the font out
+        # of every "monospace only" list.
+        if font["post"].isFixedPitch != 1:
+            failures.append(("mono-flag", -1, 1, font["post"].isFixedPitch))
+        panose = font["OS/2"].panose
+        if panose.bFamilyType == 2 and panose.bProportion != 9:
+            failures.append(("mono-panose", -2, 9, panose.bProportion))
+
         # East_Asian_Width gate: a terminal sizes a cell from Unicode's EAW
         # table, never from the font. EAW N/Na/H always get 1 cell and W/F
         # always get 2, so any font advance that disagrees is ink in the wrong
@@ -316,6 +330,17 @@ def verify_font(
             for s, items in by_set.items():
                 lines.append(f"    --- {s} ({len(items)}) ---")
                 for cp, exp, act in items[:80]:
+                    if cp == -1:
+                        lines.append(
+                            f"      post.isFixedPitch: expected {exp}, got {act} "
+                            "(font will not be listed as monospaced)"
+                        )
+                        continue
+                    if cp == -2:
+                        lines.append(
+                            f"      PANOSE bProportion: expected {exp}, got {act}"
+                        )
+                        continue
                     if act < 0:
                         lines.append(f"      {_cp_label(cp)}: missing (expected advance {exp})")
                     else:
