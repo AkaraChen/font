@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Verify ligatures (calt) + dual-width metrics + Nerd PUA presence.
+# Verify ligatures (calt) + dual-width metrics + ambiguous-width punctuation
+# + Nerd PUA presence.
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
@@ -20,6 +21,7 @@ log "verify ${#FONTS[@]} font(s)"
   --full "${CJK_ADV}" \
   --check-nerd \
   --check-ligatures \
+  --check-eaw \
   "${FONTS[@]}"
 
 log "verify ok"
