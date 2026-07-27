@@ -6,6 +6,10 @@ sans/work/
 sans/out/
 sans/dist/
 sans/samples/rendered/
+pixel/work/
+pixel/out/
+pixel/dist/
+pixel/samples/rendered/
 **/.pc/
 **/node_modules/
 *.ttf
