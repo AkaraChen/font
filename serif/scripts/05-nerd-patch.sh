@@ -139,6 +139,17 @@ if [[ -n "${PY}" && -f "${RENAME}" ]]; then
   fi
 fi
 
+# Dual-width hygiene: xAvgCharWidth=half + head bbox from half/full only.
+# Mitigates terminal right-margin gaps when hosts use average/bbox as cell width.
+FIX_METRICS="${SERIF_ROOT}/scripts/fix-terminal-metrics.py"
+if [[ -n "${PY}" && -f "${FIX_METRICS}" ]]; then
+  mapfile -t NAMED_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
+  if [[ ${#NAMED_NERD[@]} -gt 0 ]]; then
+    log "fix terminal metrics (xAvgCharWidth / head bbox)"
+    "${PY}" "${FIX_METRICS}" "${NAMED_NERD[@]}"
+  fi
+fi
+
 log "nerd products:"
 ls -lh "${NERD_OUT}"/*.{ttf,otf} 2>/dev/null || ls -lh "${NERD_OUT}/"
 
