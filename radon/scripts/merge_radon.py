@@ -22,7 +22,17 @@ from fontTools.ttLib.scaleUpem import scale_upem
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
 
 
+def is_halfwidth_kana(cp: int) -> bool:
+    """Halfwidth Katakana / related (U+FF61–FF9F) — coding half cell, not CJK."""
+    return 0xFF61 <= cp <= 0xFF9F
+
+
 def is_cjk_side(cp: int) -> bool:
+    """Codepoints that should land on the full (CJK) cell.
+
+    Halfwidth forms (U+FF61–FF9F) are intentionally *excluded* so they stay on
+    the EN cell when imported from WenKai.
+    """
     ranges = (
         (0x2E80, 0x2EFF),
         (0x2F00, 0x2FDF),
@@ -39,7 +49,9 @@ def is_cjk_side(cp: int) -> bool:
         (0x4E00, 0x9FFF),
         (0xF900, 0xFAFF),
         (0xFE30, 0xFE4F),
-        (0xFF00, 0xFFEF),
+        # Fullwidth forms only (not halfwidth kana FF61–FF9F)
+        (0xFF00, 0xFF60),
+        (0xFFE0, 0xFFEF),
         (0x20000, 0x2A6DF),
         (0x2A700, 0x2B73F),
         (0x2B740, 0x2B81F),
@@ -163,10 +175,20 @@ def copy_glyph_deep(
     return dest_name
 
 
-def set_cjk_metrics(dst: TTFont, glyph_name: str, new_adv: int) -> None:
+def set_advance_centered(
+    dst: TTFont, glyph_name: str, new_adv: int, *, x_scale: float | None = None
+) -> None:
+    """Set advance to new_adv; optional X-scale outlines first; then centre."""
+    g = dst["glyf"][glyph_name]
+    w, lsb = dst["hmtx"].metrics[glyph_name]
+    if x_scale is not None and abs(x_scale - 1.0) > 1e-6:
+        scale_glyph_x(g, dst["glyf"], x_scale)
+        w = int(round(w * x_scale))
+        lsb = int(round(lsb * x_scale))
+        dst["hmtx"].metrics[glyph_name] = (w, lsb)
+
     w, lsb = dst["hmtx"].metrics[glyph_name]
     new_lsb = center_advance(w, lsb, new_adv)
-    # shift outline if we expanded LSB
     shift = new_lsb - lsb
     if shift:
         g = dst["glyf"][glyph_name]
@@ -181,6 +203,10 @@ def set_cjk_metrics(dst: TTFont, glyph_name: str, new_adv: int) -> None:
                 c.x = int(round(c.x + shift))
             g.recalcBounds(dst["glyf"])
     dst["hmtx"].metrics[glyph_name] = (new_adv, new_lsb)
+
+
+def set_cjk_metrics(dst: TTFont, glyph_name: str, new_adv: int) -> None:
+    set_advance_centered(dst, glyph_name, new_adv)
 
 
 def rebuild_cmap(dst: TTFont, mapping: dict[int, str]) -> None:
@@ -347,7 +373,19 @@ def merge_pair(
         if i and i % 5000 == 0:
             print(f"    ... {i}/{len(to_import)}", flush=True)
         dest_name = copy_glyph_deep(cjk, latin, src_name, rename)
-        set_cjk_metrics(latin, dest_name, cjk_adv)
+        if is_halfwidth_kana(cp):
+            # WenKai halfwidth kana often sit in a full em; pin to EN cell.
+            set_advance_centered(latin, dest_name, en_adv)
+        elif is_cjk_side(cp):
+            set_cjk_metrics(latin, dest_name, cjk_adv)
+        else:
+            # Fill-ins for codepoints Radon lacks: prefer EN cell if narrow,
+            # else full cell.
+            w, _ = latin["hmtx"].metrics[dest_name]
+            if w <= en_adv * 1.25:
+                set_advance_centered(latin, dest_name, en_adv)
+            else:
+                set_cjk_metrics(latin, dest_name, cjk_adv)
         final_map[cp] = dest_name
 
     for ch in "中文荷塘月色":

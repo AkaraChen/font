@@ -8,7 +8,7 @@ Coding dual-width face: **Monaspace Radon** (Latin / programming, coding ligatur
 | CJK | [LXGW WenKai Medium](https://github.com/lxgw/LxgwWenKai) | `v1.522` |
 | Grid | EN cell / CJK cell @ UPM 1000 | **620 / 1240** |
 | CJK lean | mild pseudo-oblique | **8°** (Radon Italic is −11°) |
-| CJK weight | pathops embolden vs measured Radon stems | Regular `s=12`, Bold `s=48` |
+| CJK weight | pathops embolden vs measured Radon stems | Regular `s=12`, Bold `s=30` |
 | Product | Dual + NFM | `out/RadonWenKaiDual-*.ttf`, `out/nerd/RadonWenKaiNFM-*.ttf` |
 
 Inspired by [LXGW Bright Code](https://github.com/lxgw/LxgwBright-Code) (Argon × WenKai) and this repo’s `sans/` merge + `serif/` Nerd/stroke tooling.
@@ -27,8 +27,8 @@ Inspired by [LXGW Bright Code](https://github.com/lxgw/LxgwBright-Code) (Argon �
 | Radon Bold Latin | ~130.5 |
 | WenKai Regular CJK | ~62.9 |
 | WenKai Medium CJK (raw) | ~74.8 |
-| Medium + embolden s≈12 | ≈ Radon Regular |
-| Medium + embolden s≈48 | ≈ Radon Bold |
+| Medium + embolden s=12 | ≈ Radon Regular (中 v≈101 vs Latin v≈91) |
+| Medium + embolden s=30 | ≈ Radon Bold (中 v≈137 vs Latin v≈134) |
 
 Re-measure / re-calibrate:
 
