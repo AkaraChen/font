@@ -12,7 +12,7 @@ prepare() {
   local src="${EXTRACT_DIR}/LXGWWenKai-${wenkai_weight}.ttf"
   [[ -f "${src}" ]] || die "missing ${src}; run 01-fetch-sources.sh first"
   log "preparing CJK ${face} from WenKai ${wenkai_weight} (embolden=${embolden}, slant=${CJK_SLANT_DEG}°)"
-  "${PY}" "${KAI_ROOT}/scripts/prepare_cjk.py" \
+  "${PY}" "${HANDWRITING_ROOT}/scripts/prepare_cjk.py" \
     "${src}" "${STAGE_DIR}/WenKaiSlanted-${face}.ttf" \
     --embolden "${embolden}" \
     --slant-deg "${CJK_SLANT_DEG}" \

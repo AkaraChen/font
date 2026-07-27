@@ -10,9 +10,9 @@ pixel/work/
 pixel/out/
 pixel/dist/
 pixel/samples/rendered/
-kai/work/
-kai/out/
-kai/dist/
+handwriting/work/
+handwriting/out/
+handwriting/dist/
 **/.pc/
 **/node_modules/
 *.ttf

@@ -21,10 +21,10 @@ for f in "${STAGE_DIR}/RadonLatin-Regular.ttf" "${STAGE_DIR}/RadonLatin-Bold.ttf
 done
 
 log "slant: what angle does Radon actually lean at?"
-"${PY}" "${KAI_ROOT}/scripts/measure-slant.py" "${EXTRACT_DIR}/MonaspaceRadonNF-Regular.otf"
+"${PY}" "${HANDWRITING_ROOT}/scripts/measure-slant.py" "${EXTRACT_DIR}/MonaspaceRadonNF-Regular.otf"
 
 log "weight survey: which WenKai weight matches which Radon weight?"
-"${PY}" "${KAI_ROOT}/scripts/calibrate_cjk_weight.py" --survey \
+"${PY}" "${HANDWRITING_ROOT}/scripts/calibrate_cjk_weight.py" --survey \
   --latin "${STAGE_DIR}/RadonLatin-Regular.ttf" \
   --latin "${STAGE_DIR}/RadonLatin-Bold.ttf" \
   --cjk "${LIGHT}" \
@@ -32,7 +32,7 @@ log "weight survey: which WenKai weight matches which Radon weight?"
   --cjk "${EXTRACT_DIR}/LXGWWenKai-Medium.ttf"
 
 log "embolden sweep for the Bold face (WenKai ${WENKAI_FOR_BOLD} → Radon Bold)"
-"${PY}" "${KAI_ROOT}/scripts/calibrate_cjk_weight.py" \
+"${PY}" "${HANDWRITING_ROOT}/scripts/calibrate_cjk_weight.py" \
   --latin "${STAGE_DIR}/RadonLatin-Bold.ttf" \
   --cjk "${EXTRACT_DIR}/LXGWWenKai-${WENKAI_FOR_BOLD}.ttf" \
   --strengths 10,12,14,15,16,18

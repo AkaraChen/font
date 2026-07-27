@@ -11,7 +11,7 @@ for weight in Regular Bold; do
   src="${EXTRACT_DIR}/MonaspaceRadonNF-${weight}.otf"
   [[ -f "${src}" ]] || die "missing ${src}; run 01-fetch-sources.sh first"
   log "preparing Latin ${weight}"
-  "${PY}" "${KAI_ROOT}/scripts/prepare_latin.py" \
+  "${PY}" "${HANDWRITING_ROOT}/scripts/prepare_latin.py" \
     "${src}" "${STAGE_DIR}/RadonLatin-${weight}.ttf" \
     --src-upm "${SRC_UPM}" \
     --upm "${UPM}" \

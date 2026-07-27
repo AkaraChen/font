@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Shared helpers for kai/ build scripts.
+# Shared helpers for handwriting/ build scripts.
 set -euo pipefail
 
-KAI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_ROOT="$(cd "${KAI_ROOT}/.." && pwd)"
+HANDWRITING_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "${HANDWRITING_ROOT}/.." && pwd)"
 # shellcheck disable=SC1091
-source "${KAI_ROOT}/pins.env"
+source "${HANDWRITING_ROOT}/pins.env"
 
-WORK_DIR="${KAI_ROOT}/work"
+WORK_DIR="${HANDWRITING_ROOT}/work"
 DOWNLOADS_DIR="${WORK_DIR}/downloads"
 EXTRACT_DIR="${WORK_DIR}/src"
 STAGE_DIR="${WORK_DIR}/stage"
 VENV_DIR="${WORK_DIR}/venv"
-OUT_DIR="${KAI_ROOT}/out"
+OUT_DIR="${HANDWRITING_ROOT}/out"
 # Stroke measuring / embolden tools are shared with serif/ — not duplicated here.
 SERIF_TOOLS="${REPO_ROOT}/serif/tools"
 
