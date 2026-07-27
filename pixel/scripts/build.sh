@@ -6,8 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 "${SCRIPT_DIR}/01-fetch-sources.sh"
 "${SCRIPT_DIR}/02-add-ligatures.sh"
-"${SCRIPT_DIR}/03-nerd-patch.sh"
-"${SCRIPT_DIR}/04-verify.sh"
+"${SCRIPT_DIR}/03-narrow-ambiguous.sh"
+"${SCRIPT_DIR}/04-nerd-patch.sh"
+"${SCRIPT_DIR}/05-verify.sh"
 
 echo
 echo "Done. Product in: ${SCRIPT_DIR}/../out/nerd/"

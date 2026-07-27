@@ -19,10 +19,14 @@ mkdir -p "${FUSION_DIR}"
 log "extract fusion → ${FUSION_DIR}"
 unzip -qo "${FUSION_ZIP}" -d "${FUSION_DIR}"
 [[ -f "${FUSION_DIR}/${FUSION_TTF}" ]] || die "missing ${FUSION_TTF} in fusion zip"
+[[ -f "${FUSION_DIR}/${FUSION_TTF_HALFWIDTH_DONOR}" ]] \
+  || die "missing ${FUSION_TTF_HALFWIDTH_DONOR} in fusion zip"
 
-# Stage a clean copy under work/src for later steps
+# Stage clean copies under work/src for later steps
 mkdir -p "${EXTRACT_DIR}/staged"
 cp -f "${FUSION_DIR}/${FUSION_TTF}" "${EXTRACT_DIR}/staged/fusion-base.ttf"
+cp -f "${FUSION_DIR}/${FUSION_TTF_HALFWIDTH_DONOR}" \
+  "${EXTRACT_DIR}/staged/fusion-halfwidth-donor.ttf"
 
 log "staged:"
 ls -lh "${EXTRACT_DIR}/staged/"

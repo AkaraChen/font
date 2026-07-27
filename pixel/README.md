@@ -13,11 +13,12 @@ Coding product: **Fusion Pixel 12px monospaced** + **hand-drawn programming liga
 ## Pipeline
 
 ```
-01-fetch-sources   → pin-fetch Fusion 12px mono zip
-02-add-ligatures   → draw ligatures/ligatures.txt into the base + calt GSUB
-03-nerd-patch      → Nerd complete + --single-width-glyphs (no --mono)
-04-verify          → advances / calt / Nerd PUA gates
-preview            → HarfBuzz render sheets (not part of build.sh)
+01-fetch-sources    → pin-fetch Fusion 12px mono zip
+02-add-ligatures    → draw ligatures/ligatures.txt into the base + calt GSUB
+03-narrow-ambiguous → EAW=Ambiguous punctuation → 1 cell (donor: latin flavor)
+04-nerd-patch       → Nerd complete + --single-width-glyphs (no --mono)
+05-verify           → advances / calt / EAW / Nerd PUA gates
+preview             → HarfBuzz render sheets (not part of build.sh)
 ```
 
 ```bash
@@ -88,6 +89,29 @@ them as solid blocks, which reads as a font bug that isn't there.
 ./scripts/preview.sh path/to/x.ttf   # → out/preview/*.png + sheet.png
 ```
 
+## Ambiguous-width punctuation
+
+A terminal never asks the font how wide a character is — it sizes the cell from
+wcwidth, and `EAW=Ambiguous` codepoints get **one** cell everywhere by default.
+Fusion's `zh_hans` flavor draws these nine at **1200** (two cells) with the ink
+parked in the right half, so `“心` paints the quote straight on top of the
+following character:
+
+| | `“` `”` `‘` `’` | `…` `·` `‥` `․` `‧` |
+| --- | --- | --- |
+| Fusion `zh_hans` (base) | 1200 | 1200 |
+| Fusion `latin` / `ja` / `ko` | 600 | 600 |
+| **Product** | **600** | **600** |
+
+`03-narrow-ambiguous.sh` transplants the half-width drawings from the `latin`
+flavor of the **same release** (`FUSION_TTF_HALFWIDTH_DONOR` in `pins.env`) —
+same 12px grid, same hand, nothing scaled or redrawn. Targets are derived by
+comparing the two flavors, not hard-coded, and a donor glyph whose ink escapes
+`[0, 600]` is a hard failure. `05-verify.sh --check-eaw` gates the result.
+
+Same class of bug — and same remedy — as `serif/scripts/06-narrow-symbols.sh`,
+which pulls 1-cell symbols from Sarasa **Term**.
+
 ## Patcher policy
 
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
@@ -98,7 +122,7 @@ them as solid blocks, which reads as a font bug that isn't there.
 > current `latest`, same digest) ships **without fontforge**, so the Docker path
 > fails with `/bin/sh: fontforge: not found`. Use the local path until upstream
 > republishes: `brew install fontforge`, then
-> `NERD_PATCH_METHOD=fontforge ./scripts/03-nerd-patch.sh`.
+> `NERD_PATCH_METHOD=fontforge ./scripts/04-nerd-patch.sh`.
 
 ## Pins
 
@@ -114,10 +138,10 @@ See [`pins.env`](pins.env). Do not bump casually.
 ## Verify
 
 ```bash
-./scripts/04-verify.sh
+./scripts/05-verify.sh
 # or:
 work/venv/bin/python scripts/verify.py \
-  --half 600 --full 1200 --check-nerd --check-ligatures \
+  --half 600 --full 1200 --check-nerd --check-ligatures --check-eaw \
   out/nerd/*.ttf
 ```
 
@@ -128,6 +152,7 @@ work/venv/bin/python scripts/verify.py \
 | `post.isFixedPitch` | **1** |
 | GSUB `calt` + `liga_u*` glyphs | present (hand-drawn) |
 | Nerd sample PUA | present @ half advance |
+| `“ ” ‘ ’ … · ‥ ․ ‧` | advance **600**, ink inside the cell |
 
 ## License notes
 

@@ -24,6 +24,20 @@ LIGA_SAMPLES = (
     "===", "!==", "<=>", "<->", "-->", "<--", "...", "<!--",
 )
 
+# EAW=Ambiguous punctuation. Terminals give these one cell, so the glyph must
+# be one cell wide too — see 03-narrow-ambiguous.sh.
+AMBIGUOUS_NARROW = (
+    0x00B7,  # ·
+    0x2018,  # ‘
+    0x2019,  # ’
+    0x201C,  # “
+    0x201D,  # ”
+    0x2024,  # ․
+    0x2025,  # ‥
+    0x2026,  # …
+    0x2027,  # ‧
+)
+
 
 def check_advances(font: TTFont, half: int, full: int) -> list[str]:
     errs: list[str] = []
@@ -107,6 +121,34 @@ def check_ligatures(font: TTFont) -> list[str]:
     return errs
 
 
+def check_eaw(font: TTFont, half: int) -> list[str]:
+    errs: list[str] = []
+    cmap = font.getBestCmap() or {}
+    hmtx = font["hmtx"]
+    glyf = font["glyf"]
+    found = 0
+    for cp in AMBIGUOUS_NARROW:
+        name = cmap.get(cp)
+        if not name:
+            errs.append(f"missing cmap for U+{cp:04X} {chr(cp)!r}")
+            continue
+        found += 1
+        adv = hmtx[name][0]
+        if adv != half:
+            errs.append(
+                f"ambiguous U+{cp:04X} {chr(cp)!r} advance={adv} expected half={half}"
+            )
+            continue
+        g = glyf.get(name)
+        if g is not None and getattr(g, "numberOfContours", 0) and g.xMax > half:
+            errs.append(
+                f"ambiguous U+{cp:04X} {chr(cp)!r} ink xMax={g.xMax} overflows half={half}"
+            )
+    if not errs:
+        print(f"  eaw ok: {found} ambiguous punctuation glyph(s) @ half={half}")
+    return errs
+
+
 def check_nerd(font: TTFont, half: int) -> list[str]:
     errs: list[str] = []
     cmap = font.getBestCmap() or {}
@@ -134,6 +176,7 @@ def verify_one(
     full: int,
     check_nerd_flag: bool,
     check_liga_flag: bool,
+    check_eaw_flag: bool,
 ) -> int:
     print(f"verify {path}")
     font = TTFont(path)
@@ -149,6 +192,8 @@ def verify_one(
         errs += check_fixed_pitch(font)
         if check_liga_flag:
             errs += check_ligatures(font)
+        if check_eaw_flag:
+            errs += check_eaw(font, h)
         if check_nerd_flag:
             errs += check_nerd(font, h)
         if errs:
@@ -168,6 +213,7 @@ def main() -> int:
     ap.add_argument("--full", type=int, default=1200)
     ap.add_argument("--check-nerd", action="store_true")
     ap.add_argument("--check-ligatures", action="store_true")
+    ap.add_argument("--check-eaw", action="store_true")
     args = ap.parse_args()
     rc = 0
     for path in args.fonts:
@@ -177,6 +223,7 @@ def main() -> int:
             full=args.full,
             check_nerd_flag=args.check_nerd,
             check_liga_flag=args.check_ligatures,
+            check_eaw_flag=args.check_eaw,
         )
     return rc
 

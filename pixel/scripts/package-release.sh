@@ -19,7 +19,7 @@ mapfile -t FONTS < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o 
 PY="$(python_bin)"
 "${PY}" "${PIXEL_ROOT}/scripts/verify.py" \
   --half "${EN_ADV}" --full "${CJK_ADV}" \
-  --check-nerd --check-ligatures \
+  --check-nerd --check-ligatures --check-eaw \
   "${FONTS[@]}"
 
 rm -rf "${STAGE}"
