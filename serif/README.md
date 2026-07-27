@@ -11,6 +11,7 @@ Coding mono: **Slab Latin (IosevkaNSlab)** + **霞鹜新致宋 Opt** + **Nerd ic
 | **Product** | **Nerd Font Mono** → `out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf` |
 | Symbol widths | EAW-correct: half-width donor outlines from Sarasa `TermSlab` |
 | Mono flags | `post.isFixedPitch=1` + PANOSE `bProportion=9` (FontForge clears these) |
+| Ligatures | default `calt` **+** Iosevka `dlig` (discretionary) folded in by `expand-default-ligatures.py` |
 | Metrics gate | `scripts/verify-2to1.py --check-nerd --check-eaw` (after Nerd patch) |
 
 Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic) ref and apply **quilt** patches.
@@ -51,13 +52,14 @@ serif/
     build.sh               # one-shot → Nerd product
     01…04-*.sh             # intermediate Sarasa build
     05-nerd-patch.sh       # Nerd patch + 2:1 --check-nerd
-    06-narrow-symbols.sh   # EAW-correct symbol widths + final gate
+    06-narrow-symbols.sh   # EAW-correct symbol widths + expand calt + final gate
     calibrate-stroke.sh    # measure stems → recommend CJK_EMBOLDEN_*
     package-release.sh     # zip out/nerd for GitHub Release
     verify-2to1.py
     rename_nerd_family.py
     fix-terminal-metrics.py
     narrow-symbol-widths.py
+    expand-default-ligatures.py  # fold dlig (etc.) into default calt
     render-coding-sample.py
   samples/
   work/                    # gitignored
@@ -97,8 +99,36 @@ Step by step (same end product):
 ./scripts/03-prepare-cjk.sh
 ./scripts/04-build.sh          # intermediate out/*.ttf
 ./scripts/05-nerd-patch.sh     # product + verify --check-nerd
-./scripts/06-narrow-symbols.sh # EAW symbol widths + verify --check-eaw
+./scripts/06-narrow-symbols.sh # EAW symbol widths + expand calt + verify --check-eaw
 ```
+
+### Ligatures (calt + dlig)
+
+Iosevka’s **default `calt`** is intentionally slim (equality, arrows, triple chaining
+like `+++`/`---`, HTML comments, …). Richer programming ligations live under
+**`dlig`** (discretionary: `++`/`--`/`##`/`~~`, counter-arrows, `/\` `\/`, `{|` `|}`,
+`[|` `|]`, markdown checkboxes, …) and optional language packs (`JSPT`, `HSKL`, …).
+
+Most editors only flip **`calt`** when “font ligatures” is enabled, so stock
+Sarasa/Iosevka feels like ligatures are “half on”. After Nerd + metric hygiene,
+`06-narrow-symbols.sh` runs:
+
+```bash
+python3 scripts/expand-default-ligatures.py out/nerd/*.ttf
+# default: union dlig lookups into every calt feature
+```
+
+Repair an already-built TTF without a full rebuild:
+
+```bash
+python3 scripts/expand-default-ligatures.py SarasaNZSSlabNFM-Regular.ttf
+# optional: also fold language packs (can overlap; prefer dlig-only for product)
+# python3 scripts/expand-default-ligatures.py --include all font.ttf
+```
+
+Still **not** present in Iosevka at all (nothing to enable): e.g. `&&`, `**` as
+Fira-style multi-ampersand ligatures. Enable **font ligatures / calt** in the
+editor; no extra OpenType feature toggle is required for the expanded set.
 
 ### Patcher policy
 

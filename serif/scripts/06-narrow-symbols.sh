@@ -81,6 +81,12 @@ done
 log "re-fix terminal metrics (xAvgCharWidth / head bbox)"
 "${PY}" "${SERIF_ROOT}/scripts/fix-terminal-metrics.py" "${FONTS[@]}"
 
+# Iosevka parks richer programming ligations under dlig / language packs.
+# Editors turn on calt with "font ligatures", but almost never dlig — fold
+# dlig into default calt so ++ -- ## ~~ counter-arrows logic etc. apply.
+log "expand default calt with discretionary ligatures (dlig)"
+"${PY}" "${SERIF_ROOT}/scripts/expand-default-ligatures.py" "${FONTS[@]}"
+
 log "final verification (2:1 + nerd + EAW)"
 "${PY}" "${SERIF_ROOT}/scripts/verify-2to1.py" --check-nerd --check-eaw "${FONTS[@]}"
 
