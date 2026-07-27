@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 "${SCRIPT_DIR}/03-prepare-cjk.sh"
 "${SCRIPT_DIR}/04-build.sh"      # intermediate unhinted TTFs under out/
 "${SCRIPT_DIR}/05-nerd-patch.sh" # Nerd patch + 2:1 --check-nerd → out/nerd/
+"${SCRIPT_DIR}/06-narrow-symbols.sh" # EAW-correct symbol widths + final gate
 
 echo
 echo "Done. Nerd Fonts in: ${SCRIPT_DIR}/../out/nerd/"

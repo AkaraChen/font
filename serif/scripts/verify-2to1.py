@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
@@ -143,6 +144,16 @@ NERD_RANGES = [
 ]
 
 
+# Documented EAW exceptions: codepoints whose advance may disagree with the
+# Unicode width table without it being a bug.
+EAW_EXCEPTIONS = {
+    0x2E3A,  # ⸺ two-em dash: deliberately 2 em wide
+    0x2E3B,  # ⸻ three-em dash: deliberately 3 em wide
+    0xFE19,  # ︙ vertical presentation form, shares its outline with U+22EE
+    0xFE30,  # ︰ vertical presentation form, shares its outline with U+2025
+}
+
+
 def _cp_label(cp: int) -> str:
     ch = chr(cp) if cp <= 0x10FFFF else "?"
     if ch.isprintable() and not ch.isspace():
@@ -195,6 +206,7 @@ def verify_font(
     *,
     epsilon: int = 0,
     check_nerd: bool = False,
+    check_eaw: bool = False,
     require_cjk: bool = True,
 ) -> tuple[bool, list[str]]:
     """Return (ok, report_lines)."""
@@ -252,6 +264,26 @@ def verify_font(
             if abs(adv - full) > epsilon:
                 failures.append(("full", cp, full, adv))
 
+        # East_Asian_Width gate: a terminal sizes a cell from Unicode's EAW
+        # table, never from the font. EAW N/Na/H always get 1 cell and W/F
+        # always get 2, so any font advance that disagrees is ink in the wrong
+        # number of cells -- the '⏵ looks full width' class of bug.
+        eaw_cps: list[int] = []
+        if check_eaw:
+            for cp, gname in cmap.items():
+                if cp in EAW_EXCEPTIONS:
+                    continue
+                w = unicodedata.east_asian_width(chr(cp))
+                adv = hmtx[gname][0]
+                if adv == 0:
+                    continue
+                if w in ("N", "Na", "H") and abs(adv - half) > epsilon:
+                    eaw_cps.append(cp)
+                    failures.append(("eaw-half", cp, half, adv))
+                elif w in ("W", "F") and abs(adv - full) > epsilon:
+                    eaw_cps.append(cp)
+                    failures.append(("eaw-full", cp, full, adv))
+
         nerd_cps: list[int] = []
         if check_nerd:
             nerd_cps = collect_nerd_codepoints(cmap)
@@ -272,6 +304,7 @@ def verify_font(
         lines.append(
             f"    checked: half={len(half_cps)} full={len(full_cps)}"
             + (f" nerd={len(nerd_cps)}" if check_nerd else "")
+            + (f" eaw-violations={len(eaw_cps)}" if check_eaw else "")
         )
 
         if failures:
@@ -316,6 +349,11 @@ def main(argv: list[str] | None = None) -> int:
         help="require present Nerd/PUA icons to be half-cell width",
     )
     ap.add_argument(
+        "--check-eaw",
+        action="store_true",
+        help="require every advance to match the codepoint's East_Asian_Width",
+    )
+    ap.add_argument(
         "--allow-missing-cjk",
         action="store_true",
         help="do not fail if fixed CJK samples are absent",
@@ -331,6 +369,7 @@ def main(argv: list[str] | None = None) -> int:
             font_path,
             epsilon=args.epsilon,
             check_nerd=args.check_nerd,
+            check_eaw=args.check_eaw,
             require_cjk=not args.allow_missing_cjk,
         )
         print("\n".join(report))

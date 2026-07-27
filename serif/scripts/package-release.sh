@@ -34,8 +34,8 @@ elif command -v python3 >/dev/null 2>&1; then
   PY="python3"
 fi
 if [[ -n "${PY}" && -f "${SERIF_ROOT}/scripts/verify-2to1.py" ]]; then
-  log "2:1 verify (Nerd) before package"
-  "${PY}" "${SERIF_ROOT}/scripts/verify-2to1.py" --check-nerd "${FONTS[@]}"
+  log "2:1 + Nerd + EAW verify before package"
+  "${PY}" "${SERIF_ROOT}/scripts/verify-2to1.py" --check-nerd --check-eaw "${FONTS[@]}"
 fi
 
 rm -rf "${STAGE}"
@@ -53,6 +53,9 @@ Family: SarasaNZSSlab NFM
 Styles: Regular, Bold
 Grid:   2:1 dual-width mono (Latin half / CJK full)
 Icons:  Nerd Fonts complete set (single-cell), patcher ${NERD_FONTS_TAG:-v3.4.0}
+Widths: advances match Unicode East_Asian_Width, so terminals that size
+        cells with wcwidth() line up (neutral symbols like U+23F5 are
+        half-width). Ambiguous-width symbols stay full-width by design.
 
 Install: copy the .ttf files into your OS fonts directory, or use a
 font manager. In terminals/IDEs pick family "SarasaNZSSlab NFM".
