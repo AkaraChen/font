@@ -10,6 +10,9 @@ pixel/work/
 pixel/out/
 pixel/dist/
 pixel/samples/rendered/
+kai/work/
+kai/out/
+kai/dist/
 **/.pc/
 **/node_modules/
 *.ttf

@@ -71,7 +71,10 @@ def _parse_include(raw: str) -> list[str]:
                 if t not in out:
                     out.append(t)
             continue
-        tag = "dlig" if low == "dlig" else p.upper()
+        # Iosevka's private ligation tags are uppercase; registered features
+        # (dlig, ss01–ss20, cv01–cv99 — Monaspace parks its ligatures in ss**)
+        # are lowercase. Normalise to whichever the tag actually is.
+        tag = low.upper() if low.upper() in LANG_LIG_TAGS else low
         if tag not in out:
             out.append(tag)
     return out
