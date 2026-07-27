@@ -1,0 +1,44 @@
+# Coding sample — CN/EN 2:1 alignment check (editor 12–16px)
+# Lines with only half-width cells should share column grid with full-width CJK.
+
+def greet(name: str) -> str:
+    """返回问候语 — return a greeting."""
+    # TODO: 支持多语言 / multi-lang
+    return f"Hello, {name}! 你好，{name}！"
+
+# 半角 vs 全角标点混排
+msg = "path=/tmp/app.log"  # 日志路径
+msg2 = "路径＝／tmp／app.log"  # fullwidth-ish look (actually CJK punct)
+
+# 对齐标尺（半角 |，全角 ｜）
+# 0123456789012345678901234567890123456789
+# |.........|.........|.........|.........|
+# 中文中文中文中文中文中文中文中文中文中文
+# Hello世界Test测试Code代码Font字体OK
+
+class Config:
+    """应用配置 — application config."""
+    host = "127.0.0.1"
+    port = 8080
+    # 默认超时（秒）
+    timeout_sec = 30
+
+def main() -> None:
+    users = ["Alice", "小明", "Bob", "小红"]
+    for u in users:
+        print(greet(u))  # 输出: Hello, Alice! 你好，Alice！
+    print("status=ok count=%d" % len(users))
+    print("状态＝正常 数量＝%d" % len(users))
+
+if __name__ == "__main__":
+    main()
+
+# Box drawing (half-cell in this mono):
+# ┌────────┬────────┐
+# │ key    │ value  │
+# ├────────┼────────┤
+# │ 名称   │ 字体   │
+# └────────┴────────┘
+
+# Nerd / powerline-ish markers (after Nerd patch):
+#  \ue0b0  \ue0b2  \uf07c  \ue795  \uf031
