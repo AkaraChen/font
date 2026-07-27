@@ -1,4 +1,4 @@
-# sans — KitPlex Dual (Plex Mono × Plex Sans SC)
+# sans — PlexMonoSansSC Dual
 
 Coding dual-width face: **IBM Plex Mono** (Latin / programming) + **IBM Plex Sans SC** (CJK), strict **2:1** grid.
 
@@ -7,10 +7,24 @@ Coding dual-width face: **IBM Plex Mono** (Latin / programming) + **IBM Plex San
 | Latin / mono | [IBM Plex Mono](https://github.com/IBM/plex) complete TTF | `@ibm/plex-mono@2.5.0` (font **v2.005**) |
 | CJK | [IBM Plex Sans SC](https://github.com/IBM/plex) complete TTF (hinted) | `@ibm/plex-sans-sc@1.1.0` (font **v1.000**) |
 | Grid | EN cell / CJK cell | **550 / 1100** |
-| Product | Regular + Bold | `out/KitPlexDual-{Regular,Bold}.ttf` |
-| Family name | Derivative (not official IBM) | **KitPlex Dual** |
+| Product | Regular + Bold | `out/PlexMonoSansSCDual-{Regular,Bold}.ttf` |
+| Family name | Source-encoding (see below) | **PlexMonoSansSC Dual** |
 
 Chosen after a three-way bake-off (`500/1000`, **`550/1100`**, `600/1200`). Mono is X-scaled ~8.3% from its native 600 cell; CJK outlines stay unscaled and are recentred into a 1100 advance.
+
+## Name recipe
+
+Same style as serif’s `SarasaNZSSlab NFM` — long, concatenated sources + product tag:
+
+| Token | Meaning |
+| --- | --- |
+| **PlexMono** | IBM Plex Mono (Latin / programming glyphs) |
+| **SansSC** | IBM Plex Sans SC (Simplified Chinese CJK) |
+| **Dual** | dual-width 2:1 coding product (EN cell + CJK cell) |
+
+- Family (name ID 1): `PlexMonoSansSC Dual` (19 chars, Windows ≤31)
+- PostScript / file stem: `PlexMonoSansSCDual`
+- Not an official IBM face. Upstream OFL lists reserved font name **“Plex”** — treat this compound as a project source-label; review RFN before public OFL redistribution if that matters for your release.
 
 ## Pins
 
@@ -51,7 +65,7 @@ This tree is intentionally **simpler** than `serif/` (no quilt / Sarasa / Nerd p
 ## Dependencies
 
 - `bash`, `curl`, `unzip`, `zip`
-- Python 3.10+ (`venv`) → `fonttools`, optional `Pillow` for samples
+- Python 3.10+ (`venv` or `uv`) → `fonttools`, optional `Pillow` for samples
 
 ```bash
 # Debian/Ubuntu example
@@ -63,8 +77,8 @@ sudo apt install curl unzip zip python3-venv
 ```bash
 cd sans
 ./scripts/build.sh
-# → out/KitPlexDual-Regular.ttf
-# → out/KitPlexDual-Bold.ttf
+# → out/PlexMonoSansSCDual-Regular.ttf
+# → out/PlexMonoSansSCDual-Bold.ttf
 ```
 
 Step by step:
@@ -80,8 +94,8 @@ Step by step:
 ```bash
 # after build; needs Pillow in work/venv
 work/venv/bin/python scripts/render-sample.py \
-  --font out/KitPlexDual-Regular.ttf \
-  --title "Plex merge · EN 550 / CJK 1100"
+  --font out/PlexMonoSansSCDual-Regular.ttf \
+  --title "PlexMonoSansSC Dual · EN 550 / CJK 1100"
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -89,7 +103,7 @@ work/venv/bin/python scripts/render-sample.py \
 
 ```bash
 ./scripts/package-release.sh 0.1.0
-# → dist/KitPlexDual-0.1.0.zip
+# → dist/PlexMonoSansSCDual-0.1.0.zip
 ```
 
 ## Character policy
@@ -111,7 +125,7 @@ Not yet done (known limits of v0.1):
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --expect-half 550 out/KitPlexDual-*.ttf
+python3 scripts/verify-2to1.py --expect-half 550 out/PlexMonoSansSCDual-*.ttf
 ```
 
 | Set | Expected |
@@ -122,10 +136,10 @@ python3 scripts/verify-2to1.py --expect-half 550 out/KitPlexDual-*.ttf
 
 ## Family / license
 
-- **Product family:** `KitPlex Dual` (Regular / Bold)
-- Upstream is **SIL OFL 1.1** with reserved font name **“Plex”** — the derivative **must not** be named IBM Plex / Plex Mono / Plex Sans.
-- Keep `licenses/OFL-IBM-Plex.txt` (and the copy next to shipped TTFs) with redistributions.
-- Build scripts in this folder: MIT (repo root) unless noted.
+- **Product family:** `PlexMonoSansSC Dual` (Regular / Bold)
+- Upstream is **SIL OFL 1.1** with reserved font name **“Plex”**
+- Keep `licenses/OFL-IBM-Plex.txt` (and the copy next to shipped TTFs) with redistributions
+- Build scripts in this folder: MIT (repo root) unless noted
 
 ## Upstream links
 

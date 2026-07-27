@@ -10,8 +10,8 @@ Character policy
 - Plex Sans SC (outline unchanged; advance expanded & centred to CJK_ADV):
   CJK ideographs, CJK punctuation, fullwidth forms, and any codepoint Mono lacks.
 
-Family naming is derivative (KitPlex Dual …); reserved name "Plex" is not reused
-as the product family.
+Family naming follows the serif recipe (source tokens concatenated + product
+suffix), default: "PlexMonoSansSC Dual" = Plex Mono + Plex Sans SC + dual-width.
 """
 
 from __future__ import annotations
@@ -329,8 +329,8 @@ def main() -> int:
     p.add_argument("--en-adv", type=int, default=550)
     p.add_argument("--cjk-adv", type=int, default=1100)
     p.add_argument("--mono-src-adv", type=int, default=600)
-    p.add_argument("--family", default="KitPlex Dual")
-    p.add_argument("--family-ps", default="KitPlexDual")
+    p.add_argument("--family", default="PlexMonoSansSC Dual")
+    p.add_argument("--family-ps", default="PlexMonoSansSCDual")
     p.add_argument("--hhea-ascent", type=int, default=1025)
     p.add_argument("--hhea-descent", type=int, default=-275)
     p.add_argument("--hhea-line-gap", type=int, default=0)

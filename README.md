@@ -22,11 +22,13 @@ Details: [`serif/README.md`](serif/README.md).
 
 ## sans/
 
-**Coding product: KitPlex Dual** — IBM Plex Mono + IBM Plex Sans SC, dual-width **EN 550 / CJK 1100**.
+**Coding product: PlexMonoSansSC Dual** — Plex Mono Latin + Plex Sans SC CJK, dual-width **EN 550 / CJK 1100**.
+
+Name recipe (same style as `SarasaNZSSlab NFM`): **PlexMono** + **SansSC** + **Dual**.
 
 ```bash
 cd sans && ./scripts/build.sh
-# → out/KitPlexDual-{Regular,Bold}.ttf
+# → out/PlexMonoSansSCDual-{Regular,Bold}.ttf
 ```
 
 Upstream pins (release tags + zip SHA-256) live in [`sans/pins.env`](sans/pins.env).

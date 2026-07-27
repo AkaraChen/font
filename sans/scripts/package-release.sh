@@ -10,7 +10,8 @@ VERSION="${1:-}"
 
 need_cmd zip
 shopt -s nullglob
-fonts=("${OUT_DIR}"/KitPlexDual-*.ttf)
+stem="${PRODUCT_STEM:-PlexMonoSansSCDual}"
+fonts=("${OUT_DIR}/${stem}"-*.ttf)
 [[ ${#fonts[@]} -gt 0 ]] || die "no products in ${OUT_DIR}"
 
 DIST_DIR="${SANS_ROOT}/dist"
@@ -27,15 +28,20 @@ elif [[ -f "${SANS_ROOT}/licenses/OFL-IBM-Plex.txt" ]]; then
 fi
 
 cat > "${STAGE}/README.txt" <<EOF
-KitPlex Dual ${VERSION}
+${FAMILY_NAME} ${VERSION}
 Derived from IBM Plex Mono + IBM Plex Sans SC under SIL OFL 1.1.
 Not an official IBM product.
+
+Name recipe (same style as SarasaNZSSlab NFM):
+  PlexMono = Plex Mono Latin
+  SansSC   = Plex Sans SC CJK
+  Dual     = dual-width 2:1 coding product
 
 Cell metrics: EN ${EN_ADV} / CJK ${CJK_ADV} (strict 2:1)
 Upstream pins: see pins.env in the build repository.
 EOF
 
-ZIP="${DIST_DIR}/KitPlexDual-${VERSION}.zip"
+ZIP="${DIST_DIR}/${stem}-${VERSION}.zip"
 rm -f "${ZIP}"
 (
   cd "${STAGE}"

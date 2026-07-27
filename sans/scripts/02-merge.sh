@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Merge pinned Mono + SC into out/KitPlexDual-{Regular,Bold}.ttf
+# Merge pinned Mono + SC into out/PlexMonoSansSCDual-{Regular,Bold}.ttf
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"

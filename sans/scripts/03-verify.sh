@@ -6,7 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 PY="$(python_bin)"
 shopt -s nullglob
-fonts=("${OUT_DIR}"/KitPlexDual-*.ttf)
+stem="${PRODUCT_STEM:-PlexMonoSansSCDual}"
+fonts=("${OUT_DIR}/${stem}"-*.ttf)
 [[ ${#fonts[@]} -gt 0 ]] || die "no products in ${OUT_DIR}; run 02-merge.sh first"
 
 log "verify 2:1 (expect half=${EN_ADV})"

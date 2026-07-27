@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-shot: fetch pinned Plex sources → merge → verify 2:1.
-# Product: out/KitPlexDual-{Regular,Bold}.ttf
+# Product: out/PlexMonoSansSCDual-{Regular,Bold}.ttf
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
