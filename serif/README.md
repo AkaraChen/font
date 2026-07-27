@@ -31,6 +31,7 @@ serif/
     package-release.sh     # zip out/nerd for GitHub Release
     verify-2to1.py
     rename_nerd_family.py
+    fix-terminal-metrics.py
     render-coding-sample.py
   samples/
   work/                    # gitignored
@@ -76,6 +77,8 @@ Step by step (same end product):
 
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that forces *all* glyphs (incl. CJK) to 1 cell and breaks 2:1
+- Pin: `NERD_FONTS_TAG` in `pins.env` (currently **v3.4.0**, current upstream latest)
+- After rename: `fix-terminal-metrics.py` sets `OS/2.xAvgCharWidth` to the half-cell and recomputes `head` bbox from half/full glyphs only (see Troubleshooting)
 
 ## Verify
 
@@ -92,6 +95,24 @@ python3 scripts/verify-2to1.py --check-nerd out/nerd/*.ttf
 Epsilon default **0**. Exit `1` on failure with codepoint report.
 
 Known non-gated mixes: geometric / arrows / misc symbols.
+
+## Troubleshooting (terminal alignment / Nerd icons)
+
+Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metric fix):
+
+| Observation | Cause | What to do |
+| --- | --- | --- |
+| Nerd PUA icons (Powerline `U+E0B0`/`E0B2`, FA, Material, …) | Advances are **half** (500). `verify-2to1.py --check-nerd` gates this. | Nothing — patch path is correct (`--single-width-glyphs`, not `--mono`). |
+| Unicode triangles `▲▶▼◀` (`U+25B2`…`25C0`) look “fullwidth” | These are **not** Nerd glyphs. Base **Mono** CJK design sets advance **1000** (2 cells). Same for most arrows / geometric / ★ / ✓ / `…` / `—`. | Prefer Powerline / Nerd codepoints in prompts (`\ue0b0`), or switch the Sarasa family to **Term**/**Fixed** if you want more ambiguous symbols half-cell (product trade-off). |
+| “Nerd symbols look ugly / squashed” | `--single-width-glyphs` forces icons into **1** cell; many source icons were drawn for ~1.5–2 cells. Patcher is **v3.4.0** (not an ancient script). | Expected for NFM; try fewer glyph sets (drop `--complete`) or accept Nerd Font **Propo** only outside strict grids. |
+| Large empty band on the **right** of the terminal after selecting this font | Dual-width font: ~33k glyphs @1000 + ~18k @500 → raw `OS/2.xAvgCharWidth≈832`. Some hosts treat that average (or a huge `head.xMax` from multi-em dashes) as the monospaced cell width. Also `post.isFixedPitch=0` (correct for 2:1). | Rebuild with current `05-nerd-patch.sh` (runs `fix-terminal-metrics.py`: `xAvgCharWidth=half`, tighter head bbox). Confirm terminal uses font advances / wcwidth, not average width. |
+| Mixed CN/EN column drift | Half vs full advances are intentional 2:1 (`A=500`, `中=1000`). Drift usually comes from **full-width punctuation/symbols** in the line (see non-gated set above), not from broken CJK metrics. | Use the coding sample ruler in `samples/coding-mixed.txt`; avoid fullwidth ASCII (`ＵＴＦ`) in code. |
+
+```bash
+# Re-apply metric hygiene only (on already-patched TTFs):
+python3 scripts/fix-terminal-metrics.py out/nerd/*.ttf
+python3 scripts/verify-2to1.py --check-nerd out/nerd/*.ttf
+```
 
 ## Release package
 
