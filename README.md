@@ -35,6 +35,17 @@ Upstream pins (release tags + zip SHA-256) live in [`sans/pins.env`](sans/pins.e
 
 Details: [`sans/README.md`](sans/README.md).
 
+## pixel/
+
+**Coding product: FusionPixel12 NFM** — [Fusion Pixel](https://github.com/TakWolf/fusion-pixel-font) 12px mono + **pixelized** programming ligatures (`calt`) + **Nerd Font Mono** (icons not pixelized).
+
+```bash
+cd pixel && ./scripts/build.sh
+# → out/nerd/FusionPixel12NFM-Regular.ttf
+```
+
+Details: [`pixel/README.md`](pixel/README.md).
+
 ## kai/
 
 **Coding product: RadonWenKai NFM** — Monaspace **Radon** Latin (handwriting mono, ligatures,

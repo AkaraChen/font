@@ -1,0 +1,13 @@
+// FusionPixel12 — ligature + CJK + Nerd sample
+const ok = a === b && x != null;
+if (foo => bar) { /* comment */ }
+let n = i++; n--;
+const path = src => dest;
+type Id = string | number;
+# header := value
+中文 English 混合 12px mono
+a == b  a === b  a != b  a !== b
+a <= b  a >= b  a => b  a -> b
+a ++ b  a -- b  a && b  a || b
+/* block */  // line  <!-- html
+:: := ...
