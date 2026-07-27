@@ -14,7 +14,7 @@ stem="${PRODUCT_STEM:-RadonWenKaiNFM}"
 fonts=("${OUT_DIR}/${stem}"-*.ttf)
 [[ ${#fonts[@]} -gt 0 ]] || die "no products in ${OUT_DIR}"
 
-DIST_DIR="${KAI_ROOT}/dist"
+DIST_DIR="${HANDWRITING_ROOT}/dist"
 mkdir -p "${DIST_DIR}"
 STAGE="${WORK_DIR}/release-stage"
 rm -rf "${STAGE}"
@@ -24,8 +24,8 @@ cp "${fonts[@]}" "${STAGE}/"
 for lic in OFL-Monaspace.txt OFL-LXGWWenKai.txt; do
   if [[ -f "${OUT_DIR}/${lic}" ]]; then
     cp "${OUT_DIR}/${lic}" "${STAGE}/"
-  elif [[ -f "${KAI_ROOT}/licenses/${lic}" ]]; then
-    cp "${KAI_ROOT}/licenses/${lic}" "${STAGE}/"
+  elif [[ -f "${HANDWRITING_ROOT}/licenses/${lic}" ]]; then
+    cp "${HANDWRITING_ROOT}/licenses/${lic}" "${STAGE}/"
   fi
 done
 
@@ -43,7 +43,7 @@ Name recipe (same style as SarasaNZSSlab NFM):
 Cell metrics: EN ${EN_ADV} / CJK ${CJK_ADV} (strict 2:1)
 Nerd icons:   from the upstream Monaspace Radon NF build, one cell each
 Ligatures:    Radon liga + calt (on by default), plus ss01–ss10 / cv** opt-in
-Upstream pins: see kai/pins.env in the build repository.
+Upstream pins: see handwriting/pins.env in the build repository.
 EOF
 
 ZIP="${DIST_DIR}/${stem}-${VERSION}.zip"

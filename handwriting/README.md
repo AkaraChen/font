@@ -1,4 +1,4 @@
-# kai — RadonWenKai NFM
+# handwriting — RadonWenKai NFM
 
 Handwriting-flavoured coding mono: **Monaspace Radon** Latin + **霞鹜文楷 LXGW WenKai** CJK,
 strict **2:1** dual width, **Nerd icons**, ligatures **on by default**, and a CJK side sheared
@@ -17,7 +17,7 @@ to Radon's own lean.
 | Product | Regular + Bold | `out/RadonWenKaiNFM-{Regular,Bold}.ttf` |
 
 ```bash
-cd kai && ./scripts/build.sh
+cd handwriting && ./scripts/build.sh
 # → out/RadonWenKaiNFM-{Regular,Bold}.ttf   (~3.5 min, ~330 MiB of upstream never downloaded)
 ```
 
@@ -139,7 +139,7 @@ Two subtleties the gate caught:
 ## Layout
 
 ```
-kai/
+handwriting/
   pins.env                 # upstream refs, grid, slant, weight-match, naming
   licenses/                # OFL-Monaspace.txt · OFL-LXGWWenKai.txt (refreshed by 01-)
   scripts/

@@ -20,7 +20,7 @@ FAMILY="${FAMILY_NAME}"
 [[ -n "${FAMILY_SUFFIX:-}" ]] && FAMILY="${FAMILY_NAME} ${FAMILY_SUFFIX}"
 
 log "merging EN=${EN_ADV} CJK=${CJK_ADV} family='${FAMILY}'"
-"${PY}" "${KAI_ROOT}/scripts/merge_radon_wenkai.py" \
+"${PY}" "${HANDWRITING_ROOT}/scripts/merge_radon_wenkai.py" \
   --latin-regular "${STAGE_DIR}/RadonLatin-Regular.ttf" \
   --latin-bold "${STAGE_DIR}/RadonLatin-Bold.ttf" \
   --cjk-regular "${STAGE_DIR}/WenKaiSlanted-Regular.ttf" \
@@ -41,7 +41,7 @@ log "merging EN=${EN_ADV} CJK=${CJK_ADV} family='${FAMILY}'"
   --os2-win-descent "${OS2_WIN_DESCENT}"
 
 for lic in OFL-Monaspace.txt OFL-LXGWWenKai.txt; do
-  [[ -f "${KAI_ROOT}/licenses/${lic}" ]] && cp "${KAI_ROOT}/licenses/${lic}" "${OUT_DIR}/${lic}"
+  [[ -f "${HANDWRITING_ROOT}/licenses/${lic}" ]] && cp "${HANDWRITING_ROOT}/licenses/${lic}" "${OUT_DIR}/${lic}"
 done
 
 log "products:"

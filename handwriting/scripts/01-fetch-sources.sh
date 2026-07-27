@@ -8,7 +8,7 @@ ensure_dirs
 PY="$(python_bin)"
 
 log "fetching Radon NF members from ${MONASPACE_RELEASE_TAG} (ranged, not the whole 315 MiB zip)"
-"${PY}" "${KAI_ROOT}/scripts/fetch_zip_member.py" "${MONASPACE_NF_ZIP_URL}" \
+"${PY}" "${HANDWRITING_ROOT}/scripts/fetch_zip_member.py" "${MONASPACE_NF_ZIP_URL}" \
   --member "${RADON_NF_MEMBER_REGULAR}" \
   --out "${EXTRACT_DIR}/MonaspaceRadonNF-Regular.otf" \
   --sha256 "${RADON_NF_SHA256_REGULAR}" \
@@ -27,11 +27,11 @@ refresh_license() {
   local repo="$1" upstream_file="$2" name="$3"
   local raw="${repo/github.com/raw.githubusercontent.com}/main/${upstream_file}"
   if curl -fsSL "${raw}" -o "${WORK_DIR}/${name}.new"; then
-    mv "${WORK_DIR}/${name}.new" "${KAI_ROOT}/licenses/${name}"
+    mv "${WORK_DIR}/${name}.new" "${HANDWRITING_ROOT}/licenses/${name}"
     log "refreshed licenses/${name}"
   else
     rm -f "${WORK_DIR}/${name}.new"
-    [[ -f "${KAI_ROOT}/licenses/${name}" ]] \
+    [[ -f "${HANDWRITING_ROOT}/licenses/${name}" ]] \
       || die "could not fetch ${raw} and no in-tree licenses/${name}"
     log "kept in-tree licenses/${name}"
   fi

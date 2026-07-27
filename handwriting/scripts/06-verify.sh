@@ -16,7 +16,7 @@ log "verify 2:1 + EAW + Nerd cells"
 "${PY}" "${REPO_ROOT}/serif/scripts/verify-2to1.py" --check-nerd --check-eaw "${fonts[@]}"
 
 log "verify Radon coding features (liga / calt / ss / cv)"
-"${PY}" "${KAI_ROOT}/scripts/verify-features.py" --expect-half "${EN_ADV}" "${fonts[@]}"
+"${PY}" "${HANDWRITING_ROOT}/scripts/verify-features.py" --expect-half "${EN_ADV}" "${fonts[@]}"
 
 log "stroke match (CJK vs Latin, in the shipped products)"
 for font in "${fonts[@]}"; do
