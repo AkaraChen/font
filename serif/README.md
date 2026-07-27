@@ -7,7 +7,7 @@ Coding mono: **Slab Latin (IosevkaNSlab)** + **霞鹜新致宋 Opt** + **Nerd ic
 | Latin | Sarasa `IosevkaNSlab` (MonoSlab) |
 | CJK | [LXGW Neo ZhiSong Plus](https://github.com/lxgw/LxgwNeoZhiSong) `v1.066` |
 | Grid | 2:1 mono (`A=500` / `中=1000`) |
-| Weight match | pathops embolden **s=14** (Regular) / **s=32** (Bold) |
+| Weight match | pathops embolden **s=7.5** (Regular) / **s=24** (Bold), stem-measured vs IosevkaNSlab |
 | **Product** | **Nerd Font Mono** → `out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf` |
 | Symbol widths | EAW-correct: half-width donor outlines from Sarasa `TermSlab` |
 | Mono flags | `post.isFixedPitch=1` + PANOSE `bProportion=9` (FontForge clears these) |
@@ -19,6 +19,26 @@ Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sar
 
 See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_TAG` + docker digest.
 
+## Optical weight (CJK vs Latin stems)
+
+Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlines:
+
+1. **Latin target** — IosevkaNSlab in upstream `SarasaMonoSlabSC-{Regular,Bold}.ttf` (same Latin this build uses).
+2. **CJK trial** — LXGW Neo ZhiSong Plus scaled to UPM 1000, emboldened at candidate strengths.
+3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Vertical stems dominate mixed CN/EN optical weight in a mono face; Song horizontals stay thinner by design.
+
+```bash
+./scripts/calibrate-stroke.sh
+# → recommends CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD for pins.env
+```
+
+| Face | Latin v-stem (U) | Old embolden | Measured CJK v @ old | New embolden | CJK v @ new |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Regular | ≈78 | 14 | ≈91 (+13) | **7.5** | ≈78 (matched) |
+| Bold | ≈111 | 32 | ≈127 (+16) | **24** | ≈111 (matched) |
+
+The previous Regular **s=14** made CJK verticals noticeably heavier than Latin — matching the reported “中文比英文稍粗”.
+
 ## Layout
 
 ```
@@ -26,11 +46,13 @@ serif/
   pins.env
   patches/                 # quilt series
   tools/embolden_cjk.py
+  tools/measure_stroke_width.py  # scanline stem widths (Latin vs CJK)
   scripts/
     build.sh               # one-shot → Nerd product
     01…04-*.sh             # intermediate Sarasa build
     05-nerd-patch.sh       # Nerd patch + 2:1 --check-nerd
     06-narrow-symbols.sh   # EAW-correct symbol widths + final gate
+    calibrate-stroke.sh    # measure stems → recommend CJK_EMBOLDEN_*
     package-release.sh     # zip out/nerd for GitHub Release
     verify-2to1.py
     rename_nerd_family.py
