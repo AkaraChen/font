@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Merge IBM Plex Mono + IBM Plex Sans SC into a dual-width coding face.
+"""Merge Lilex + IBM Plex Sans SC into a dual-width coding face.
 
 Default product metrics: EN 550 / CJK 1100 (strict 2:1).
 
 Character policy
 ----------------
-- Plex Mono (X-scaled to EN_ADV): Latin, digits, programming symbols, half-width
-  punctuation, Greek / Cyrillic — anything Mono already maps.
+- Lilex (X-scaled to EN_ADV): Latin, digits, programming symbols, half-width
+  punctuation, Greek / Cyrillic — anything Lilex already maps. **GSUB / GPOS /
+  GDEF are kept** so programming ligatures (`calt`), stylistic sets, character
+  variants, and mark positioning survive the merge.
 - Plex Sans SC (outline unchanged; advance expanded & centred to CJK_ADV):
-  CJK ideographs, CJK punctuation, fullwidth forms, and any codepoint Mono lacks.
+  CJK ideographs, CJK punctuation, fullwidth forms, and any codepoint Lilex lacks.
 
 Family naming follows the serif recipe (source tokens concatenated + product
-suffix), default: "PlexMonoSansSC Dual" = Plex Mono + Plex Sans SC + dual-width.
+suffix), default: "LilexSansSC Dual" = Lilex + Plex Sans SC + dual-width.
 """
 
 from __future__ import annotations
@@ -73,10 +75,74 @@ def scale_glyph_x(glyph, glyf_table, scale: float) -> None:
     glyph.recalcBounds(glyf_table)
 
 
-def scale_mono_font(font: TTFont, scale: float, target_adv: int) -> None:
+def _scale_value_record_x(vr, scale: float) -> None:
+    if vr is None:
+        return
+    for attr in ("XAdvance", "XPlacement"):
+        if hasattr(vr, attr):
+            val = getattr(vr, attr)
+            if val:
+                setattr(vr, attr, int(round(val * scale)))
+
+
+def _scale_anchor_x(anchor, scale: float) -> None:
+    if anchor is None:
+        return
+    if hasattr(anchor, "XCoordinate") and anchor.XCoordinate is not None:
+        anchor.XCoordinate = int(round(anchor.XCoordinate * scale))
+
+
+def scale_gpos_x(font: TTFont, scale: float) -> None:
+    """Scale horizontal GPOS deltas / anchors after mono X scale."""
+    if "GPOS" not in font or abs(scale - 1.0) < 1e-9:
+        return
+    gpos = font["GPOS"].table
+    if not gpos.LookupList:
+        return
+    for lookup in gpos.LookupList.Lookup:
+        for st in lookup.SubTable:
+            # PairPos / SinglePos value records
+            if hasattr(st, "Value") and st.Value is not None:
+                _scale_value_record_x(st.Value, scale)
+            if hasattr(st, "Value1"):
+                _scale_value_record_x(st.Value1, scale)
+            if hasattr(st, "Value2"):
+                _scale_value_record_x(st.Value2, scale)
+            if hasattr(st, "PairSet"):
+                for ps in st.PairSet or []:
+                    for pr in ps.PairValueRecord or []:
+                        _scale_value_record_x(getattr(pr, "Value1", None), scale)
+                        _scale_value_record_x(getattr(pr, "Value2", None), scale)
+            if hasattr(st, "Class1Record"):
+                for row in st.Class1Record or []:
+                    for rec in row.Class2Record or []:
+                        _scale_value_record_x(getattr(rec, "Value1", None), scale)
+                        _scale_value_record_x(getattr(rec, "Value2", None), scale)
+            # MarkToBase / MarkToMark / MarkToLigature anchors
+            if hasattr(st, "MarkArray") and st.MarkArray is not None:
+                for rec in st.MarkArray.MarkRecord or []:
+                    _scale_anchor_x(rec.MarkAnchor, scale)
+            if hasattr(st, "BaseArray") and st.BaseArray is not None:
+                for rec in st.BaseArray.BaseRecord or []:
+                    for anchor in rec.BaseAnchor or []:
+                        _scale_anchor_x(anchor, scale)
+            if hasattr(st, "Mark2Array") and st.Mark2Array is not None:
+                for rec in st.Mark2Array.Mark2Record or []:
+                    for anchor in rec.Mark2Anchor or []:
+                        _scale_anchor_x(anchor, scale)
+            if hasattr(st, "LigatureArray") and st.LigatureArray is not None:
+                for lig in st.LigatureArray.LigatureAttach or []:
+                    for comp in lig.ComponentRecord or []:
+                        for anchor in comp.LigatureAnchor or []:
+                            _scale_anchor_x(anchor, scale)
+
+
+def scale_latin_font(font: TTFont, scale: float, target_adv: int, src_adv: int) -> None:
+    """X-scale outlines; map mono-cell advances → target_adv; keep 0-width marks."""
     glyf = font["glyf"]
     hmtx = font["hmtx"].metrics
 
+    # Bitmap / device tables invalid after outline scale
     for tag in ("hdmx", "LTSH", "VDMX", "kern"):
         if tag in font:
             del font[tag]
@@ -86,7 +152,16 @@ def scale_mono_font(font: TTFont, scale: float, target_adv: int) -> None:
         old_w, old_lsb = hmtx[name]
         scale_glyph_x(g, glyf, scale)
         new_lsb = int(round(old_lsb * scale))
-        hmtx[name] = (target_adv, new_lsb)
+        if old_w == 0:
+            # Combining marks / control chars — keep zero advance for OT mark attach
+            hmtx[name] = (0, new_lsb)
+        elif src_adv and old_w == src_adv:
+            hmtx[name] = (target_adv, new_lsb)
+        else:
+            # Multi-cell or odd advances: scale proportionally
+            hmtx[name] = (max(0, int(round(old_w * scale))), new_lsb)
+
+    scale_gpos_x(font, scale)
 
     if "maxp" in font:
         font["maxp"].recalc(font)
@@ -182,7 +257,8 @@ def rename_family(
     full = f"{family} {subfamily}" if subfamily != "Regular" else family
     ps = f"{ps_base}-{subfamily.replace(' ', '')}"
 
-    keep_ids = {0, 5, 7, 8, 9, 10, 11, 13, 14}
+    # Keep copyright / trademark / manufacturer / designer / license URLs
+    keep_ids = {0, 7, 8, 9, 10, 11, 13, 14}
     records = [r for r in name.names if r.nameID in keep_ids]
     font["name"].names = records
 
@@ -202,7 +278,7 @@ def rename_family(
     add(17, subfamily)
     add(
         5,
-        f"1.000;KIT;{family} merge (Plex Mono + Plex Sans SC; EN {en_adv} / CJK {cjk_adv})",
+        f"1.000;KIT;{family} merge (Lilex + Plex Sans SC; EN {en_adv} / CJK {cjk_adv})",
     )
 
 
@@ -243,68 +319,69 @@ def unify_metrics(
 
 
 def merge_pair(
-    mono_path: Path,
+    latin_path: Path,
     sc_path: Path,
     out_path: Path,
     subfamily: str,
     *,
     en_adv: int,
     cjk_adv: int,
-    mono_src_adv: int,
+    latin_src_adv: int,
     family: str,
     family_ps: str,
     metrics: dict,
 ) -> dict[str, int]:
-    print(f"Loading {mono_path.name} + {sc_path.name} ...")
-    mono = TTFont(mono_path, recalcBBoxes=True, recalcTimestamp=False)
+    print(f"Loading {latin_path.name} + {sc_path.name} ...")
+    latin = TTFont(latin_path, recalcBBoxes=True, recalcTimestamp=False)
     sc = TTFont(sc_path, recalcBBoxes=True, recalcTimestamp=False)
 
-    scale = en_adv / mono_src_adv
-    print(f"  Scaling Mono glyphs X * {scale:.6f} -> advance {en_adv}")
-    scale_mono_font(mono, scale, en_adv)
+    scale = en_adv / latin_src_adv
+    print(f"  Scaling Latin glyphs X * {scale:.6f} -> advance {en_adv}")
+    print("  Preserving GSUB/GPOS/GDEF (ligatures / features / marks)")
+    scale_latin_font(latin, scale, en_adv, latin_src_adv)
 
-    mono_cmap = mono.getBestCmap() or {}
+    latin_cmap = latin.getBestCmap() or {}
     sc_cmap = sc.getBestCmap() or {}
 
     to_import: dict[int, str] = {}
     for cp, gname in sc_cmap.items():
-        if is_cjk_side(cp) or cp not in mono_cmap:
+        if is_cjk_side(cp) or cp not in latin_cmap:
             to_import[cp] = gname
 
     print(f"  Importing {len(to_import)} codepoints from SC ...")
 
     rename: dict[str, str] = {}
-    final_map: dict[int, str] = dict(mono_cmap)
+    final_map: dict[int, str] = dict(latin_cmap)
 
     for i, (cp, src_name) in enumerate(sorted(to_import.items())):
         if i and i % 5000 == 0:
             print(f"    ... {i}/{len(to_import)}")
-        dest_name = copy_glyph_deep(sc, mono, src_name, rename)
-        set_cjk_metrics(mono, dest_name, cjk_adv)
+        dest_name = copy_glyph_deep(sc, latin, src_name, rename)
+        set_cjk_metrics(latin, dest_name, cjk_adv)
         final_map[cp] = dest_name
 
     for ch in "中文荷塘月色":
         if ord(ch) not in final_map:
             raise SystemExit(f"missing required CJK sample glyph: {ch}")
 
-    rebuild_cmap(mono, final_map)
-    rename_family(mono, family, subfamily, family_ps, en_adv, cjk_adv)
-    unify_metrics(mono, en_adv=en_adv, **metrics)
+    rebuild_cmap(latin, final_map)
+    rename_family(latin, family, subfamily, family_ps, en_adv, cjk_adv)
+    unify_metrics(latin, en_adv=en_adv, **metrics)
 
-    glyf = mono["glyf"]
-    for gname in mono.getGlyphOrder():
+    glyf = latin["glyf"]
+    for gname in latin.getGlyphOrder():
         g = glyf[gname]
         if g.numberOfContours != 0:
             try:
                 g.recalcBounds(glyf)
             except Exception:
                 pass
-    mono["maxp"].recalc(mono)
-    mono["hhea"].advanceWidthMax = max(m[0] for m in mono["hmtx"].metrics.values())
+    latin["maxp"].recalc(latin)
+    latin["hhea"].advanceWidthMax = max(m[0] for m in latin["hmtx"].metrics.values())
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    mono.save(out_path)
-    mono.close()
+    latin.save(out_path)
+    latin.close()
     sc.close()
 
     v = TTFont(out_path)
@@ -314,6 +391,15 @@ def merge_pair(
     for ch in list("aAi0中文荷") + [" "]:
         g = cm[ord(ch)]
         checks[ch] = hmtx[g][0]
+    # Quick OT feature smoke
+    gsub_tags = []
+    if "GSUB" in v:
+        gsub_tags = sorted(
+            {fr.FeatureTag for fr in v["GSUB"].table.FeatureList.FeatureRecord}
+        )
+    liga_n = sum(1 for n in v.getGlyphOrder() if ".liga" in n)
+    print(f"  GSUB features: {gsub_tags}")
+    print(f"  .liga glyphs: {liga_n}")
     v.close()
     print(f"  Saved {out_path}  advances={checks}")
     return checks
@@ -321,16 +407,16 @@ def merge_pair(
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--mono-regular", type=Path, required=True)
-    p.add_argument("--mono-bold", type=Path, required=True)
+    p.add_argument("--mono-regular", "--latin-regular", dest="latin_regular", type=Path, required=True)
+    p.add_argument("--mono-bold", "--latin-bold", dest="latin_bold", type=Path, required=True)
     p.add_argument("--sc-regular", type=Path, required=True)
     p.add_argument("--sc-bold", type=Path, required=True)
     p.add_argument("--out-dir", type=Path, required=True)
     p.add_argument("--en-adv", type=int, default=550)
     p.add_argument("--cjk-adv", type=int, default=1100)
-    p.add_argument("--mono-src-adv", type=int, default=600)
-    p.add_argument("--family", default="PlexMonoSansSC Dual")
-    p.add_argument("--family-ps", default="PlexMonoSansSCDual")
+    p.add_argument("--mono-src-adv", "--latin-src-adv", dest="latin_src_adv", type=int, default=600)
+    p.add_argument("--family", default="LilexSansSC Dual")
+    p.add_argument("--family-ps", default="LilexSansSCDual")
     p.add_argument("--hhea-ascent", type=int, default=1025)
     p.add_argument("--hhea-descent", type=int, default=-275)
     p.add_argument("--hhea-line-gap", type=int, default=0)
@@ -358,34 +444,33 @@ def main() -> int:
         os2_win_desc=args.os2_win_descent,
     )
 
-    # File stem keeps metrics so side-by-side experiments don't collide.
     stem = f"{args.family_ps}"
     pairs = [
         (
-            args.mono_regular,
+            args.latin_regular,
             args.sc_regular,
             args.out_dir / f"{stem}-Regular.ttf",
             "Regular",
         ),
         (
-            args.mono_bold,
+            args.latin_bold,
             args.sc_bold,
             args.out_dir / f"{stem}-Bold.ttf",
             "Bold",
         ),
     ]
-    for mono_p, sc_p, out_p, sub in pairs:
-        if not mono_p.exists() or not sc_p.exists():
-            print(f"Missing source fonts: {mono_p} / {sc_p}", file=sys.stderr)
+    for latin_p, sc_p, out_p, sub in pairs:
+        if not latin_p.exists() or not sc_p.exists():
+            print(f"Missing source fonts: {latin_p} / {sc_p}", file=sys.stderr)
             return 1
         merge_pair(
-            mono_p,
+            latin_p,
             sc_p,
             out_p,
             sub,
             en_adv=args.en_adv,
             cjk_adv=args.cjk_adv,
-            mono_src_adv=args.mono_src_adv,
+            latin_src_adv=args.latin_src_adv,
             family=args.family,
             family_ps=args.family_ps,
             metrics=metrics,
