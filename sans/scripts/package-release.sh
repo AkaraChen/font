@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Zip product TTFs + OFL for a GitHub Release.
+# Zip product TTFs + OFLs for a GitHub Release.
 # Usage: ./scripts/package-release.sh 0.1.0
 set -euo pipefail
 # shellcheck disable=SC1091
@@ -10,7 +10,7 @@ VERSION="${1:-}"
 
 need_cmd zip
 shopt -s nullglob
-stem="${PRODUCT_STEM:-PlexMonoSansSCDual}"
+stem="${PRODUCT_STEM:-LilexSansSCDual}"
 fonts=("${OUT_DIR}/${stem}"-*.ttf)
 [[ ${#fonts[@]} -gt 0 ]] || die "no products in ${OUT_DIR}"
 
@@ -21,21 +21,23 @@ rm -rf "${STAGE}"
 mkdir -p "${STAGE}"
 
 cp "${fonts[@]}" "${STAGE}/"
-if [[ -f "${OUT_DIR}/OFL-IBM-Plex.txt" ]]; then
-  cp "${OUT_DIR}/OFL-IBM-Plex.txt" "${STAGE}/"
-elif [[ -f "${SANS_ROOT}/licenses/OFL-IBM-Plex.txt" ]]; then
-  cp "${SANS_ROOT}/licenses/OFL-IBM-Plex.txt" "${STAGE}/"
-fi
+for lic in OFL-Lilex.txt OFL-IBM-Plex.txt; do
+  if [[ -f "${OUT_DIR}/${lic}" ]]; then
+    cp "${OUT_DIR}/${lic}" "${STAGE}/"
+  elif [[ -f "${SANS_ROOT}/licenses/${lic}" ]]; then
+    cp "${SANS_ROOT}/licenses/${lic}" "${STAGE}/"
+  fi
+done
 
 cat > "${STAGE}/README.txt" <<EOF
 ${FAMILY_NAME} ${VERSION}
-Derived from IBM Plex Mono + IBM Plex Sans SC under SIL OFL 1.1.
-Not an official IBM product.
+Derived from Lilex + IBM Plex Sans SC under SIL OFL 1.1.
+Not an official Lilex or IBM product.
 
 Name recipe (same style as SarasaNZSSlab NFM):
-  PlexMono = Plex Mono Latin
-  SansSC   = Plex Sans SC CJK
-  Dual     = dual-width 2:1 coding product
+  Lilex  = Lilex Latin / programming (ligatures + OT features preserved)
+  SansSC = Plex Sans SC CJK
+  Dual   = dual-width 2:1 coding product
 
 Cell metrics: EN ${EN_ADV} / CJK ${CJK_ADV} (strict 2:1)
 Upstream pins: see pins.env in the build repository.

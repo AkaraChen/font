@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render 荷塘月色 mixed CJK/EN sample for PlexMonoSansSC Dual."""
+"""Render 荷塘月色 mixed CJK/EN sample for LilexSansSC Dual."""
 
 from __future__ import annotations
 
@@ -116,7 +116,7 @@ def main() -> int:
     ap.add_argument(
         "--font",
         type=Path,
-        default=root / "out" / "PlexMonoSansSCDual-Regular.ttf",
+        default=root / "out" / "LilexSansSCDual-Regular.ttf",
     )
     ap.add_argument("--out-dir", type=Path, default=root / "samples" / "rendered")
     ap.add_argument("--title", default="Plex merge · EN 550 / CJK 1100")

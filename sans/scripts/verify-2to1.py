@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Strict 2:1 dual-width metric verification for PlexMonoSansSC Dual.
+"""Strict 2:1 dual-width metric verification for LilexSansSC Dual.
 
 half_unit = advance('A')   # default product: 550
 full_unit = 2 * half_unit  # default product: 1100

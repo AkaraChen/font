@@ -1,16 +1,16 @@
-# sans — PlexMonoSansSC Dual
+# sans — LilexSansSC Dual
 
-Coding dual-width face: **IBM Plex Mono** (Latin / programming) + **IBM Plex Sans SC** (CJK), strict **2:1** grid.
+Coding dual-width face: **Lilex** (Latin / programming ligatures) + **IBM Plex Sans SC** (CJK), strict **2:1** grid.
 
 | Component | Source | Pin |
 | --- | --- | --- |
-| Latin / mono | [IBM Plex Mono](https://github.com/IBM/plex) complete TTF | `@ibm/plex-mono@2.5.0` (font **v2.005**) |
+| Latin / mono | [Lilex](https://github.com/mishamyrt/Lilex) static TTF | **2.700** |
 | CJK | [IBM Plex Sans SC](https://github.com/IBM/plex) complete TTF (hinted) | `@ibm/plex-sans-sc@1.1.0` (font **v1.000**) |
 | Grid | EN cell / CJK cell | **550 / 1100** |
-| Product | Regular + Bold | `out/PlexMonoSansSCDual-{Regular,Bold}.ttf` |
-| Family name | Source-encoding (see below) | **PlexMonoSansSC Dual** |
+| Product | Regular + Bold | `out/LilexSansSCDual-{Regular,Bold}.ttf` |
+| Family name | Source-encoding (see below) | **LilexSansSC Dual** |
 
-Chosen after a three-way bake-off (`500/1000`, **`550/1100`**, `600/1200`). Mono is X-scaled ~8.3% from its native 600 cell; CJK outlines stay unscaled and are recentred into a 1100 advance.
+Lilex is an extended face on IBM Plex Mono with programming ligatures and OpenType features. The merge keeps Lilex **GSUB / GPOS / GDEF** (so `calt` ligatures, stylistic sets, character variants, and mark attach survive), X-scales the mono cell from native **600 → 550**, and imports SC for CJK.
 
 ## Name recipe
 
@@ -18,13 +18,13 @@ Same style as serif’s `SarasaNZSSlab NFM` — long, concatenated sources + pro
 
 | Token | Meaning |
 | --- | --- |
-| **PlexMono** | IBM Plex Mono (Latin / programming glyphs) |
+| **Lilex** | Lilex (Latin / programming glyphs + ligatures / OT features) |
 | **SansSC** | IBM Plex Sans SC (Simplified Chinese CJK) |
 | **Dual** | dual-width 2:1 coding product (EN cell + CJK cell) |
 
-- Family (name ID 1): `PlexMonoSansSC Dual` (19 chars, Windows ≤31)
-- PostScript / file stem: `PlexMonoSansSCDual`
-- Not an official IBM face. Upstream OFL lists reserved font name **“Plex”** — treat this compound as a project source-label; review RFN before public OFL redistribution if that matters for your release.
+- Family (name ID 1): `LilexSansSC Dual` (16 chars, Windows ≤31)
+- PostScript / file stem: `LilexSansSCDual`
+- Not an official Lilex or IBM face. Upstream OFLs list reserved font names **“Lilex”** and **“Plex”** — treat this compound as a project source-label; review RFN before public OFL redistribution if that matters for your release.
 
 ## Pins
 
@@ -42,14 +42,17 @@ Do **not** bump pins casually; change them in a dedicated commit with a short ra
 ```
 sans/
   pins.env                 # upstream refs + product metrics
-  licenses/OFL-IBM-Plex.txt
+  licenses/
+    OFL-Lilex.txt
+    OFL-IBM-Plex.txt
   scripts/
     build.sh               # one-shot fetch → merge → verify
     01-fetch-sources.sh
     02-merge.sh
     03-verify.sh
-    merge_plex.py          # core merge (Mono scale + SC import)
+    merge_plex.py          # core merge (Lilex scale + SC import; keeps OT)
     verify-2to1.py
+    verify-features.py     # calt / ligatures / zero-width marks
     render-sample.py
     package-release.sh
   samples/
@@ -77,16 +80,16 @@ sudo apt install curl unzip zip python3-venv
 ```bash
 cd sans
 ./scripts/build.sh
-# → out/PlexMonoSansSCDual-Regular.ttf
-# → out/PlexMonoSansSCDual-Bold.ttf
+# → out/LilexSansSCDual-Regular.ttf
+# → out/LilexSansSCDual-Bold.ttf
 ```
 
 Step by step:
 
 ```bash
 ./scripts/01-fetch-sources.sh   # download + extract pinned zips
-./scripts/02-merge.sh           # merge EN=550 / CJK=1100
-./scripts/03-verify.sh          # hard-fail if advances drift
+./scripts/02-merge.sh           # merge EN=550 / CJK=1100 (preserve Lilex GSUB)
+./scripts/03-verify.sh          # hard-fail if advances or features drift
 ```
 
 ### Sample render
@@ -94,8 +97,8 @@ Step by step:
 ```bash
 # after build; needs Pillow in work/venv
 work/venv/bin/python scripts/render-sample.py \
-  --font out/PlexMonoSansSCDual-Regular.ttf \
-  --title "PlexMonoSansSC Dual · EN 550 / CJK 1100"
+  --font out/LilexSansSCDual-Regular.ttf \
+  --title "LilexSansSC Dual · EN 550 / CJK 1100"
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -103,15 +106,15 @@ work/venv/bin/python scripts/render-sample.py \
 
 ```bash
 ./scripts/package-release.sh 0.1.0
-# → dist/PlexMonoSansSCDual-0.1.0.zip
+# → dist/LilexSansSCDual-0.1.0.zip
 ```
 
 ## Character policy
 
 | Source | Role |
 | --- | --- |
-| **Plex Mono** (scaled to 550) | ASCII, Latin extensions Mono ships, digits, programming symbols, half-width punctuation, Greek / Cyrillic |
-| **Plex Sans SC** (advance → 1100, centred) | Han, CJK punctuation / symbols, fullwidth forms, kana / bopomofo, and any codepoint Mono lacks |
+| **Lilex** (scaled to 550; OT tables kept) | ASCII, Latin extensions, digits, programming symbols, half-width punctuation, Greek / Cyrillic, **programming ligatures** (`calt`), stylistic sets / character variants |
+| **Plex Sans SC** (advance → 1100, centred) | Han, CJK punctuation / symbols, fullwidth forms, kana / bopomofo, and any codepoint Lilex lacks |
 
 Not yet done (known limits of v0.1):
 
@@ -125,7 +128,8 @@ Not yet done (known limits of v0.1):
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --expect-half 550 out/PlexMonoSansSCDual-*.ttf
+python3 scripts/verify-2to1.py --expect-half 550 out/LilexSansSCDual-*.ttf
+python3 scripts/verify-features.py out/LilexSansSCDual-*.ttf
 ```
 
 | Set | Expected |
@@ -133,16 +137,18 @@ python3 scripts/verify-2to1.py --expect-half 550 out/PlexMonoSansSCDual-*.ttf
 | `A` / printable ASCII | **550** |
 | `中` / sample Han / fullwidth forms | **1100** (= 2× EN) |
 | `post.isFixedPitch` | **0** (dual-width; hosts that only list classic mono may hide it) |
+| GSUB `calt` + `.liga` glyphs | present (Lilex coding ligatures) |
 
 ## Family / license
 
-- **Product family:** `PlexMonoSansSC Dual` (Regular / Bold)
-- Upstream is **SIL OFL 1.1** with reserved font name **“Plex”**
-- Keep `licenses/OFL-IBM-Plex.txt` (and the copy next to shipped TTFs) with redistributions
+- **Product family:** `LilexSansSC Dual` (Regular / Bold)
+- Upstream is **SIL OFL 1.1** (Lilex RFN **“Lilex”**; Plex RFN **“Plex”**)
+- Keep `licenses/OFL-Lilex.txt` and `licenses/OFL-IBM-Plex.txt` (and copies next to shipped TTFs) with redistributions
 - Build scripts in this folder: MIT (repo root) unless noted
 
 ## Upstream links
 
-- Mono release: <https://github.com/IBM/plex/releases/tag/%40ibm/plex-mono%402.5.0>
+- Lilex release: <https://github.com/mishamyrt/Lilex/releases/tag/2.700>
+- Lilex project: <https://github.com/mishamyrt/Lilex> · <https://lilex.myrt.co>
 - Sans SC release: <https://github.com/IBM/plex/releases/tag/%40ibm/plex-sans-sc%401.1.0>
-- Project home: <https://github.com/IBM/plex>
+- Plex project: <https://github.com/IBM/plex>

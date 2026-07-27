@@ -22,13 +22,13 @@ Details: [`serif/README.md`](serif/README.md).
 
 ## sans/
 
-**Coding product: PlexMonoSansSC Dual** — Plex Mono Latin + Plex Sans SC CJK, dual-width **EN 550 / CJK 1100**.
+**Coding product: LilexSansSC Dual** — Lilex Latin (ligatures / OT features) + Plex Sans SC CJK, dual-width **EN 550 / CJK 1100**.
 
-Name recipe (same style as `SarasaNZSSlab NFM`): **PlexMono** + **SansSC** + **Dual**.
+Name recipe (same style as `SarasaNZSSlab NFM`): **Lilex** + **SansSC** + **Dual**.
 
 ```bash
 cd sans && ./scripts/build.sh
-# → out/PlexMonoSansSCDual-{Regular,Bold}.ttf
+# → out/LilexSansSCDual-{Regular,Bold}.ttf
 ```
 
 Upstream pins (release tags + zip SHA-256) live in [`sans/pins.env`](sans/pins.env).
