@@ -1,0 +1,54 @@
+Index: Sarasa-Gothic/verdafile.mjs
+===================================================================
+--- Sarasa-Gothic.orig/verdafile.mjs	2026-07-27 12:12:14.915148669 +0800
++++ Sarasa-Gothic/verdafile.mjs	2026-07-27 12:12:14.994381919 +0800
+@@ -95,6 +95,11 @@
+ 	await t.need(TtfFontFiles`TTF`, TtfFontFiles`TTF-Unhinted`);
+ });
+ 
++// kit-font/serif: unhinted-only target (skip Chlorophytum; faster builds)
++const TtfUnhintedOnly = phony(`ttf-unhinted`, async t => {
++	await t.need(TtfFontFiles`TTF-Unhinted`);
++});
++
+ const CheckTtfAutoHintExists = oracle("oracle:check-ttfautohint-exists", async _target => {
+ 	try {
+ 		return await which(TTFAUTOHINT);
+@@ -197,6 +202,20 @@
+ 		const [config] = await $.need(Config, de(`${BUILD}/shs`));
+ 		const shsSourceMap = config.shsSourceMap;
+ 		const shsSuffix = shsSourceMap.styleMap[weight] || weight;
++		// kit-font/serif: drop-in TrueType CJK without OTC (e.g. LXGW Neo ZhiSong).
++		// When shsSourceMap.directTtf is true, copy sources/shs/<prefix>-<suffix>.ttf
++		// into .build/shs as a pseudo-.otf that ShsTtf will pass through.
++		if (shsSourceMap.directTtf) {
++			for (const regionID in shsSourceMap.region) {
++				const shsPrefix = shsSourceMap.region[regionID];
++				const srcTtf = `${SOURCES}/shs/${shsPrefix}-${shsSuffix}.ttf`;
++				const dst = `${BUILD}/shs/${shsPrefix}-${shsSuffix}.otf`;
++				if (await fs.pathExists(srcTtf)) {
++					await fs.copy(srcTtf, dst, { overwrite: true });
++				}
++			}
++			return;
++		}
+ 		await run(OTC2OTF, `${SOURCES}/shs/${shsSourceMap.defaultRegion}-${shsSuffix}.ttc`);
+ 		for (const regionID in shsSourceMap.region) {
+ 			const shsPrefix = shsSourceMap.region[regionID];
+@@ -217,6 +236,16 @@
+ 		const shsPrefix = shsSourceMap.region[region];
+ 		const shsSuffix = shsSourceMap.styleMap[weight] || weight;
+ 		const [, $1] = await t.need(de(out.dir), fu`${BUILD}/shs/${shsPrefix}-${shsSuffix}.otf`);
++		// TrueType drop-ins are already glyf fonts; skip otf2ttf (CFF→TTF).
++		const fd = await fs.open($1.full, "r");
++		const head = Buffer.alloc(4);
++		await fs.read(fd, head, 0, 4, 0);
++		await fs.close(fd);
++		const tag = head.toString("binary");
++		if (tag === "\x00\x01\x00\x00" || tag === "true" || tag === "typ1") {
++			await fs.copy($1.full, out.full, { overwrite: true });
++			return;
++		}
+ 		await run("otf2ttf", "-o", out.full, $1.full);
+ 	},
+ );

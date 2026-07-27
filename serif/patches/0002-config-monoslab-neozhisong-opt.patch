@@ -1,0 +1,173 @@
+Index: Sarasa-Gothic/config.json
+===================================================================
+--- Sarasa-Gothic.orig/config.json	2026-07-27 12:12:13.898699757 +0800
++++ Sarasa-Gothic/config.json	2026-07-27 12:12:15.140633024 +0800
+@@ -1,6 +1,8 @@
+ {
+ 	"buildOptions": {},
+-	"familyOrder": ["Gothic", "Ui", "Mono", "MonoSlab", "Term", "TermSlab", "Fixed", "FixedSlab"],
++	"familyOrder": [
++		"MonoSlab"
++	],
+ 	"families": {
+ 		"Gothic": {
+ 			"isGothic": true,
+@@ -69,12 +71,12 @@
+ 			"isMono": true,
+ 			"latinGroup": "IosevkaNSlab",
+ 			"naming": {
+-				"en_US": "Sarasa Mono Slab",
+-				"zh_CN": "等距更纱黑体 Slab",
+-				"zh_TW": "等距更紗黑體 Slab",
+-				"zh_HK": "等距更紗黑體 Slab",
+-				"ja_JP": "更紗等幅ゴシック Slab",
+-				"ko_KR": "사라사 고정 폭고딕 Slab"
++				"en_US": "Sarasa Mono Slab NeoZhiSong Opt",
++				"zh_CN": "等距更纱新致宋 Slab Opt",
++				"zh_TW": "等距更紗新致宋 Slab Opt",
++				"zh_HK": "等距更紗新致宋 Slab Opt",
++				"ja_JP": "Sarasa Mono Slab NeoZhiSong Opt",
++				"ko_KR": "Sarasa Mono Slab NeoZhiSong Opt"
+ 			}
+ 		},
+ 		"TermSlab": {
+@@ -105,21 +107,20 @@
+ 		}
+ 	},
+ 	"styleOrder": [
+-		"ExtraLight",
+-		"ExtraLightItalic",
+-		"Light",
+-		"LightItalic",
+ 		"Regular",
+-		"Italic",
+-		"SemiBold",
+-		"SemiBoldItalic",
+-		"Bold",
+-		"BoldItalic"
++		"Bold"
+ 	],
+ 	"latinGroups": {
+ 		"Inter": {
+ 			"isCff": false,
+-			"bakeFeatures": [{ "tag": "ss03" }, { "tag": "cv10" }],
++			"bakeFeatures": [
++				{
++					"tag": "ss03"
++				},
++				{
++					"tag": "cv10"
++				}
++			],
+ 			"dropFeatures": [
+ 				"cv01",
+ 				"cv02",
+@@ -146,43 +147,16 @@
+ 		}
+ 	},
+ 	"styles": {
+-		"ExtraLight": {
+-			"name": "ExtraLight"
+-		},
+-		"ExtraLightItalic": {
+-			"name": "ExtraLight Italic",
+-			"uprightStyleMap": "ExtraLight"
+-		},
+-		"Light": {
+-			"name": "Light"
+-		},
+-		"LightItalic": {
+-			"name": "Light Italic",
+-			"uprightStyleMap": "Light"
+-		},
+ 		"Regular": {
+ 			"name": "Regular"
+ 		},
+-		"Italic": {
+-			"name": "Italic",
+-			"uprightStyleMap": "Regular"
+-		},
+-		"SemiBold": {
+-			"name": "SemiBold"
+-		},
+-		"SemiBoldItalic": {
+-			"name": "SemiBold Italic",
+-			"uprightStyleMap": "SemiBold"
+-		},
+ 		"Bold": {
+ 			"name": "Bold"
+-		},
+-		"BoldItalic": {
+-			"name": "Bold Italic",
+-			"uprightStyleMap": "Bold"
+ 		}
+ 	},
+-	"subfamilyOrder": ["CL", "SC", "TC", "HC", "J", "K"],
++	"subfamilyOrder": [
++		"SC"
++	],
+ 	"os2encodings": {
+ 		"J": {
+ 			"gbk": false,
+@@ -222,33 +196,39 @@
+ 		}
+ 	},
+ 	"nameTupleSelector": {
+-		"J": ["en_US", "ja_JP"],
+-		"K": ["en_US", "ko_KR"],
+-		"SC": ["en_US", "zh_CN"],
+-		"TC": ["en_US", "zh_TW"],
+-		"HC": ["en_US", "zh_HK"],
+-		"CL": ["en_US", "zh_TW"]
++		"J": [
++			"en_US",
++			"ja_JP"
++		],
++		"K": [
++			"en_US",
++			"ko_KR"
++		],
++		"SC": [
++			"en_US",
++			"zh_CN"
++		],
++		"TC": [
++			"en_US",
++			"zh_TW"
++		],
++		"HC": [
++			"en_US",
++			"zh_HK"
++		],
++		"CL": [
++			"en_US",
++			"zh_TW"
++		]
+ 	},
+ 	"copyright": "Copyright (c) 2015-2025, Renzhi Li (aka. Belleve Invis, belleve@typeof.net). Portions Copyright (c) 2016 The Inter Project Authors. Portions Copyright (c) 2014-2021 Adobe Systems Incorporated (http://www.adobe.com/). Portions Copyright (c) 2012 Google Inc.",
+ 	"shsSourceMap": {
+-		"defaultRegion": "SourceHanSans",
++		"directTtf": true,
++		"defaultRegion": "LXGWNeoZhiSong",
+ 		"region": {
+-			"J": "SourceHanSans",
+-			"K": "SourceHanSansK",
+-			"CL": "SourceHanSansK",
+-			"SC": "SourceHanSansSC",
+-			"TC": "SourceHanSansTC",
+-			"HC": "SourceHanSansHC",
+-			"J-HW": "SourceHanSansHW",
+-			"K-HW": "SourceHanSansHWK",
+-			"CL-HW": "SourceHanSansHWK",
+-			"SC-HW": "SourceHanSansHWSC",
+-			"TC-HW": "SourceHanSansHWTC",
+-			"HC-HW": "SourceHanSansHWHC"
+-		},
+-		"styleMap": {
+-			"SemiBold": "Medium"
++			"SC": "LXGWNeoZhiSongSC"
+ 		},
++		"styleMap": {},
+ 		"classicalRegion": "CL",
+ 		"classicalOverridePrefix": "ShangguSansTC",
+ 		"classicalOverrideSuffixMap": {

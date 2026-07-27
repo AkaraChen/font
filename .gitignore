@@ -1,0 +1,21 @@
+# Build trees & products
+serif/work/
+serif/out/
+**/.pc/
+**/node_modules/
+*.ttf
+*.otf
+*.ttc
+!**/patches/**
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
