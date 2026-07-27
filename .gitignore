@@ -6,6 +6,9 @@ sans/work/
 sans/out/
 sans/dist/
 sans/samples/rendered/
+kai/work/
+kai/out/
+kai/dist/
 **/.pc/
 **/node_modules/
 *.ttf

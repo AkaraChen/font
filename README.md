@@ -34,3 +34,20 @@ cd sans && ./scripts/build.sh
 Upstream pins (release tags + zip SHA-256) live in [`sans/pins.env`](sans/pins.env).
 
 Details: [`sans/README.md`](sans/README.md).
+
+## kai/
+
+**Coding product: RadonWenKai NFM** — Monaspace **Radon** Latin (handwriting mono, ligatures,
+pre-patched Nerd icons) + **霞鹜文楷 LXGW WenKai** CJK, **Nerd Font Mono**, 2:1 dual width
+(EN 500 / CJK 1000), CJK sheared **7.5°** to match Radon's measured lean.
+
+```bash
+cd kai && ./scripts/build.sh
+# → out/RadonWenKaiNFM-{Regular,Bold}.ttf
+```
+
+Monaspace parks its ligatures in `ss01`–`ss10`; the build folds them into default `calt` and
+gates that with a HarfBuzz shaping test. Weight pairing and slant are measured, not guessed
+(`./scripts/calibrate-stroke.sh`).
+
+Details: [`kai/README.md`](kai/README.md).
