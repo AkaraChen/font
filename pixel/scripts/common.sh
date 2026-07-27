@@ -56,24 +56,24 @@ download_file() {
 }
 
 ensure_python() {
-  if [[ -x "${VENV_DIR}/bin/python" ]] && "${VENV_DIR}/bin/python" -c "import fontTools, PIL" 2>/dev/null; then
+  if [[ -x "${VENV_DIR}/bin/python" ]] && "${VENV_DIR}/bin/python" -c "import fontTools" 2>/dev/null; then
     return 0
   fi
   mkdir -p "${WORK_DIR}"
   log "creating venv at ${VENV_DIR}"
   if command -v uv >/dev/null 2>&1; then
     uv venv "${VENV_DIR}" --clear 2>/dev/null || uv venv "${VENV_DIR}"
-    uv pip install --python "${VENV_DIR}/bin/python" -q 'fonttools>=4.50' brotli Pillow
+    uv pip install --python "${VENV_DIR}/bin/python" -q 'fonttools>=4.50' brotli
   else
     need_cmd python3
     python3 -m venv "${VENV_DIR}"
     # shellcheck disable=SC1091
     source "${VENV_DIR}/bin/activate"
     python -m pip install -q --upgrade pip
-    python -m pip install -q 'fonttools>=4.50' brotli Pillow
+    python -m pip install -q 'fonttools>=4.50' brotli
   fi
-  "${VENV_DIR}/bin/python" -c "import fontTools, PIL" \
-    || die "fontTools/Pillow not importable in ${VENV_DIR}"
+  "${VENV_DIR}/bin/python" -c "import fontTools" \
+    || die "fontTools not importable in ${VENV_DIR}"
 }
 
 python_bin() {

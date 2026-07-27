@@ -17,8 +17,12 @@ NERD_SAMPLES = (
     0xF120,  # terminal
 )
 
-# Sequences we expect to ligate under calt (subset of what we inject)
-LIGA_SAMPLES = ("==", "!=", "===", "=>", "->", "<=", ">=", "++", "--", ":=", "&&", "||")
+# Sequences we expect to ligate under calt (subset of ligatures/ligatures.txt).
+# '&&' and '||' are deliberately NOT drawn — see the notes in the art file.
+LIGA_SAMPLES = (
+    "==", "!=", "<=", ">=", "=>", "->", "<-", "++", "--", ":=",
+    "===", "!==", "<=>", "<->", "-->", "<--", "...", "<!--",
+)
 
 
 def check_advances(font: TTFont, half: int, full: int) -> list[str]:

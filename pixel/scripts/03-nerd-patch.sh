@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Patch intermediate FusionPixel12 Mono TTFs with Nerd Font icons.
-# Nerd glyphs are kept as-is (NOT pixelized). Dual-width CJK preserved.
+# Nerd glyphs are kept as-is (no pixel redraw). Dual-width CJK preserved.
 #
 # Strategy mirrors serif/scripts/05-nerd-patch.sh:
 #   - --complete + --single-width-glyphs (icons = 1 half-cell)

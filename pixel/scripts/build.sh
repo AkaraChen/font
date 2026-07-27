@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot: Fusion 12px mono + pixelized ligatures + Nerd Font Mono product.
+# One-shot: Fusion 12px mono + hand-drawn ligatures + Nerd Font Mono product.
 # Final: out/nerd/FusionPixel12NFM-Regular.ttf
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

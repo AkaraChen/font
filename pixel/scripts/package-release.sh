@@ -35,15 +35,15 @@ ${FAMILY_NAME} ${VERSION}
 
 Family: ${FAMILY_NAME}
 Grid:   Fusion Pixel 12px mono (EN ${EN_ADV} / CJK ${CJK_ADV})
-Ligatures: pixelized programming ligatures (calt) from Lilex outlines
-Icons:  Nerd Fonts complete set (single-cell), NOT pixelized
+Ligatures: hand-drawn pixel programming ligatures (calt)
+Icons:  Nerd Fonts complete set (single-cell), not redrawn
         patcher ${NERD_FONTS_TAG}
 
 Install: copy the .ttf into your OS fonts directory.
 In terminals/IDEs pick family "${FAMILY_NAME}" and enable font ligatures.
 
 Sources: https://github.com/AkaraChen/font (pixel/)
-Upstream: Fusion Pixel Font (OFL), Lilex (OFL), Nerd Fonts glyph sets
+Upstream: Fusion Pixel Font (OFL), Nerd Fonts glyph sets
 EOF
 
 need_cmd zip
