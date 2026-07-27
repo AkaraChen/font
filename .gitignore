@@ -1,6 +1,11 @@
 # Build trees & products
 serif/work/
 serif/out/
+serif/dist/
+sans/work/
+sans/out/
+sans/dist/
+sans/samples/rendered/
 **/.pc/
 **/node_modules/
 *.ttf
@@ -19,4 +24,4 @@ venv/
 *.swp
 .idea/
 .vscode/
-serif/dist/
+

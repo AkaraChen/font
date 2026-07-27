@@ -19,3 +19,18 @@ cd serif && ./scripts/package-release.sh 0.1.0
 ```
 
 Details: [`serif/README.md`](serif/README.md).
+
+## sans/
+
+**Coding product: PlexMonoSansSC Dual** — Plex Mono Latin + Plex Sans SC CJK, dual-width **EN 550 / CJK 1100**.
+
+Name recipe (same style as `SarasaNZSSlab NFM`): **PlexMono** + **SansSC** + **Dual**.
+
+```bash
+cd sans && ./scripts/build.sh
+# → out/PlexMonoSansSCDual-{Regular,Bold}.ttf
+```
+
+Upstream pins (release tags + zip SHA-256) live in [`sans/pins.env`](sans/pins.env).
+
+Details: [`sans/README.md`](sans/README.md).
