@@ -11,9 +11,9 @@ Human-facing reference for **editor-size** CN/EN mono alignment (not a reading p
 
 ```bash
 cd serif
-# after ./scripts/build.sh  (and optionally ./scripts/05-nerd-patch.sh)
-../path/to/venv/bin/python scripts/render-coding-sample.py \
-  --font out/SarasaMonoSlabNeoZhiSongSC-Opt-Regular.ttf \
+# after ./scripts/build.sh  → product is out/nerd/
+python3 scripts/render-coding-sample.py \
+  --font out/nerd/SarasaNZSSlabNFM-Regular.ttf \
   --sizes 12,14,16
 ```
 

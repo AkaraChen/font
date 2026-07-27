@@ -1,183 +1,146 @@
-# serif — MonoSlab × 霞鹜新致宋 Opt
+# serif — SarasaNZSSlab NFM (Nerd Font Mono)
 
-Stable rebuild of the **KIT-234** experiment, plus **coding** gates (**KIT-236**):
+Coding mono: **Slab Latin (IosevkaNSlab)** + **霞鹜新致宋 Opt** + **Nerd icons**, strict **2:1** dual-width.
 
 | Component | Source |
 | --- | --- |
 | Latin | Sarasa `IosevkaNSlab` (MonoSlab) |
 | CJK | [LXGW Neo ZhiSong Plus](https://github.com/lxgw/LxgwNeoZhiSong) `v1.066` |
-| Grid | 2:1 mono (`A=500` / `中=1000` after merge) |
+| Grid | 2:1 mono (`A=500` / `中=1000`) |
 | Weight match | pathops embolden **s=14** (Regular) / **s=32** (Bold) |
-| Output | Unhinted TTF SC Regular + Bold |
-| Nerd (optional) | Secondary patch via Nerd Fonts `font-patcher` → `out/nerd/` |
-| Metrics gate | `scripts/verify-2to1.py` (strict advance check, CI-friendly) |
+| **Product** | **Nerd Font Mono** → `out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf` |
+| Metrics gate | `scripts/verify-2to1.py --check-nerd` (after Nerd patch) |
 
-Upstream tree is **not forked permanently**. Build scripts clone a **pinned ref** of [be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic) and apply **quilt** patches from `patches/`.
+Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic) ref and apply **quilt** patches.
 
 ## Pins
 
-See `pins.env`:
-
-- `SARASA_REF=v1.0.40` / `SARASA_COMMIT=4b908c7…`
-- `LXGW_TAG=v1.066`
-- embolden strengths
-- `NERD_FONTS_TAG=v3.4.0` (FontPatcher.zip) / docker image tag
+See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_TAG` + docker digest.
 
 ## Layout
 
 ```
 serif/
-  pins.env                 # version pins
-  patches/
-    series                 # quilt series
-    0001-verdafile-….patch # ttf-unhinted + directTtf CJK drop-in
-    0002-config-….patch    # MonoSlab × SC × NeoZhiSong Opt naming
-  tools/
-    embolden_cjk.py        # pathops stroke embolden
+  pins.env
+  patches/                 # quilt series
+  tools/embolden_cjk.py
   scripts/
-    build.sh               # one-shot (NERD=1 enables Nerd step)
-    01-clone-sarasa.sh
-    02-apply-quilt.sh
-    03-prepare-cjk.sh
-    04-build.sh            # build + strict 2:1 verify
-    05-nerd-patch.sh       # Nerd Font patch + re-verify --check-nerd
-    verify-2to1.py         # advance-width gate
+    build.sh               # one-shot → Nerd product
+    01…04-*.sh             # intermediate Sarasa build
+    05-nerd-patch.sh       # Nerd patch + 2:1 --check-nerd
+    package-release.sh     # zip out/nerd for GitHub Release
+    verify-2to1.py
+    rename_nerd_family.py
     render-coding-sample.py
-  samples/                 # coding text + optional PNG renders
-  work/                    # gitignored build tree
-  out/                     # gitignored products
-  out/nerd/                # gitignored Nerd-patched products
+  samples/
+  work/                    # gitignored
+  out/                     # intermediate pre-Nerd TTFs (gitignored)
+  out/nerd/                # **product** (gitignored)
+  dist/                    # release zips (gitignored)
 ```
 
 ## Dependencies
 
-### Base build
-
-- `git`, `curl`, `quilt`, `node` (≥ 20), `npm`
-- `ttfautohint` (Sarasa latin prep)
-- Python 3.10+ (`python3 -m venv` **or** `uv`) for `fonttools` + `skia-pathops`
-
-AFDKO `otc2otf` is **not** required for this drop-in TTF path.
+- `git`, `curl`, `quilt`, `node` (≥ 20), `npm`, `ttfautohint`, `unzip`, `zip`
+- Python 3.10+ (`venv` or `uv`) → `fonttools` + `skia-pathops`
+- **Nerd patch** — one of:
+  1. **Docker** (preferred): image in `pins.env` (`nerdfonts/patcher@sha256:…`)
+  2. **Local**: `fontforge` + FontPatcher.zip (cached under `work/`)
 
 ```bash
 # Debian/Ubuntu example
-sudo apt install git curl quilt nodejs npm ttfautohint python3-venv unzip
-# or: brew install quilt node ttfautohint
+sudo apt install git curl quilt nodejs npm ttfautohint python3-venv unzip zip
+# docker recommended for Nerd; or: sudo apt install fontforge
 ```
 
-### Nerd patch (optional)
-
-Pick **one**:
-
-1. **Docker** (preferred): `docker` + image `nerdfonts/patcher` (see `pins.env`)
-2. **Local**: `fontforge` + downloaded `FontPatcher.zip` (script caches under `work/`)
-
-```bash
-# Debian/Ubuntu local patcher
-sudo apt install fontforge
-```
-
-## Build
+## Build (Nerd only product)
 
 ```bash
 cd serif
 ./scripts/build.sh
-# → out/SarasaMonoSlabNeoZhiSongSC-Opt-{Regular,Bold}.ttf
-# 04-build.sh runs verify-2to1.py automatically (exit ≠ 0 on metric failure)
-```
-
-With Nerd icons:
-
-```bash
-NERD=1 ./scripts/build.sh
-# or after a normal build:
-./scripts/05-nerd-patch.sh
 # → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
-#    (patcher full set + --single-width-glyphs; family shortened for Windows ≤31)
+# Family name: "SarasaNZSSlab NFM"  (Windows-safe ≤31)
 ```
 
-Step by step:
+Step by step (same end product):
 
 ```bash
-./scripts/01-clone-sarasa.sh   # clone pinned Sarasa
-./scripts/02-apply-quilt.sh    # quilt push -a
-./scripts/03-prepare-cjk.sh    # download LXGW, scale UPM, embolden
-./scripts/04-build.sh          # npm run build ttf-unhinted + 2:1 verify
-./scripts/05-nerd-patch.sh     # optional Nerd + 2:1 --check-nerd
+./scripts/01-clone-sarasa.sh
+./scripts/02-apply-quilt.sh
+./scripts/03-prepare-cjk.sh
+./scripts/04-build.sh          # intermediate out/*.ttf
+./scripts/05-nerd-patch.sh     # product + verify --check-nerd
 ```
 
-## Strict 2:1 verification
+### Patcher policy
+
+- `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
+- **Never** `--mono` / `-s` — that forces *all* glyphs (incl. CJK) to 1 cell and breaks 2:1
+
+## Verify
 
 ```bash
-# needs fontTools (build venv under work/venv, or any env with fonttools)
-python3 scripts/verify-2to1.py out/*.ttf
 python3 scripts/verify-2to1.py --check-nerd out/nerd/*.ttf
 ```
 
-| Set | Expected advance |
+| Set | Expected |
 | --- | --- |
-| Reference | `A` = half unit (usually 500 @ UPM 1000); `中` = 2× half |
-| Half | ASCII `0x20–0x7E`, box/block `0x2500–0x259F`, halfwidth kana |
-| Full | fullwidth forms, common CJK punct, CJK ideograph samples |
-| Nerd (`--check-nerd`) | present Nerd/PUA icons = **half** (1 cell) |
+| `A` / half ASCII, box drawing, halfwidth kana | half unit (usually 500) |
+| `中` / fullwidth / CJK samples | 2× half |
+| Nerd/PUA icons present | half unit |
 
-**Epsilon** defaults to **0** (exact). Failures print codepoint, expected, and actual advances; process exits `1`.
+Epsilon default **0**. Exit `1` on failure with codepoint report.
 
-### Known exceptions (not hard-gated)
+Known non-gated mixes: geometric / arrows / misc symbols.
 
-- Geometric shapes / arrows / misc symbols may mix half and full in CJK mono; only the sets above are gated.
-- Do **not** pass font-patcher `--mono` / `-s` on this family: it rewrites **all** glyph advances to one cell and **breaks CJK 2:1**. Use `--single-width-glyphs` only (what `05-nerd-patch.sh` does).
+## Release package
 
-### Nerd strategy decision
+```bash
+./scripts/package-release.sh 0.1.0
+# → dist/SarasaNZSSlabNFM-0.1.0.zip  (Nerd TTFs only)
+```
 
-| Question | Choice here |
-| --- | --- |
-| Build integration | **Secondary** step on `out/*.ttf` (not inlined into Sarasa Verda graph) |
-| Icon width | **Single-cell** (`--single-width-glyphs`) |
-| Glyph set | `--complete` (full Nerd set); subset by editing `PATCH_ARGS` in `05-nerd-patch.sh` |
-| Publish name | Coexist: base Opt family + short `SarasaNZSSlab NFM` (post-rename) |
+Then:
+
+```bash
+gh release create v0.1.0 \
+  dist/SarasaNZSSlabNFM-0.1.0.zip \
+  out/nerd/SarasaNZSSlabNFM-Regular.ttf \
+  out/nerd/SarasaNZSSlabNFM-Bold.ttf \
+  --title "SarasaNZSSlab NFM v0.1.0" \
+  --notes "Nerd Font Mono coding build (2:1 SC)."
+```
+
 ## Coding samples
-
-See [`samples/`](samples/) for CN/EN code snippets and how to render 12–16px PNGs:
 
 ```bash
 python3 scripts/render-coding-sample.py \
-  --font out/SarasaMonoSlabNeoZhiSongSC-Opt-Regular.ttf \
+  --font out/nerd/SarasaNZSSlabNFM-Regular.ttf \
   --sizes 12,14,16
 ```
 
-## Quilt workflow (edit patches)
+See [`samples/`](samples/).
+
+## Quilt workflow
 
 ```bash
 export QUILT_PATCHES="$PWD/patches"
-cd work/Sarasa-Gothic          # after 01+02
-
-quilt series
-quilt pop -a                   # or push -a
-# edit files, then:
-quilt add path/to/file
-# …edit…
-quilt refresh                  # rewrite current patch under patches/
+cd work/Sarasa-Gothic
+quilt series   # 0001 pipeline, 0002 product config
 ```
 
-Keep patches **small and ordered**:
-
-1. `0001` — pipeline capability (`verdafile.mjs`)
-2. `0002` — product config (`config.json`)
-
-Do **not** put multi‑MiB font binaries in git; CJK is fetched in `03-prepare-cjk.sh`.
+Do **not** commit multi‑MiB font binaries; CJK is fetched in `03-prepare-cjk.sh`.
 
 ## Family name
 
-- English: `Sarasa Mono Slab NeoZhiSong Opt SC`
-- Chinese: `等距更纱新致宋 Slab Opt SC`
-- Nerd (after patch): patcher-generated `… Nerd Font` / Mono suffix
+- **Product:** `SarasaNZSSlab NFM` (Regular / Bold)
+- Intermediate pre-Nerd names are build artifacts only.
 
-Experimental naming only; respect OFL / reserved font names if you redistribute.
+Experimental naming; respect OFL / reserved font names if redistributing.
 
 ## License notes
 
-- Sarasa Gothic / IosevkaN: see upstream
-- LXGW Neo ZhiSong: OFL (see upstream release)
-- Nerd Fonts glyph sets / patcher: see [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) licenses
-- Scripts & patches in this folder: MIT (same as repo root unless noted)
+- Sarasa Gothic / IosevkaN: upstream
+- LXGW Neo ZhiSong: OFL
+- Nerd Fonts glyphs / patcher: [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts)
+- Scripts & patches here: MIT (repo root) unless noted

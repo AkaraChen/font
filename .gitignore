@@ -19,3 +19,4 @@ venv/
 *.swp
 .idea/
 .vscode/
+serif/dist/

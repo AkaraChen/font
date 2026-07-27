@@ -31,23 +31,6 @@ cp -f out/TTF-Unhinted/SarasaMonoSlabSC-Regular.ttf \
 cp -f out/TTF-Unhinted/SarasaMonoSlabSC-Bold.ttf \
   "${OUT_DIR}/SarasaMonoSlabNeoZhiSongSC-Opt-Bold.ttf"
 
-log "products:"
+log "intermediate (pre-Nerd) products:"
 ls -lh "${OUT_DIR}"/*.ttf
-
-# Strict 2:1 gate (ASCII / CJK / fullwidth / box drawing)
-VERIFY="${SERIF_ROOT}/scripts/verify-2to1.py"
-if [[ -f "${VERIFY}" ]]; then
-  PY=""
-  if [[ -x "${VENV_DIR}/bin/python" ]]; then
-    PY="${VENV_DIR}/bin/python"
-  elif command -v python3 >/dev/null 2>&1; then
-    PY="python3"
-  fi
-  if [[ -n "${PY}" ]]; then
-    log "strict 2:1 verification"
-    mapfile -t PRODUCTS < <(find "${OUT_DIR}" -maxdepth 1 -type f -name '*.ttf' | sort)
-    "${PY}" "${VERIFY}" "${PRODUCTS[@]}"
-  else
-    log "warning: no python for verify-2to1.py"
-  fi
-fi
+log "next: 05-nerd-patch.sh (product is out/nerd/; 2:1 gate runs there)"
