@@ -34,3 +34,15 @@ cd sans && ./scripts/build.sh
 Upstream pins (release tags + zip SHA-256) live in [`sans/pins.env`](sans/pins.env).
 
 Details: [`sans/README.md`](sans/README.md).
+
+## radon/
+
+**Coding product: RadonWenKai Dual / NFM** — Monaspace **Radon** Latin + 霞鹜文楷 Medium CJK, dual-width **EN 620 / CJK 1240**, coding ligatures (`calt`/`dlig`), mild CJK oblique, measured stem embolden, optional Nerd Font Mono.
+
+```bash
+cd radon && ./scripts/build.sh
+# → out/RadonWenKaiDual-{Regular,Bold}.ttf
+# → out/nerd/RadonWenKaiNFM-{Regular,Bold}.ttf
+```
+
+Details: [`radon/README.md`](radon/README.md).

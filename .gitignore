@@ -6,6 +6,10 @@ sans/work/
 sans/out/
 sans/dist/
 sans/samples/rendered/
+radon/work/
+radon/out/
+radon/dist/
+radon/samples/rendered/
 **/.pc/
 **/node_modules/
 *.ttf

@@ -1,0 +1,10 @@
+这几天心里颇不宁静。今晚在 courtyard 里坐着乘凉，忽然想起 day by day 走过的荷塘。
+
+// RadonWenKai Dual · EN 620 / CJK 1240 · calt ligatures
+const moon = "荷塘月色";
+fn main() {
+  // => != <= >= == && ||
+  println!("aa中bb文cc混dd排");
+}
+aa中bb文cc混dd排ee齐ff检
+|a|b|中|c|d|文|e|f|混|
