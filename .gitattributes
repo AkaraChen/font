@@ -1,0 +1,22 @@
+# Fingerprint baselines are build products, not source. They are regenerated
+# wholesale by `just fingerprint <family>`, so every intentional update rewrites
+# large parts of every file and the diff drowns the actual change in a PR.
+#
+# linguist-generated collapses them in GitHub's diff view (expandable on click)
+# and drops them from the repo's language stats — without giving up the reasons
+# they are text in the first place: `git diff` still works locally, `git blame`
+# still works, and git can still delta-compress them.
+#
+# Storing them as real binary (gzip) was measured and rejected: compressed
+# streams do not delta-compress, so five successive baseline updates grew the
+# repo 472K as .fp.gz versus 200K as text. It would hide the diff at 2.4x the
+# long-term cost, and make the baselines unreadable even locally.
+#
+# If you want them hidden outright rather than collapsed, change this to
+# `fingerprints/** -diff` — then GitHub shows "Binary file not shown" and local
+# `git diff` needs --text. That trade loses the ability to review an intentional
+# baseline change, which is the whole reason the format is normalised text.
+fingerprints/** linguist-generated=true
+
+# Keep shell scripts LF on every platform; they run inside the Nix devShell.
+*.sh text eol=lf

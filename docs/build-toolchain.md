@@ -95,6 +95,22 @@ Baselines live in `fingerprints/<family>/`, one `.fp` per product plus an
 `head.modified`; fontforge ignores it, which is why the net does not depend on
 byte reproducibility in the first place.
 
+### Why they are committed as text
+
+They are build products, so the obvious move is to store them as binary and stop
+GitHub rendering a diff on every update. That was measured and rejected:
+compressed streams do not delta-compress, so five successive baseline updates
+grow the repo **472K as `.fp.gz` versus 200K as text**. Storing them binary
+hides the diff at 2.4x the long-term cost, and makes the baseline unreadable
+even locally.
+
+`.gitattributes` marks `fingerprints/**` as `linguist-generated` instead: GitHub
+collapses them in the diff view (expandable on click) and drops them from the
+language stats, while `git diff`, `git blame` and delta compression all keep
+working. To hide them outright rather than collapse, change that line to
+`fingerprints/** -diff` — at the cost of not being able to review an intentional
+baseline change, which is what the normalised text format exists for.
+
 ### Baseline provenance
 
 Each `fingerprints/<family>/PROVENANCE` records the system and nixpkgs revision
