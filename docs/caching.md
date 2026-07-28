@@ -115,13 +115,19 @@ input, so there is nothing to look up and nothing to fall back to:
 sources.perFamily.sans."Lilex.zip"   # a store path, already fetched and hashed
 ```
 
-Phase 1 had to bridge this with a lookup by sha256, because the consumers were
-shell scripts that curled their own inputs — `tools/src-cache.sh` checked
-`$FONTKIT_SRC_CACHE/by-sha256/` first and fell back to curl. Phase 3 deleted
-both the bridge and the fallback along with the scripts that needed them. What
-was described then as "load-bearing" — a laptop with no Nix still builds — was
-true of a shell pipeline and is no longer the deal: the build is derivations, so
-Nix is the requirement, not the accelerant.
+Phase 1 had to bridge this with a lookup by sha256, because every consumer was a
+shell script that curled its own inputs — `tools/src-cache.sh` checked
+`$FONTKIT_SRC_CACHE/by-sha256/` first and fell back to curl.
+
+**That bridge still exists, for serif and nothing else**, until its Sarasa
+toolchain moves into Nix. `just build serif` realises `.#source-cache` and
+exports the variable; `FONTKIT_SRC_CACHE=off` falls back to curl, still
+hash-gated, at the cost of re-downloading 300 MiB of Sarasa.
+
+For the other six the fallback is gone, and so is what it was for. "Load-bearing
+— a laptop with no Nix still builds" was true of a shell pipeline and is no
+longer the deal: those families are derivations, so Nix is the requirement
+rather than the accelerant.
 
 `nix build .#source-cache` still produces the by-name / by-sha256 view:
 

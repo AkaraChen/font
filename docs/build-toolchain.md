@@ -241,8 +241,9 @@ message instead of as a confusing behavioural assertion.
 
 Phase 3 (KIT-277). Every step of every family except serif is a derivation, and
 the shell that used to sequence them is gone: 6 × `common.sh`, 6 × `build.sh`,
-6 × `package-release.sh`, the numbered step scripts, `tools/build-family.sh` and
-`tools/src-cache.sh` — about 2,900 lines.
+6 × `package-release.sh`, the numbered step scripts and `tools/build-family.sh` —
+about 2,900 lines. `tools/src-cache.sh` stays for serif alone, which still curls
+its own inputs; see [`caching.md`](caching.md).
 
 ### What a step is
 

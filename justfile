@@ -61,6 +61,13 @@ build family:
     #!/usr/bin/env bash
     set -euo pipefail
     if [[ "{{family}}" == "serif" ]]; then
+      # serif still curls its own inputs, so it needs the source layer realised
+      # and pointed at — tools/build-family.sh used to do this for all seven.
+      # FONTKIT_SRC_CACHE=off skips it and falls back to curl, which still works
+      # and is still hash-gated; it just re-downloads 300 MiB of Sarasa.
+      if [[ "${FONTKIT_SRC_CACHE:-}" != "off" ]]; then
+        export FONTKIT_SRC_CACHE="$({{nix}} build --no-link --print-out-paths .#source-cache)"
+      fi
       {{nix}} develop --command serif/scripts/build.sh
       exit 0
     fi
