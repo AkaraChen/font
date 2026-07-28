@@ -1,0 +1,18 @@
+这几天心里颇不宁静。今晚在 courtyard 里坐着乘凉，忽然想起 day by day 走过的荷塘，
+在这 full moon 的光里，总该另有一番样子吧。叶子出水很高，像亭亭的舞女的 skirt。
+层层的叶子中间，零星地点缀着些 white flowers，有袅娜地开着的，有羞涩地打着朵儿的；
+正如一粒粒的明珠，又如碧天里的 stars，又如刚出浴的美人。
+
+// coding sample · 中英混排对齐检查
+const moon = "荷塘月色"; // full moon over the lotus pond
+function walk(path: string): void {
+  // day by day 走过的 path，观察 leaf 与 flower 的 rhythm
+  console.log(`path=${path}, width=EN/CJK 2:1`);
+}
+// 易混字符: 0O o l1 I |  运算符: == => -> != <= >=
+const o0 = 0; const OO = "O"; const l1 = 1; const II = "I";
+if (x == y || a => b || p -> q || n != m) { /* ok */ }
+// 两英文字母应严格对齐一汉字：aa中bb文cc混dd排
+// |a|b|中|c|d|文|  →  中文 cell=2×英文
+aa中bb文cc混dd排ee齐ff检
+|a|b|中|c|d|文|e|f|混|
