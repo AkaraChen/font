@@ -1,6 +1,6 @@
-# typewriter — TypewriterMono NFM
+# typewriter — PrimeZhuque NFM
 
-Coding dual-width face: **Courier Prime** (Latin slab mono) + **朱雀仿宋 Zhuque Fangsong** (CJK) + **Nerd Font Mono**, strict **2:1** grid. Typewriter / archive / technical-manual vibe — distinct from `serif/` (IosevkaNSlab + 新致宋).
+Coding dual-width face: **Courier Prime** (Latin slab mono) + **朱雀仿宋 Zhuque Fangsong** (CJK) + **Nerd Font Mono**, strict **2:1** grid. Name recipe encodes sources (**Prime** + **Zhuque** + **NFM**), same style as `LilexSansSC NFM`. Distinct from `serif/` (IosevkaNSlab + 新致宋).
 
 | Component | Source | Pin |
 | --- | --- | --- |
@@ -9,9 +9,9 @@ Coding dual-width face: **Courier Prime** (Latin slab mono) + **朱雀仿宋 Zhu
 | Icons | [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) FontPatcher | **v3.4.0** (`--complete --single-width-glyphs`) |
 | Grid | EN cell / CJK cell | **600 / 1200** |
 | Symbol widths | EAW-correct (N/Na/H → half, W/F → full; A left alone) | `narrow-symbol-widths.py` after Nerd |
-| Intermediate | Regular + Bold (pre-Nerd) | `out/TypewriterMonoDual-{Regular,Bold}.ttf` |
-| Product | Regular + Bold (Nerd Mono) | `out/nerd/TypewriterMonoNFM-{Regular,Bold}.ttf` |
-| Family name | Project product name (not upstream RFN) | **TypewriterMono NFM** |
+| Intermediate | Regular + Bold (pre-Nerd) | `out/PrimeZhuqueDual-{Regular,Bold}.ttf` |
+| Product | Regular + Bold (Nerd Mono) | `out/nerd/PrimeZhuqueNFM-{Regular,Bold}.ttf` |
+| Family name | Source tokens + product tag | **PrimeZhuque NFM** |
 | Metrics gate | `verify-2to1.py --expect-half 600 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
 Courier Prime ships UPM **2048** mono cell **1228**; the merge normalizes to UPM **1000** (EN **600**). Zhuque’s embedded Alegreya Latin is **dropped** — only CJK-side ranges are imported. Zhuque is single-weight; both product weights stem-match Latin verticals via embolden (`CJK_EMBOLDEN_REGULAR=8`, `CJK_EMBOLDEN_BOLD=32`, via `serif/tools/embolden_cjk.py`) so mixed CJK/EN coding text reads at the same optical weight.
@@ -22,14 +22,14 @@ v1 does **not** add programming `calt` ligatures (Courier Prime has none). Optio
 
 | Token | Meaning |
 | --- | --- |
-| **TypewriterMono** | Product family (typewriter / archive coding dual-width) |
-| **Dual** | Intermediate pre-Nerd merge only |
+| **Prime** | Courier Prime (Latin slab mono) |
+| **Zhuque** | 朱雀仿宋 Zhuque Fangsong (CJK) |
 | **NFM** | Nerd Font Mono product (complete icons, single-width glyphs) |
 
-- Intermediate family (name ID 1): `TypewriterMono Dual`
-- Product family (name ID 1): `TypewriterMono NFM` (18 chars, Windows ≤31)
-- PostScript / file stem: `TypewriterMonoNFM`
-- Not an official Courier Prime, Zhuque, or Nerd Fonts face. Upstream OFLs may reserve names — this product uses a distinct family name.
+- Intermediate family (name ID 1): `PrimeZhuque Dual` (pre-Nerd only)
+- Product family (name ID 1): `PrimeZhuque NFM` (15 chars, Windows ≤31)
+- PostScript / file stem: `PrimeZhuqueNFM`
+- Source-encoding label (same style as `LilexSansSC NFM`); not an official Courier Prime / Zhuque / Nerd Fonts face.
 
 ## Pins
 
@@ -94,8 +94,8 @@ sudo apt install curl unzip zip python3-venv
 ```bash
 cd typewriter
 ./scripts/build.sh
-# → out/TypewriterMonoDual-{Regular,Bold}.ttf          (intermediate)
-# → out/nerd/TypewriterMonoNFM-{Regular,Bold}.ttf      (product)
+# → out/PrimeZhuqueDual-{Regular,Bold}.ttf          (intermediate)
+# → out/nerd/PrimeZhuqueNFM-{Regular,Bold}.ttf      (product)
 ```
 
 Step by step:
@@ -115,8 +115,8 @@ Force patcher backend: `NERD_PATCH_METHOD=docker|fontforge ./scripts/04-nerd-pat
 ```bash
 # after build; needs Pillow in work/venv
 work/venv/bin/python scripts/render-sample.py \
-  --font out/nerd/TypewriterMonoNFM-Regular.ttf \
-  --title "TypewriterMono NFM · EN 600 / CJK 1200"
+  --font out/nerd/PrimeZhuqueNFM-Regular.ttf \
+  --title "PrimeZhuque NFM · EN 600 / CJK 1200"
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -124,7 +124,7 @@ work/venv/bin/python scripts/render-sample.py \
 
 ```bash
 ./scripts/package-release.sh 0.1.0
-# → dist/TypewriterMonoNFM-0.1.0.zip
+# → dist/PrimeZhuqueNFM-0.1.0.zip
 ```
 
 ## Character policy
@@ -145,7 +145,7 @@ Not yet done (known limits):
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --expect-half 600 --check-nerd --check-eaw out/nerd/TypewriterMonoNFM-*.ttf
+python3 scripts/verify-2to1.py --expect-half 600 --check-nerd --check-eaw out/nerd/PrimeZhuqueNFM-*.ttf
 ```
 
 | Set | Expected |
@@ -161,7 +161,7 @@ python3 scripts/verify-2to1.py --expect-half 600 --check-nerd --check-eaw out/ne
 
 ## Family / license
 
-- **Product family:** `TypewriterMono NFM` (Regular / Bold)
+- **Product family:** `PrimeZhuque NFM` (Regular / Bold)
 - Upstream is **SIL OFL 1.1** (Courier Prime; Zhuque Fangsong)
 - Nerd glyph sets follow the Nerd Fonts / individual icon-font licenses
 - Keep `licenses/OFL-CourierPrime.txt` and `licenses/OFL-Zhuque.txt` with redistributions

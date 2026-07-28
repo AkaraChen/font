@@ -72,15 +72,17 @@ Details: [`handwriting/README.md`](handwriting/README.md).
 
 ## typewriter/
 
-**Coding product: TypewriterMono NFM** — [Courier Prime](https://github.com/quoteunquoteapps/CourierPrime)
+**Coding product: PrimeZhuque NFM** — [Courier Prime](https://github.com/quoteunquoteapps/CourierPrime)
 slab mono Latin + [朱雀仿宋 Zhuque Fangsong](https://github.com/TrionesType/zhuque) CJK + **Nerd Font Mono**,
-dual-width **EN 600 / CJK 1200** (Prime UPM 2048→1000). Typewriter / archive vibe; distinct from `serif/`.
+dual-width **EN 600 / CJK 1200** (Prime UPM 2048→1000).
+
+Name recipe (same style as `LilexSansSC NFM`): **Prime** + **Zhuque** + **NFM**.
 
 ```bash
 cd typewriter && ./scripts/build.sh
-# → out/nerd/TypewriterMonoNFM-{Regular,Bold}.ttf
+# → out/nerd/PrimeZhuqueNFM-{Regular,Bold}.ttf
 ```
 
-Bold CJK is stem-measured embolden of Zhuque Regular. Upstream Alegreya Latin inside Zhuque is dropped.
+CJK weights are stem-measured embolden of Zhuque Regular. Upstream Alegreya Latin inside Zhuque is dropped.
 
 Details: [`typewriter/README.md`](typewriter/README.md).

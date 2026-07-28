@@ -11,7 +11,7 @@ Character policy
   CJK punctuation, fullwidth forms, kana / bopomofo. **Embedded Alegreya Latin
   is discarded** — only CJK-side ranges are imported.
 
-Family naming: "TypewriterMono Dual" intermediate / "TypewriterMono NFM" product.
+Family naming: "PrimeZhuque Dual" intermediate / "PrimeZhuque NFM" product.
 """
 
 from __future__ import annotations
@@ -495,8 +495,8 @@ def main() -> int:
     p.add_argument("--latin-src-adv", type=int, default=600)
     p.add_argument("--latin-src-upm", type=int, default=2048)
     p.add_argument("--latin-target-upm", type=int, default=1000)
-    p.add_argument("--family", default="TypewriterMono Dual")
-    p.add_argument("--family-ps", default="TypewriterMonoDual")
+    p.add_argument("--family", default="PrimeZhuque Dual")
+    p.add_argument("--family-ps", default="PrimeZhuqueDual")
     p.add_argument("--hhea-ascent", type=int, default=1050)
     p.add_argument("--hhea-descent", type=int, default=-300)
     p.add_argument("--hhea-line-gap", type=int, default=0)
