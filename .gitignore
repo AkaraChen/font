@@ -18,6 +18,10 @@ rounded/work/
 rounded/out/
 rounded/dist/
 rounded/samples/rendered/
+casual/work/
+casual/out/
+casual/dist/
+casual/samples/rendered/
 **/.pc/
 **/node_modules/
 *.ttf
