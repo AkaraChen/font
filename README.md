@@ -2,6 +2,21 @@
 
 Personal / project font build recipes.
 
+## Building
+
+The toolchain is pinned by a Nix flake; `just` is a thin alias layer over it.
+
+```bash
+just dev              # enter the pinned shell (fontforge, ttfautohint, afdko, node, python deps)
+just build sans       # run sans/scripts/build.sh inside it, one step at a time, timed
+just verify sans      # diff the products against the committed fingerprint baseline
+just --list           # everything else
+```
+
+The per-family `cd <family> && ./scripts/build.sh` invocations below still work
+unchanged outside the shell, but then you are back to whatever versions happen
+to be on your `PATH`. See [`docs/build-toolchain.md`](docs/build-toolchain.md).
+
 ## serif/
 
 **Coding product: SarasaNZSSlab NFM** — MonoSlab Latin + 霞鹜新致宋 Opt CJK, **Nerd Font Mono**, 2:1 dual-width SC.

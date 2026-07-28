@@ -33,6 +33,11 @@ casual/samples/rendered/
 *.ttc
 !**/patches/**
 
+# Nix
+result
+result-*
+.direnv/
+
 # Python
 __pycache__/
 *.pyc
@@ -44,3 +49,6 @@ venv/
 *.swp
 .idea/
 .vscode/
+
+# Fingerprint working dir (CI writes the current run here)
+fingerprints-current/

@@ -26,7 +26,11 @@ mapfile -t FONTS < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o 
 [[ ${#FONTS[@]} -gt 0 ]] || die "no fonts in ${NERD_OUT}; run 05-nerd-patch.sh first"
 
 PY=""
-if [[ -x "${VENV_DIR}/bin/python" ]]; then
+if [[ -n "${FONTKIT_PYTHON:-}" ]]; then
+  "${FONTKIT_PYTHON}" -c "import fontTools" \
+    || die "FONTKIT_PYTHON=${FONTKIT_PYTHON} cannot import: fontTools"
+  PY="${FONTKIT_PYTHON}"
+elif [[ -x "${VENV_DIR}/bin/python" ]]; then
   PY="${VENV_DIR}/bin/python"
 elif command -v python3 >/dev/null 2>&1; then
   PY="python3"

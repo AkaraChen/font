@@ -63,6 +63,15 @@ download_zip() {
 }
 
 ensure_python() {
+  # A pre-provisioned interpreter (the Nix devShell sets this) replaces the venv
+  # entirely: no pip, no network, no version drift. It must already import
+  # everything this family needs — missing modules are a hard failure, never a
+  # silently degraded build.
+  if [[ -n "${FONTKIT_PYTHON:-}" ]]; then
+    "${FONTKIT_PYTHON}" -c "import fontTools, pathops, PIL" \
+      || die "FONTKIT_PYTHON=${FONTKIT_PYTHON} cannot import: fontTools, pathops, PIL"
+    return 0
+  fi
   if [[ -x "${VENV_DIR}/bin/python" ]] && "${VENV_DIR}/bin/python" -c "import fontTools" 2>/dev/null; then
     # pathops needed for Bold embolden
     if "${VENV_DIR}/bin/python" -c "import pathops" 2>/dev/null; then
@@ -75,7 +84,7 @@ ensure_python() {
     uv venv "${VENV_DIR}"
     uv pip install --python "${VENV_DIR}/bin/python" -q 'fonttools>=4.50' brotli 'skia-pathops'
     uv pip install --python "${VENV_DIR}/bin/python" -q Pillow \
-      || log "Pillow not installed; sample render will be skipped"
+      || die "sample-render dependencies failed to install; this used to be a warning that let the build \"succeed\" with no sample sheet"
   else
     need_cmd python3
     python3 -m venv "${VENV_DIR}"
@@ -84,7 +93,7 @@ ensure_python() {
     python -m pip install -q --upgrade pip
     python -m pip install -q 'fonttools>=4.50' brotli 'skia-pathops'
     python -m pip install -q Pillow \
-      || log "Pillow not installed; sample render will be skipped"
+      || die "sample-render dependencies failed to install; this used to be a warning that let the build \"succeed\" with no sample sheet"
   fi
   "${VENV_DIR}/bin/python" -c "import fontTools, pathops" \
     || die "fontTools/pathops not importable in ${VENV_DIR}"
@@ -92,5 +101,9 @@ ensure_python() {
 
 python_bin() {
   ensure_python
-  echo "${VENV_DIR}/bin/python"
+  if [[ -n "${FONTKIT_PYTHON:-}" ]]; then
+    echo "${FONTKIT_PYTHON}"
+  else
+    echo "${VENV_DIR}/bin/python"
+  fi
 }

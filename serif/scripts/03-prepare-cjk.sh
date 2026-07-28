@@ -18,19 +18,27 @@ else
   log "using cached ${SRC_TTF}"
 fi
 
-# Python venv: fonttools + skia-pathops
-if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
-  log "creating venv ${VENV_DIR}"
-  if command -v uv >/dev/null 2>&1; then
-    uv venv "${VENV_DIR}"
-    uv pip install --python "${VENV_DIR}/bin/python" fonttools skia-pathops
-  else
-    python3 -m venv "${VENV_DIR}"
-    "${VENV_DIR}/bin/pip" install -U pip
-    "${VENV_DIR}/bin/pip" install fonttools skia-pathops
+# Python venv: fonttools + skia-pathops.
+# A pre-provisioned interpreter (the Nix devShell sets FONTKIT_PYTHON) replaces
+# the venv entirely: no pip, no network, no version drift.
+if [[ -n "${FONTKIT_PYTHON:-}" ]]; then
+  "${FONTKIT_PYTHON}" -c "import fontTools, pathops" \
+    || die "FONTKIT_PYTHON=${FONTKIT_PYTHON} cannot import: fontTools, pathops"
+  PY="${FONTKIT_PYTHON}"
+else
+  if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
+    log "creating venv ${VENV_DIR}"
+    if command -v uv >/dev/null 2>&1; then
+      uv venv "${VENV_DIR}"
+      uv pip install --python "${VENV_DIR}/bin/python" fonttools skia-pathops
+    else
+      python3 -m venv "${VENV_DIR}"
+      "${VENV_DIR}/bin/pip" install -U pip
+      "${VENV_DIR}/bin/pip" install fonttools skia-pathops
+    fi
   fi
+  PY="${VENV_DIR}/bin/python"
 fi
-PY="${VENV_DIR}/bin/python"
 
 BASE_SCALED="${DOWNLOADS_DIR}/LXGWNeoZhiSongSC-Regular-base.ttf"
 REG_OUT="${SARASA_DIR}/sources/shs/LXGWNeoZhiSongSC-Regular.ttf"

@@ -1,0 +1,170 @@
+# Build every family from source in the pinned Nix toolchain, then diff the
+# products against the committed fingerprint baselines.
+#
+# Before this workflow existed the only CI in the repo was release-nfm.yml,
+# which is serif-only and does not build from source — it downloads the previous
+# tag's products and post-processes them. Six of the seven families had no
+# automated verification at all.
+#
+# Every step is timed. Those numbers are the input to the caching decisions in
+# KIT-265: the plan has no measured wall-clock data yet, only script reading.
+name: Build matrix
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      families:
+        description: "Space-separated subset to build (default: all)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.family }}
+    runs-on: ubuntu-latest
+    # serif runs the full upstream Sarasa toolchain (clone + quilt + npm build);
+    # it is by far the longest pole. No family has a measured number yet, which
+    # is exactly what this run produces.
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        family:
+          - casual
+          - handwriting
+          - pixel
+          - rounded
+          - sans
+          - serif
+          - typewriter
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip unselected family
+        id: gate
+        run: |
+          wanted='${{ github.event.inputs.families }}'
+          if [[ -n "$wanted" && " $wanted " != *" ${{ matrix.family }} "* ]]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Nix
+        if: steps.gate.outputs.run == 'true'
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      # Binary-cache wiring is deliberately out of scope here — that is KIT-265,
+      # which needs the timings this workflow produces before it can pick a
+      # layering strategy against GHA cache's 10 GB / 7-day limits.
+      - name: Realise devShell
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          start=$SECONDS
+          nix develop --command true
+          echo "devShell realised in $(( SECONDS - start ))s" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Toolchain provenance
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          nix develop --command bash -c '
+            for c in curl git quilt unzip zip 7z fontforge ttfautohint node npm \
+                     hb-view otc2otf otf2ttf python3; do
+              printf "%-14s %s\n" "$c" "$(command -v "$c")"
+            done
+            python3 -c "import fontTools; print(\"fontTools\", fontTools.version)"
+          '
+
+      - name: Build
+        if: steps.gate.outputs.run == 'true'
+        run: nix develop --command tools/build-family.sh ${{ matrix.family }}
+
+      - name: Fingerprint check
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set +e
+          nix develop --command python3 tools/fingerprint.py check ${{ matrix.family }}
+          rc=$?
+          set -e
+          # Always publish what this run actually produced, whatever the verdict.
+          # Products are 25-50 MB per family and awkward to pull; the fingerprints
+          # are a few hundred KB, so drift can be diagnosed — and a baseline
+          # adopted — straight from this artifact.
+          nix develop --command python3 tools/fingerprint.py write ${{ matrix.family }} \
+            --out fingerprints-current/${{ matrix.family }}
+          case "$rc" in
+            0) echo "fingerprints match the baseline" ;;
+            3)
+              # Baselines are authored by CI, not by a laptop: fontforge and
+              # skia-pathops do not produce identical output across platforms.
+              # The first run bootstraps them; they must then be committed.
+              echo "::warning title=No fingerprint baseline::${{ matrix.family }} has no committed baseline. Download the fingerprints-${{ matrix.family }} artifact from this run and commit it under fingerprints/${{ matrix.family }}/."
+              ;;
+            *) exit "$rc" ;;
+          esac
+
+      - name: Upload fingerprints
+        if: steps.gate.outputs.run == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingerprints-${{ matrix.family }}
+          path: fingerprints-current/${{ matrix.family }}/
+          if-no-files-found: warn
+
+      - name: Upload step timings
+        if: steps.gate.outputs.run == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: timings-${{ matrix.family }}
+          path: ${{ matrix.family }}/work/step-timings.tsv
+          if-no-files-found: warn
+
+      - name: Upload products
+        if: steps.gate.outputs.run == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: products-${{ matrix.family }}
+          path: ${{ matrix.family }}/out/
+          if-no-files-found: warn
+          retention-days: 7
+
+  timings:
+    name: Collect timings
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: timings-*
+          path: timings
+          merge-multiple: false
+      - name: Summarise
+        run: |
+          {
+            echo "## Wall-clock per step"
+            echo
+            echo "| family | step | seconds | status |"
+            echo "| --- | --- | ---: | --- |"
+            find timings -name step-timings.tsv -print0 \
+              | xargs -0 -r tail -q -n +2 \
+              | sort \
+              | while IFS=$'\t' read -r fam step secs st; do
+                  echo "| $fam | \`$step\` | $secs | $st |"
+                done
+          } >> "$GITHUB_STEP_SUMMARY"
