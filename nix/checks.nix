@@ -108,4 +108,21 @@ in
     (
       lib.all (f: (lib.attrNames sources.familyPins.${f}.pins) != [ ]) sources.families
     ) "a family's pins.env parsed to nothing";
+
+  # sh's ${VAR} interpolation, which sans/ and typewriter/ both use to build a
+  # raw.githubusercontent URL out of a pinned commit. It is checked by name
+  # because the parser's regex is the one piece of this that is not portable by
+  # construction: the first version used `\$\{…\}`, which the maintainer's nix
+  # accepted and CI's rejected outright as an invalid POSIX ERE. A green
+  # `nix flake check` on one machine is not evidence for the other unless the
+  # interpolation path is actually exercised.
+  pins-interpolation = ok "pins-interpolation"
+    (
+      let
+        p = sources.familyPins.sans;
+        commit = p.get "PLEX_SANS_SC_COMMIT";
+      in
+      lib.hasInfix commit (p.get "PLEX_SANS_SC_TTF_REGULAR_URL")
+      && !(lib.hasInfix "$" (p.get "PLEX_SANS_SC_TTF_REGULAR_URL"))
+    ) "pins.env \${VAR} interpolation did not expand";
 }
