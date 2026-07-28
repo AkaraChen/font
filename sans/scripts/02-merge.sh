@@ -59,9 +59,6 @@ mapfile -t DUAL_FONTS < <(
 if [[ ${#DUAL_FONTS[@]} -gt 0 ]]; then
   log "narrow/widen Dual intermediate to match East_Asian_Width"
   "${PY}" "${SANS_ROOT}/scripts/narrow-symbol-widths.py" --no-donor "${DUAL_FONTS[@]}"
-  # Vertical optics for coding brackets/ops — before Nerd so PUA icons stay put.
-  log "vertically centre coding brackets / operators on shared midline"
-  "${PY}" "${SANS_ROOT}/scripts/vertical-center-ops.py" "${DUAL_FONTS[@]}"
   log "fix Dual terminal metrics"
   "${PY}" "${SANS_ROOT}/scripts/fix-terminal-metrics.py" "${DUAL_FONTS[@]}"
 fi

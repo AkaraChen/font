@@ -61,7 +61,6 @@ sans/
     rename_nerd_family.py
     fix-nerd-widths.py
     narrow-symbol-widths.py  # EAW N/Na/H ↔ half, W/F ↔ full
-    vertical-center-ops.py   # y-shift brackets/ops to shared midline
     fix-terminal-metrics.py
     verify-2to1.py
     verify-features.py
@@ -69,7 +68,6 @@ sans/
     package-release.sh
   samples/
     coding-mixed.txt
-    coding-ops.txt         # brackets / operators / arrows smoke
     rendered/              # gitignored PNGs
   work/                    # gitignored downloads / venv / extract
   out/                     # gitignored intermediate Dual TTFs
@@ -102,7 +100,7 @@ Step by step:
 
 ```bash
 ./scripts/01-fetch-sources.sh   # download + extract pinned sources
-./scripts/02-merge.sh           # merge EN=550 / CJK=1100 + EAW + vertical-center ops
+./scripts/02-merge.sh           # merge EN=550 / CJK=1100 (preserve Lilex GSUB)
 ./scripts/03-nerd-patch.sh      # Nerd complete + half-cell icons + EAW widths + mono flags
 ./scripts/04-verify.sh          # hard-fail if advances / flags / EAW / features drift
 ```
@@ -134,50 +132,13 @@ work/venv/bin/python scripts/render-sample.py \
 | **Plex Sans SC** (advance → 1100, centred) | Han, CJK punctuation / symbols, fullwidth forms, kana / bopomofo, and any codepoint Lilex lacks |
 | **Nerd Fonts** (`--single-width-glyphs`) | PUA icon sets at **half-cell** (Powerline, FA, Material, …) |
 
-### Vertical centering (brackets / operators)
-
-After EAW width fix (still on the Dual intermediate, **before** Nerd),
-`vertical-center-ops.py` y-shifts a whitelist of coding punctuation so each
-glyph’s outline centre sits on a shared visual midline.
-
-| Item | Detail |
-| --- | --- |
-| Target midline | Mean of vertical centres of `H`, `x`, `0`, `中` (whichever exist) |
-| Mutates | Outline Y only (simple + composite components) |
-| Unchanged | Advance, LSB, horizontal centering, Nerd PUA icons |
-| When | `02-merge.sh`, after `narrow-symbol-widths.py`, before Nerd |
-
-**Whitelist** (see `WHITELIST` in `scripts/vertical-center-ops.py`; list with
-`--list-whitelist`):
-
-| Group | Codepoints (examples) |
-| --- | --- |
-| ASCII brackets | `()[]{}<>` |
-| ASCII ops | `=+-*/\\|&%~` |
-| Math / compare | `±×÷≠≤≥≈≡−∗⋅•` |
-| Arrows | `←↑→↓↔↕⇐⇒⇔⟵⟶⟷` |
-| Fullwidth / CJK brackets | `（）［］｛｝＜＞＝＋…` `【】《》〈〉〔〕〖〗` |
-
-**Not shifted** (baseline / intentional high-low by design):
-
-- `. , ; : ' " \` _`
-- `^ ! ? @ # $` and fullwidth `＾！？＠＃＄`
-- CJK corner quotes `「」『』`
-
-Re-run on an existing Dual intermediate:
-
-```bash
-python3 scripts/vertical-center-ops.py out/LilexSansSCDual-*.ttf
-# dry-run (report only):
-python3 scripts/vertical-center-ops.py --dry-run out/LilexSansSCDual-*.ttf
-```
-
 Not yet done (known limits):
 
 1. SC `locl` / full GSUB/GPOS merge (SC layout tables are not copied)
 2. x-height / CJK face optical size match (optical weight: follow-up)
-3. Italic (Latin-only italic planned; no CJK pseudo-oblique)
-4. Pure visual QA of every math / symbol beyond the EAW metric gate
+3. Per-glyph vertical centering for brackets / equals / arrows
+4. Italic (Latin-only italic planned; no CJK pseudo-oblique)
+5. Pure visual QA of every math / symbol beyond the EAW metric gate
 
 ## Verify
 
