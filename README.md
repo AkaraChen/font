@@ -70,6 +70,23 @@ gates that with a HarfBuzz shaping test. Weight pairing and slant are measured, 
 
 Details: [`handwriting/README.md`](handwriting/README.md).
 
+## typewriter/
+
+**Coding product: CourierPrimeZhuque NFM** — [Courier Prime](https://github.com/quoteunquoteapps/CourierPrime)
+slab mono Latin + [朱雀仿宋 Zhuque Fangsong](https://github.com/TrionesType/zhuque) CJK + **Nerd Font Mono**,
+dual-width **EN 600 / CJK 1200** (Prime UPM 2048→1000).
+
+Name recipe (same style as `LilexSansSC NFM`): **CourierPrime** + **Zhuque** + **NFM**.
+
+```bash
+cd typewriter && ./scripts/build.sh
+# → out/nerd/CourierPrimeZhuqueNFM-{Regular,Bold}.ttf
+```
+
+CJK weights are stem-measured embolden of Zhuque Regular. Upstream Alegreya Latin inside Zhuque is dropped.
+
+Details: [`typewriter/README.md`](typewriter/README.md).
+
 ## rounded/ （圆体）
 
 **Coding product: IosevkaCurlyRHR NFM / 圆体** — **Iosevka Curly** (ss20 Curly Style, sans — not NSlab)

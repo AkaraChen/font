@@ -14,6 +14,10 @@ handwriting/work/
 handwriting/out/
 handwriting/dist/
 handwriting/samples/rendered/
+typewriter/work/
+typewriter/out/
+typewriter/dist/
+typewriter/samples/rendered/
 rounded/work/
 rounded/out/
 rounded/dist/
@@ -40,4 +44,3 @@ venv/
 *.swp
 .idea/
 .vscode/
-
