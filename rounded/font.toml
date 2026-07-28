@@ -59,6 +59,24 @@ base_family = "IosevkaCurlyRHR Dual"
 base_ps = "IosevkaCurlyRHRDual"
 product_name_zh = "圆体"
 
+[merge]
+version = "1.000"
+sources_note = "Iosevka Curly + Resource Han Rounded"
+# Iosevka Curly is ~46k glyphs at UPM 1000 — subset to the coding ranges before
+# the CJK import or the product cannot fit TrueType's 65535-glyph budget.
+latin = "normalize"
+latin_subset = "coding"
+cjk = "normalize"
+# RHR carries its own Latin; it is a different design, so only the CJK side
+# comes across.
+import_policy = "cjk-side"
+placement = "center"
+glyph_prefix = "cjk."
+required_sample = "中文荷塘月色"
+# Iosevka's masters leave OS/2 weight flags at the Regular values.
+set_weight_class = true
+recalc_bounds = true
+
 [metrics.coding]
 hhea_ascent = 1000
 hhea_descent = -200
