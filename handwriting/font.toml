@@ -21,11 +21,15 @@ repository = "https://github.com/githubnext/monaspace"
 version = "v1.400"
 
 [sources.monaspace.artifacts.regular]
+file = "MonaspaceRadonNF-Regular.otf"
+fetch = "zip-member"
 url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-nerdfonts-v1.400.zip"
 sha256 = "7e8bed594c1708f8f45f312339dc182deec7461c47b8fff79f410646baa9a3d2"
 member = "NerdFonts/Monaspace Radon/MonaspaceRadonNF-Regular.otf"
 
 [sources.monaspace.artifacts.bold]
+file = "MonaspaceRadonNF-Bold.otf"
+fetch = "zip-member"
 url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-nerdfonts-v1.400.zip"
 sha256 = "81e3e1e8815073a0c979ce1ba327f91b74606d81478fe271d160fcad22fd60eb"
 member = "NerdFonts/Monaspace Radon/MonaspaceRadonNF-Bold.otf"
@@ -37,10 +41,12 @@ version = "v1.522"
 regions = ["sc"]
 
 [sources.wenkai.artifacts.regular]
+file = "LXGWWenKai-Regular.ttf"
 url = "https://github.com/lxgw/LxgwWenKai/releases/download/v1.522/LXGWWenKai-Regular.ttf"
 sha256 = "39ad71264b588165b469e35e6afb162a378dacd1f95348160240ba9038ac3009"
 
 [sources.wenkai.artifacts.medium]
+file = "LXGWWenKai-Medium.ttf"
 url = "https://github.com/lxgw/LxgwWenKai/releases/download/v1.522/LXGWWenKai-Medium.ttf"
 sha256 = "d4bdeb38a39151d74d084cba5090f8cb7d20bf83eedb78c35939ae70b9f4e3f6"
 

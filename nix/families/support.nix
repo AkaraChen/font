@@ -23,6 +23,11 @@
 }:
 
 let
+  weightName =
+    weight:
+    lib.toUpper (builtins.substring 0 1 weight)
+    + builtins.substring 1 (builtins.stringLength weight - 1) weight;
+
   # fontTools + skia-pathops + fontkit, and nothing else. The devShell carries
   # more (Pillow, uharfbuzz, numpy) because the diagnostics under tools/ need
   # them; a build step that imported one of those would be reaching outside the
@@ -104,6 +109,7 @@ in
     step
     file
     emboldenOrCopy
+    weightName
     ;
 
   inherit (pkgs) fontforge;

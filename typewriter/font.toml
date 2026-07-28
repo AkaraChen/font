@@ -21,10 +21,12 @@ repository = "https://github.com/quoteunquoteapps/CourierPrime"
 commit = "7fd585a2dd4c1612c79b3308e300923d1c13df93"
 
 [sources.courier_prime.artifacts.regular]
+file = "CourierPrime-Regular.ttf"
 url = "https://raw.githubusercontent.com/quoteunquoteapps/CourierPrime/7fd585a2dd4c1612c79b3308e300923d1c13df93/fonts/ttf/CourierPrime-Regular.ttf"
 sha256 = "72f793376f8e2841656bf21d77a5de010f2929bd6956a22ee848ad0c7eb978af"
 
 [sources.courier_prime.artifacts.bold]
+file = "CourierPrime-Bold.ttf"
 url = "https://raw.githubusercontent.com/quoteunquoteapps/CourierPrime/7fd585a2dd4c1612c79b3308e300923d1c13df93/fonts/ttf/CourierPrime-Bold.ttf"
 sha256 = "ff1f38786c849d1c41fa8e447960abdb2bd75fdfb0cfcdeb524fad65a5af3638"
 
@@ -35,6 +37,7 @@ version = "v0.212"
 regions = ["sc"]
 
 [sources.zhuque.artifacts.archive]
+file = "ZhuqueFangsong.zip"
 url = "https://github.com/TrionesType/zhuque/releases/download/v0.212/ZhuqueFangsong-v0.212.zip"
 sha256 = "bb8b661a7643d2296a72d9d10530a00949419c4e527fb61783f73c2ba1a8c062"
 

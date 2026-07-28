@@ -22,6 +22,7 @@ version = "2026.07.20"
 regions = ["sc"]
 
 [sources.fusion.artifacts.archive]
+file = "fusion-pixel-12px-monospaced-ttf.zip"
 url = "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.20/fusion-pixel-font-12px-monospaced-ttf-v2026.07.20.zip"
 sha256 = "d751204e62248ed3acd9508b6a68f1e731b1aa86114d25ad92880b145a7e6685"
 

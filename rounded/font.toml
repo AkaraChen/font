@@ -21,6 +21,7 @@ repository = "https://github.com/be5invis/Iosevka"
 version = "v34.8.0"
 
 [sources.iosevka.artifacts.archive]
+file = "PkgTTF-IosevkaCurly.zip"
 url = "https://github.com/be5invis/Iosevka/releases/download/v34.8.0/PkgTTF-IosevkaCurly-34.8.0.zip"
 sha256 = "9a126d1cda838c1646943044d3b27693fa0d2f827787c5821e95de13d9ed0ac0"
 
@@ -31,6 +32,7 @@ version = "v0.990"
 regions = ["sc"]
 
 [sources.rhr.artifacts.archive]
+file = "RHR-CN.7z"
 url = "https://github.com/CyanoHao/Resource-Han-Rounded/releases/download/v0.990/RHR-CN-0.990.7z"
 sha256 = "e7005f7b4a7a0b8352d32c4a1358ff47564eb73be7fdb2db00d9f792755e9dc7"
 

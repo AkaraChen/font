@@ -26,14 +26,14 @@ is its own piece of work. See [`docs/build-toolchain.md`](docs/build-toolchain.m
 **Coding product: SarasaNZSSlab NFM** — MonoSlab Latin + 霞鹜新致宋 Opt CJK, **Nerd Font Mono**, 2:1 dual-width SC.
 
 ```bash
-cd serif && ./scripts/build.sh
+nix develop --command serif/scripts/build.sh
 # → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
 ```
 
 Package for a GitHub Release:
 
 ```bash
-cd serif && ./scripts/package-release.sh 0.1.0
+nix develop --command serif/scripts/package-release.sh 0.1.0
 # → dist/SarasaNZSSlabNFM-0.1.0.zip
 ```
 

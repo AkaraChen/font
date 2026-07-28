@@ -11,6 +11,24 @@ from fontkit.manifest import Manifest, legacy_environment, load_manifest
 
 ROOT = Path(__file__).parents[2]
 FAMILIES = ("casual", "handwriting", "pixel", "rounded", "sans", "serif", "typewriter")
+FETCHED_FILES = {
+    "casual": {"ArrowType-Recursive.zip", "Yozai-Regular.ttf", "Yozai-Medium.ttf"},
+    "handwriting": {
+        "MonaspaceRadonNF-Regular.otf",
+        "MonaspaceRadonNF-Bold.otf",
+        "LXGWWenKai-Regular.ttf",
+        "LXGWWenKai-Medium.ttf",
+    },
+    "pixel": {"fusion-pixel-12px-monospaced-ttf.zip"},
+    "rounded": {"PkgTTF-IosevkaCurly.zip", "RHR-CN.7z"},
+    "sans": {"Lilex.zip", "IBMPlexSansSC-Regular.ttf", "IBMPlexSansSC-Bold.ttf"},
+    "serif": {"LXGWNeoZhiSongPlus.ttf", "SarasaTermSlabSC-TTF-Unhinted.7z"},
+    "typewriter": {
+        "CourierPrime-Regular.ttf",
+        "CourierPrime-Bold.ttf",
+        "ZhuqueFangsong.zip",
+    },
+}
 
 
 def raw(family: str = "sans") -> dict:
@@ -23,6 +41,18 @@ def test_every_family_manifest_validates(family: str) -> None:
     manifest = load_manifest(ROOT / family / "font.toml")
     assert manifest.family == family
     assert "upright" in manifest.build.slopes
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_manifest_declares_exact_source_cache_files(family: str) -> None:
+    manifest = load_manifest(ROOT / family / "font.toml")
+    fetched = {
+        artifact.file
+        for source in manifest.sources.values()
+        for artifact in source.artifacts.values()
+        if artifact.fetch != "embedded"
+    }
+    assert fetched == FETCHED_FILES[family]
 
 
 def test_missing_artifact_sha256_fails_at_parse_time() -> None:

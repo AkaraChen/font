@@ -21,15 +21,18 @@ repository = "https://github.com/arrowtype/recursive"
 version = "v1.085"
 
 [sources.recursive.artifacts.archive]
+file = "ArrowType-Recursive.zip"
 url = "https://github.com/arrowtype/recursive/releases/download/v1.085/ArrowType-Recursive-1.085.zip"
 sha256 = "cbcbdf7a0e181d284a9235e09ed5f3873e527bc5dd1d977df71cdc1ff937da02"
 
 [sources.recursive.artifacts.regular]
+fetch = "embedded"
 url = "https://github.com/arrowtype/recursive/releases/download/v1.085/ArrowType-Recursive-1.085.zip"
 sha256 = "4a405818af28b9cdf945a34254c226f5b18d350827bf517b6fb050699d632445"
 member = "ArrowType-Recursive-1.085/Recursive_Desktop/separate_statics/TTF/RecursiveMonoCslSt-Regular.ttf"
 
 [sources.recursive.artifacts.bold]
+fetch = "embedded"
 url = "https://github.com/arrowtype/recursive/releases/download/v1.085/ArrowType-Recursive-1.085.zip"
 sha256 = "bc03d101684c98eb2961061cf6d2106f9ba43afc52bcd033d6710c80e9587f0a"
 member = "ArrowType-Recursive-1.085/Recursive_Desktop/separate_statics/TTF/RecursiveMonoCslSt-Bold.ttf"
@@ -41,10 +44,12 @@ version = "v0.868"
 regions = ["sc"]
 
 [sources.yozai.artifacts.regular]
+file = "Yozai-Regular.ttf"
 url = "https://github.com/lxgw/yozai-font/releases/download/v0.868/Yozai-Regular.ttf"
 sha256 = "25071998a0fe6a72f54c235e714986d259633e5ff670b1a2b5e264387f3316ac"
 
 [sources.yozai.artifacts.medium]
+file = "Yozai-Medium.ttf"
 url = "https://github.com/lxgw/yozai-font/releases/download/v0.868/Yozai-Medium.ttf"
 sha256 = "05f50f252b45197d0d6148a4abc3e37c7cd4cfdf03c955b57c25d53d924f835f"
 

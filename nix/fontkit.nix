@@ -15,12 +15,26 @@
 , pytestCheckHook
 }:
 
+let
+  families = [ "casual" "handwriting" "pixel" "rounded" "sans" "serif" "typewriter" ];
+in
 buildPythonPackage {
   pname = "fontkit";
   version = "0.1.0";
   pyproject = true;
 
-  src = lib.cleanSource ../lib;
+  # Unit tests live under lib/, while manifest integration tests intentionally
+  # read the seven repo-level font.toml files. Include exactly those fixtures;
+  # sourceRoot keeps packaging rooted at lib/ and avoids making README changes
+  # invalidate the fontkit derivation.
+  src = lib.fileset.toSource {
+    root = ../.;
+    fileset = lib.fileset.unions (
+      [ ../lib ]
+      ++ map (family: ../. + "/${family}/font.toml") families
+    );
+  };
+  sourceRoot = "source/lib";
 
   build-system = [ setuptools ];
 
@@ -31,7 +45,7 @@ buildPythonPackage {
   ];
 
   nativeCheckInputs = [ pytestCheckHook ];
-  # tests/ lives next to the package inside lib/, so it ships in src and runs here.
+  # tests/ lives next to the package; font.toml fixtures are one directory up.
   pytestFlagsArray = [ "tests" ];
 
   pythonImportsCheck = [

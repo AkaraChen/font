@@ -29,6 +29,7 @@ version = "v1.066"
 regions = ["sc"]
 
 [sources.lxgw.artifacts.regular]
+file = "LXGWNeoZhiSongPlus.ttf"
 url = "https://github.com/lxgw/LxgwNeoZhiSong/releases/download/v1.066/LXGWNeoZhiSongPlus.ttf"
 sha256 = "279c973effc2811a827713ffa12706d556cab10b5067c0728400bf9e464f7008"
 
@@ -38,6 +39,7 @@ repository = "https://github.com/be5invis/Sarasa-Gothic"
 version = "v1.0.40"
 
 [sources.sarasa_term.artifacts.archive]
+file = "SarasaTermSlabSC-TTF-Unhinted.7z"
 url = "https://github.com/be5invis/Sarasa-Gothic/releases/download/v1.0.40/SarasaTermSlabSC-TTF-Unhinted-1.0.40.7z"
 sha256 = "d809a92d89c912942f19cdbc56fd3a7df982c9a653ac846e8e5bfc72edafb903"
 

@@ -80,7 +80,7 @@ Inspect it any time with `just graph`.
 
 Everything pinned in a `font.toml` is now a Nix derivation (`nix/sources/`).
 Nix reads those same files — it does not carry a second copy of any URL or hash
-(`nix/lib/pins.nix`).
+(`nix/lib/manifest.nix`).
 
 A store path is keyed by `(url, hash)`, which is what makes the headline case
 work: **five families pin the same font-patcher commit, so there is one

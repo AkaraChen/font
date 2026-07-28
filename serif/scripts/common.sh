@@ -13,6 +13,12 @@ command -v "${PY}" >/dev/null 2>&1 || {
   printf 'error: missing Python interpreter: %s\n' "${PY}" >&2
   exit 1
 }
+"${PY}" -c 'import pydantic' 2>/dev/null || {
+  printf '%s\n' \
+    'error: serif manifest validation requires the pinned dev shell.' \
+    'run from the repository root: nix develop --command serif/scripts/build.sh' >&2
+  exit 1
+}
 eval "$("${PY}" -m fontkit.manifest shell "${SERIF_ROOT}/font.toml")"
 
 # Pinned artifacts come from the Nix store when it has been realised

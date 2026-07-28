@@ -21,6 +21,7 @@ repository = "https://github.com/mishamyrt/Lilex"
 version = "2.700"
 
 [sources.lilex.artifacts.archive]
+file = "Lilex.zip"
 url = "https://github.com/mishamyrt/Lilex/releases/download/2.700/Lilex.zip"
 sha256 = "34310edb4ba749f772d42b88e3eec4a6318527e75ceeaa96cfc556ee35366fbc"
 
@@ -32,14 +33,17 @@ commit = "222657a016f31e6d913ede88520de7dec84dc81b"
 regions = ["sc"]
 
 [sources.plex.artifacts.regular]
+file = "IBMPlexSansSC-Regular.ttf"
 url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Regular.ttf"
 sha256 = "012e587c5a78d25f456057614b880fc7450b748c352573d8052245df2a71158a"
 
 [sources.plex.artifacts.bold]
+file = "IBMPlexSansSC-Bold.ttf"
 url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Bold.ttf"
 sha256 = "3e94ef1df394eae336cc1bc98f2160b58e2cab186f47d820e4c808aef1f4e28f"
 
 [sources.plex.artifacts.legacy_archive]
+fetch = "embedded"
 url = "https://github.com/IBM/plex/releases/download/%40ibm/plex-sans-sc%401.1.0/ibm-plex-sans-sc.zip"
 sha256 = "0aabd737c8ef0206892b912c759101c10b86c6244be99f2e6b57c6905c716837"
 

@@ -29,7 +29,7 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Vertical stems dominate mixed CN/EN optical weight in a mono face; Song horizontals stay thinner by design.
 
 ```bash
-./scripts/calibrate-stroke.sh
+nix develop --command serif/scripts/calibrate-stroke.sh
 # → recommends calibration.regular.embolden / calibration.bold.embolden for font.toml
 ```
 
@@ -80,18 +80,14 @@ serif/
 The container path was removed in KIT-277 along with the other five families':
 it was selected at runtime depending on what happened to be installed, so two
 machines could produce two different fonts silently. `just dev` provides all of
-the above.
-
-```bash
-# Debian/Ubuntu example, if you are not using the flake
-sudo apt install git curl quilt nodejs npm ttfautohint python3-venv unzip zip fontforge
-```
+the above. The shell pipeline now also validates `font.toml` with Pydantic before
+doing any work, so the pinned Nix dev shell is the supported entry point.
 
 ## Build (Nerd only product)
 
 ```bash
-cd serif
-./scripts/build.sh
+# From the repository root:
+nix develop --command serif/scripts/build.sh
 # → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
 # Family name: "SarasaNZSSlab NFM"  (Windows-safe ≤31)
 ```
@@ -99,12 +95,13 @@ cd serif
 Step by step (same end product):
 
 ```bash
-./scripts/01-clone-sarasa.sh
-./scripts/02-apply-quilt.sh
-./scripts/03-prepare-cjk.sh
-./scripts/04-build.sh          # intermediate out/*.ttf
-./scripts/05-nerd-patch.sh     # product + verify --check-nerd
-./scripts/06-narrow-symbols.sh # EAW symbol widths + expand calt + verify --check-eaw
+nix develop
+serif/scripts/01-clone-sarasa.sh
+serif/scripts/02-apply-quilt.sh
+serif/scripts/03-prepare-cjk.sh
+serif/scripts/04-build.sh          # intermediate out/*.ttf
+serif/scripts/05-nerd-patch.sh     # product + verify --check-nerd
+serif/scripts/06-narrow-symbols.sh # EAW symbol widths + expand calt + verify --check-eaw
 ```
 
 ### Ligatures (calt + dlig)

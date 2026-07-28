@@ -30,6 +30,8 @@ class StrictModel(BaseModel):
 
 
 class Artifact(StrictModel):
+    file: str | None = None
+    fetch: Literal["plain", "zip-member", "embedded"] = "plain"
     url: HttpUrl
     sha256: str
     member: str | None = None
@@ -40,6 +42,14 @@ class Artifact(StrictModel):
         if len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
             raise ValueError("sha256 must be 64 lowercase hexadecimal characters")
         return value
+
+    @model_validator(mode="after")
+    def fetch_contract_is_complete(self) -> Self:
+        if self.fetch != "embedded" and not self.file:
+            raise ValueError("fetched artifacts must declare their canonical file name")
+        if self.fetch == "zip-member" and not self.member:
+            raise ValueError("zip-member artifacts must declare member")
+        return self
 
 
 class Source(StrictModel):

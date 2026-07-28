@@ -11,16 +11,18 @@
 , lib
 , support
 , sources
-, pins
+, manifest
 ,
 }:
 
 let
   inherit (support) step file profile region patcher;
-  get = pins.get;
+  m = manifest.data;
+  inherit (m) grid naming;
+  metrics = m.metrics.coding;
 
   family = "pixel";
-  weight = "Regular";
+  weight = support.weightName (lib.head m.build.weights);
 
   # --- src-cjk --------------------------------------------------------------
   # The product face and the half-width donor come out of the same zip; both are
@@ -30,8 +32,8 @@ let
     buildCommand = ''
       mkdir -p $out unpacked
       unzip -q ${sources.perFamily.pixel."fusion-pixel-12px-monospaced-ttf.zip"} -d unpacked
-      cp unpacked/${get "FUSION_TTF"} $out/fusion-base.ttf
-      cp unpacked/${get "FUSION_TTF_HALFWIDTH_DONOR"} $out/fusion-halfwidth-donor.ttf
+      cp unpacked/${m.options.fusion_ttf} $out/fusion-base.ttf
+      cp unpacked/${m.options.fusion_ttf_halfwidth_donor} $out/fusion-halfwidth-donor.ttf
     '';
   };
 
@@ -49,12 +51,12 @@ let
         python3 ${file "pixel/scripts/build_ligatures.py"} \
           --base ${src}/fusion-base.ttf \
           --art ${file "pixel/ligatures/ligatures.txt"} \
-          --out $out/${get "BASE_FAMILY_PS"}-${weight}.ttf \
-          --family ${lib.escapeShellArg (get "BASE_FAMILY_NAME")} \
-          --family-ps ${get "BASE_FAMILY_PS"} \
-          --half ${get "EN_ADV"} \
-          --px ${get "PX_UNIT"} \
-          --ascent ${get "HHEA_ASCENT"}
+          --out $out/${naming.base_ps}-${weight}.ttf \
+          --family ${lib.escapeShellArg naming.base_family} \
+          --family-ps ${naming.base_ps} \
+          --half ${toString grid.en_adv} \
+          --px ${toString m.options.px_unit} \
+          --ascent ${toString metrics.hhea_ascent}
 
         # Fusion's zh_hans flavour draws “ ” ‘ ’ … · ‥ ․ ‧ at two cells with the
         # ink in the right half; the latin flavour of the same release draws
@@ -74,8 +76,8 @@ let
       fontkit nerd-patch \
         --patcher ${patcher} \
         --out $out \
-        --family ${lib.escapeShellArg (get "FAMILY_NAME")} \
-        --family-ps ${get "FAMILY_PS"} \
+        --family ${lib.escapeShellArg naming.family} \
+        --family-ps ${naming.ps} \
         ${merged}/*.ttf
     '';
   };
@@ -100,8 +102,8 @@ let
     }
     ''
       python3 ${file "pixel/scripts/verify.py"} \
-        --half ${get "EN_ADV"} \
-        --full ${get "CJK_ADV"} \
+        --half ${toString grid.en_adv} \
+        --full ${toString grid.cjk_adv} \
         --check-nerd \
         --check-ligatures \
         --check-eaw \
@@ -110,17 +112,17 @@ let
     '';
 
   readme = pkgs.writeText "pixel-README.txt" ''
-    ${get "FAMILY_NAME"} @version@
+    ${naming.family} @version@
     ============================================
 
-    Family: ${get "FAMILY_NAME"}
-    Grid:   Fusion Pixel 12px mono (EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"})
+    Family: ${naming.family}
+    Grid:   Fusion Pixel 12px mono (EN ${toString grid.en_adv} / CJK ${toString grid.cjk_adv})
     Ligatures: hand-drawn pixel programming ligatures (calt)
     Icons:  Nerd Fonts complete set (single-cell), not redrawn
-            font-patcher ${get "NERD_FONTS_PATCHER_VERSION"}
+            font-patcher ${m.nerd.version}
 
     Install: copy the .ttf into your OS fonts directory.
-    In terminals/IDEs pick family "${get "FAMILY_NAME"}" and enable font ligatures.
+    In terminals/IDEs pick family "${naming.family}" and enable font ligatures.
 
     Sources: https://github.com/AkaraChen/font (pixel/)
     Upstream: Fusion Pixel Font (OFL), Nerd Fonts glyph sets
@@ -140,7 +142,7 @@ in
   # Everything the release archive ships, and the gate it must pass first.
   release = {
     inherit family profile region weight readme verify;
-    stem = get "PRODUCT_STEM";
+    stem = naming.stem;
     fontDir = nerd;
     licenseDir = file "pixel/licenses";
   };

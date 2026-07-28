@@ -12,32 +12,31 @@
 , lib
 , support
 , sources
-, pins
+, manifest
 ,
 }:
 
 let
   inherit (support) step file profile region patcher;
-  get = pins.get;
+  m = manifest.data;
+  inherit (m) grid naming;
+  metrics = m.metrics.coding;
 
   family = "rounded";
-  weights = [ "Regular" "Bold" ];
+  weights = map support.weightName m.build.weights;
 
-  ps = get "FAMILY_PS";
-  basePs = get "BASE_FAMILY_PS";
+  ps = naming.ps;
+  basePs = naming.base_ps;
   mergeFamily =
-    let
-      suffix = pins.pins.FAMILY_SUFFIX or "";
-    in
-    if suffix == "" then get "BASE_FAMILY_NAME" else "${get "BASE_FAMILY_NAME"} ${suffix}";
+    if naming.suffix == "" then naming.base_family else "${naming.base_family} ${naming.suffix}";
 
   srcLatin = weight: step "src-latin" { inherit family weight; } {
     nativeBuildInputs = [ pkgs.unzip ];
     buildCommand = ''
       mkdir -p $out unpacked
       unzip -q ${sources.perFamily.rounded."PkgTTF-IosevkaCurly.zip"} \
-        ${lib.escapeShellArg (get "IOSEVKA_TTF_${lib.toUpper weight}")} -d unpacked
-      cp unpacked/${lib.escapeShellArg (get "IOSEVKA_TTF_${lib.toUpper weight}")} \
+        ${lib.escapeShellArg m.options.${"iosevka_ttf_${lib.toLower weight}"}} -d unpacked
+      cp unpacked/${lib.escapeShellArg m.options.${"iosevka_ttf_${lib.toLower weight}"}} \
         $out/IosevkaCurly-${weight}.ttf
     '';
   };
@@ -47,7 +46,7 @@ let
     buildCommand = ''
       mkdir -p $out unpacked
       7z x ${sources.perFamily.rounded."RHR-CN.7z"} -ounpacked -y > /dev/null
-      cp "$(find unpacked -type f -name ${lib.escapeShellArg (get "RHR_TTF_${lib.toUpper weight}")})" \
+      cp "$(find unpacked -type f -name ${lib.escapeShellArg m.options.${"rhr_ttf_${lib.toLower weight}"}})" \
         $out/RHR-${weight}.ttf
     '';
   };
@@ -59,7 +58,7 @@ let
     buildCommand = ''
       mkdir -p $out
       ${support.emboldenOrCopy {
-        strength = get "CJK_EMBOLDEN_${lib.toUpper weight}";
+        strength = toString m.calibration.${lib.toLower weight}.embolden;
         src = "${srcCjk weight}/RHR-${weight}.ttf";
         dst = "$out/RHR-${weight}-prepared.ttf";
       }}
@@ -75,21 +74,21 @@ let
         --cjk-regular ${cjkPrepared "Regular"}/RHR-Regular-prepared.ttf \
         --cjk-bold ${cjkPrepared "Bold"}/RHR-Bold-prepared.ttf \
         --out-dir merged \
-        --en-adv ${get "EN_ADV"} \
-        --cjk-adv ${get "CJK_ADV"} \
-        --latin-src-adv ${get "LATIN_SRC_ADV"} \
-        --latin-src-upm ${get "LATIN_SRC_UPM"} \
-        --latin-target-upm ${get "LATIN_TARGET_UPM"} \
+        --en-adv ${toString grid.en_adv} \
+        --cjk-adv ${toString grid.cjk_adv} \
+        --latin-src-adv ${toString grid.latin_src_adv} \
+        --latin-src-upm ${toString grid.latin_src_upm} \
+        --latin-target-upm ${toString grid.latin_target_upm} \
         --family ${lib.escapeShellArg mergeFamily} \
         --family-ps ${basePs} \
-        --hhea-ascent ${get "HHEA_ASCENT"} \
-        --hhea-descent ${get "HHEA_DESCENT"} \
-        --hhea-line-gap ${get "HHEA_LINE_GAP"} \
-        --os2-typo-ascender ${get "OS2_TYPO_ASCENDER"} \
-        --os2-typo-descender ${get "OS2_TYPO_DESCENDER"} \
-        --os2-typo-line-gap ${get "OS2_TYPO_LINE_GAP"} \
-        --os2-win-ascent ${get "OS2_WIN_ASCENT"} \
-        --os2-win-descent ${get "OS2_WIN_DESCENT"}
+        --hhea-ascent ${toString metrics.hhea_ascent} \
+        --hhea-descent ${toString metrics.hhea_descent} \
+        --hhea-line-gap ${toString metrics.hhea_line_gap} \
+        --os2-typo-ascender ${toString metrics.os2_typo_ascender} \
+        --os2-typo-descender ${toString metrics.os2_typo_descender} \
+        --os2-typo-line-gap ${toString metrics.os2_typo_line_gap} \
+        --os2-win-ascent ${toString metrics.os2_win_ascent} \
+        --os2-win-descent ${toString metrics.os2_win_descent}
 
       cp merged/${basePs}-${weight}.ttf $out/
       fontkit narrow-symbol-widths --no-donor $out/${basePs}-${weight}.ttf
@@ -105,7 +104,7 @@ let
       fontkit nerd-patch \
         --patcher ${patcher} \
         --out $out \
-        --family ${lib.escapeShellArg (get "FAMILY_NAME")} \
+        --family ${lib.escapeShellArg naming.family} \
         --family-ps ${ps} \
         --narrow-symbols \
         ${merged weight}/*.ttf
@@ -126,14 +125,14 @@ let
     }
     ''
       fontkit verify-2to1 \
-        --expect-half ${get "EN_ADV"} --check-nerd --check-eaw ${out}/nerd/${ps}-*.ttf
+        --expect-half ${toString grid.en_adv} --check-nerd --check-eaw ${out}/nerd/${ps}-*.ttf
       touch $out
     '';
 
   readme = pkgs.writeText "rounded-README.txt" ''
-    ${get "FAMILY_NAME"} @version@
+    ${naming.family} @version@
     Derived from Iosevka Curly (ss20) + Resource Han Rounded SC (资源圆体) under SIL OFL 1.1.
-    Nerd Font icons via font-patcher ${get "NERD_FONTS_PATCHER_VERSION"} (--complete --single-width-glyphs).
+    Nerd Font icons via font-patcher ${m.nerd.version} (--complete --single-width-glyphs).
     Not an official Iosevka, Resource Han Rounded, or Nerd Fonts product.
 
     Name recipe (inheritance in the family name):
@@ -141,15 +140,15 @@ let
       Curly   = ss20 Curly Style package (not Slab/NSlab)
       RHR     = Resource Han Rounded SC
       NFM     = Nerd Font Mono
-      (docs nickname: ${get "PRODUCT_NAME_ZH"})
+      (docs nickname: ${naming.product_name_zh})
 
-    Cell metrics: EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"} (strict 2:1)
+    Cell metrics: EN ${toString grid.en_adv} / CJK ${toString grid.cjk_adv} (strict 2:1)
     Mono flags:   post.isFixedPitch=1, PANOSE bProportion=9
     Icons:        Nerd complete set at half-cell advance
     EAW:          N/Na/H → half, W/F → full (ambiguous left alone by default)
 
     Install: copy the .ttf into your OS fonts directory.
-    In terminals/IDEs pick family "${get "FAMILY_NAME"}".
+    In terminals/IDEs pick family "${naming.family}".
 
     Upstream pins: see font.toml in the build repository.
   '';

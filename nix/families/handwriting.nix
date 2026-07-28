@@ -13,32 +13,31 @@
 , lib
 , support
 , sources
-, pins
+, manifest
 ,
 }:
 
 let
   inherit (support) step file profile region;
-  get = pins.get;
+  m = manifest.data;
+  inherit (m) grid naming;
+  metrics = m.metrics.coding;
 
   family = "handwriting";
-  weights = [ "Regular" "Bold" ];
+  weights = map support.weightName m.build.weights;
 
-  ps = get "FAMILY_PS";
+  ps = naming.ps;
   familyName =
-    let
-      suffix = pins.pins.FAMILY_SUFFIX or "";
-    in
-    if suffix == "" then get "FAMILY_NAME" else "${get "FAMILY_NAME"} ${suffix}";
+    if naming.suffix == "" then naming.family else "${naming.family} ${naming.suffix}";
 
   cjkFor = {
     Regular = {
-      master = get "WENKAI_FOR_REGULAR";
-      embolden = get "CJK_EMBOLDEN_REGULAR";
+      master = support.weightName m.calibration.regular.source_weight;
+      embolden = m.calibration.regular.embolden;
     };
     Bold = {
-      master = get "WENKAI_FOR_BOLD";
-      embolden = get "CJK_EMBOLDEN_BOLD";
+      master = support.weightName m.calibration.bold.source_weight;
+      embolden = m.calibration.bold.embolden;
     };
   };
 
@@ -66,12 +65,12 @@ let
       python3 ${file "handwriting/scripts/prepare_latin.py"} \
         ${srcLatin weight}/MonaspaceRadonNF-${weight}.otf \
         $out/RadonLatin-${weight}.ttf \
-        --src-upm ${get "SRC_UPM"} \
-        --upm ${get "UPM"} \
-        --src-adv ${get "LATIN_SRC_ADV"} \
-        --narrow-adv ${get "LATIN_NARROW_ADV"} \
-        --uniform-scale ${get "LATIN_UNIFORM_SCALE"} \
-        --en-adv ${get "EN_ADV"}
+        --src-upm ${toString grid.latin_src_upm} \
+        --upm ${toString grid.upm} \
+        --src-adv ${toString grid.latin_src_adv} \
+        --narrow-adv ${toString grid.latin_narrow_adv} \
+        --uniform-scale ${toString grid.latin_uniform_scale} \
+        --en-adv ${toString grid.en_adv}
     '';
   };
 
@@ -82,8 +81,8 @@ let
         ${srcCjk weight}/LXGWWenKai-${cjkFor.${weight}.master}.ttf \
         $out/WenKaiSlanted-${weight}.ttf \
         --embolden ${cjkFor.${weight}.embolden} \
-        --slant-deg ${get "CJK_SLANT_DEG"} \
-        --pivot-y ${get "CJK_SLANT_PIVOT_Y"}
+        --slant-deg ${toString m.calibration.regular.slant_deg} \
+        --pivot-y ${toString m.calibration.regular.slant_pivot_y}
     '';
   };
 
@@ -100,22 +99,24 @@ let
         --cjk-regular ${cjkPrepared "Regular"}/WenKaiSlanted-Regular.ttf \
         --cjk-bold ${cjkPrepared "Bold"}/WenKaiSlanted-Bold.ttf \
         --out-dir merged \
-        --en-adv ${get "EN_ADV"} \
-        --cjk-adv ${get "CJK_ADV"} \
+        --en-adv ${toString grid.en_adv} \
+        --cjk-adv ${toString grid.cjk_adv} \
         --family ${lib.escapeShellArg familyName} \
         --family-ps ${ps} \
-        --slant-deg ${get "CJK_SLANT_DEG"} \
-        --hhea-ascent ${get "HHEA_ASCENT"} \
-        --hhea-descent ${get "HHEA_DESCENT"} \
-        --hhea-line-gap ${get "HHEA_LINE_GAP"} \
-        --os2-typo-ascender ${get "OS2_TYPO_ASCENDER"} \
-        --os2-typo-descender ${get "OS2_TYPO_DESCENDER"} \
-        --os2-typo-line-gap ${get "OS2_TYPO_LINE_GAP"} \
-        --os2-win-ascent ${get "OS2_WIN_ASCENT"} \
-        --os2-win-descent ${get "OS2_WIN_DESCENT"}
+        --slant-deg ${toString m.calibration.regular.slant_deg} \
+        --hhea-ascent ${toString metrics.hhea_ascent} \
+        --hhea-descent ${toString metrics.hhea_descent} \
+        --hhea-line-gap ${toString metrics.hhea_line_gap} \
+        --os2-typo-ascender ${toString metrics.os2_typo_ascender} \
+        --os2-typo-descender ${toString metrics.os2_typo_descender} \
+        --os2-typo-line-gap ${toString metrics.os2_typo_line_gap} \
+        --os2-win-ascent ${toString metrics.os2_win_ascent} \
+        --os2-win-descent ${toString metrics.os2_win_descent}
 
       cp merged/${ps}-${weight}.ttf $out/
-      fontkit expand-ligatures --include ${get "LIGATURE_SETS"} $out/${ps}-${weight}.ttf
+      fontkit expand-ligatures \
+        --include ${lib.concatStringsSep "," m.options.ligature_sets} \
+        $out/${ps}-${weight}.ttf
     '';
   };
 
@@ -135,7 +136,7 @@ let
     ''
       fontkit verify-2to1 --profile dense --check-nerd --check-eaw ${out}/${ps}-*.ttf
       python3 ${file "handwriting/scripts/verify-features.py"} \
-        --expect-half ${get "EN_ADV"} ${out}/${ps}-*.ttf
+        --expect-half ${toString grid.en_adv} ${out}/${ps}-*.ttf
       # Informational, like sans'. See the note there about measure.py and
       # all-off-curve contours.
       for font in ${out}/${ps}-*.ttf; do
@@ -145,17 +146,17 @@ let
     '';
 
   readme = pkgs.writeText "handwriting-README.txt" ''
-    ${get "FAMILY_NAME"} @version@
-    Derived from Monaspace Radon NF (${get "MONASPACE_RELEASE_TAG"}) and
-    LXGW WenKai 霞鹜文楷 (${get "WENKAI_RELEASE_TAG"}) under SIL OFL 1.1.
+    ${naming.family} @version@
+    Derived from Monaspace Radon NF (${m.sources.monaspace.version}) and
+    LXGW WenKai 霞鹜文楷 (${m.sources.wenkai.version}) under SIL OFL 1.1.
     Not an official Monaspace / GitHub Next or LXGW product.
 
     Name recipe (same style as SarasaNZSSlab NFM):
       Radon    = Monaspace Radon (Latin, ligatures + OpenType features)
-      WenKai   = 霞鹜文楷 (CJK, sheared ${get "CJK_SLANT_DEG"}° to Radon's lean)
+      WenKai   = 霞鹜文楷 (CJK, sheared ${toString m.calibration.regular.slant_deg}° to Radon's lean)
       NFM      = Nerd Font Mono product (icons at one cell)
 
-    Cell metrics: EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"} (strict 2:1)
+    Cell metrics: EN ${toString grid.en_adv} / CJK ${toString grid.cjk_adv} (strict 2:1)
     Nerd icons:   from the upstream Monaspace Radon NF build, one cell each
     Ligatures:    Radon liga + calt (on by default), plus ss01–ss10 / cv** opt-in
     Upstream pins: see handwriting/font.toml in the build repository.
@@ -180,7 +181,7 @@ in
   release = {
     inherit family profile region readme verify;
     weight = "Regular";
-    stem = get "PRODUCT_STEM";
+    stem = naming.stem;
     fontDir = out;
     licenseDir = file "handwriting/licenses";
   };

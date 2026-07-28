@@ -29,6 +29,26 @@ let
   patcherUsers = lib.filter (f: sources.perFamily.${f} ? "font-patcher") sources.families;
   patcherPaths = lib.unique (map (f: sources.perFamily.${f}."font-patcher".drvPath) patcherUsers);
 
+  manifestValid =
+    manifest:
+    let
+      matrixValues = axis: lib.concatMap (entry: entry.${axis}) manifest.build.matrix;
+      axisValid =
+        axis:
+        lib.all (value: lib.elem value manifest.build.${axis}) (matrixValues axis);
+      cjkRegions = lib.concatMap
+        (source: if source.role == "cjk" then source.regions else [ ])
+        (lib.attrValues manifest.sources);
+      artifacts = lib.concatMap
+        (source: lib.attrValues (source.artifacts or { }))
+        (lib.attrValues manifest.sources);
+    in
+    manifest.grid.cjk_adv == manifest.grid.en_adv * 2
+    && lib.all (artifact: artifact ? url && artifact ? sha256) artifacts
+    && lib.all axisValid [ "regions" "weights" "formats" "slopes" ]
+    && lib.all (entry: lib.elem entry.profile manifest.build.profiles) manifest.build.matrix
+    && lib.all (region: lib.elem region cjkRegions) (matrixValues "regions");
+
 in
 {
   # Completion criterion 1: the Nerd Fonts patcher is one store path repo-wide.
@@ -105,13 +125,18 @@ in
 
   # Every font.toml must parse in full. `data` is the direct result of
   # builtins.fromTOML; forcing it proves Nix consumes the same semantic file as
-  # Python rather than a generated compatibility manifest.
+  # Python rather than generated Nix data.
   manifests-parse = ok "manifests-parse"
     (
       lib.all
         (f:
-          let manifest = sources.familyPins.${f}.data;
-          in manifest.schema_version == 1 && manifest.family == f)
+          let manifest = sources.manifests.${f}.data;
+          in
+          builtins.deepSeq manifest (
+            manifest.schema_version == 1
+            && manifest.family == f
+            && manifestValid manifest
+          ))
         sources.families
     ) "a family's font.toml did not parse as schema version 1";
 
@@ -162,10 +187,10 @@ in
   manifest-source-url = ok "manifest-source-url"
     (
       let
-        p = sources.familyPins.sans;
-        commit = p.get "PLEX_SANS_SC_COMMIT";
+        manifest = sources.manifests.sans.data;
+        commit = manifest.sources.plex.commit;
+        url = manifest.sources.plex.artifacts.regular.url;
       in
-      lib.hasInfix commit (p.get "PLEX_SANS_SC_TTF_REGULAR_URL")
-      && !(lib.hasInfix "$" (p.get "PLEX_SANS_SC_TTF_REGULAR_URL"))
+      lib.hasInfix commit url && !(lib.hasInfix "$" url)
     ) "font.toml source URL does not contain its pinned commit";
 }
