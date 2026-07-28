@@ -28,7 +28,10 @@ let
   ps = naming.ps;
   basePs = naming.base_ps;
   mergeFamily =
-    if naming.suffix == "" then naming.base_family else "${naming.base_family} ${naming.suffix}";
+    if (naming.suffix or "") == "" then
+      naming.base_family
+    else
+      "${naming.base_family} ${naming.suffix}";
 
   emboldenFor = weight: toString m.calibration.${lib.toLower weight}.embolden;
 

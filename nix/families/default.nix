@@ -61,7 +61,7 @@ let
   packaged =
     family: rel:
     let
-      version = sources.manifests.${family}.data.naming.version;
+      version = sources.manifests.${family}.data.naming.version or "0.1.0";
       licenses = lib.mapAttrsToList (name: _: "--license ${rel.licenseDir}/${name}") (
         builtins.readDir rel.licenseDir
       );

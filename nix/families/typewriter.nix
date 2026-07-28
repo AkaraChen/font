@@ -27,7 +27,10 @@ let
   ps = naming.ps;
   basePs = naming.base_ps;
   mergeFamily =
-    if naming.suffix == "" then naming.base_family else "${naming.base_family} ${naming.suffix}";
+    if (naming.suffix or "") == "" then
+      naming.base_family
+    else
+      "${naming.base_family} ${naming.suffix}";
 
   srcLatin = weight: step "src-latin" { inherit family weight; } {
     buildCommand = ''

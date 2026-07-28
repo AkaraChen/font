@@ -30,7 +30,10 @@ let
 
   ps = naming.ps;
   familyName =
-    if naming.suffix == "" then naming.family else "${naming.family} ${naming.suffix}";
+    if (naming.suffix or "") == "" then
+      naming.family
+    else
+      "${naming.family} ${naming.suffix}";
 
   # Which Yozai master backs each product face, and how hard to stroke it.
   # Measured, not guessed — see casual/font.toml and tools/calibrate-cjk-weight.py.
@@ -91,7 +94,7 @@ let
       fontkit prepare-cjk \
         ${srcCjk weight}/Yozai-${cjkFor.${weight}.master}.ttf \
         $out/YozaiPrepared-${weight}.ttf \
-        --embolden ${cjkFor.${weight}.embolden} \
+        --embolden ${toString cjkFor.${weight}.embolden} \
         --slant-deg ${toString m.calibration.regular.slant_deg} \
         --pivot-y ${toString m.calibration.regular.slant_pivot_y}
     '';

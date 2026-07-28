@@ -28,7 +28,10 @@ let
 
   ps = naming.ps;
   familyName =
-    if naming.suffix == "" then naming.family else "${naming.family} ${naming.suffix}";
+    if (naming.suffix or "") == "" then
+      naming.family
+    else
+      "${naming.family} ${naming.suffix}";
 
   cjkFor = {
     Regular = {
@@ -80,7 +83,7 @@ let
       fontkit prepare-cjk \
         ${srcCjk weight}/LXGWWenKai-${cjkFor.${weight}.master}.ttf \
         $out/WenKaiSlanted-${weight}.ttf \
-        --embolden ${cjkFor.${weight}.embolden} \
+        --embolden ${toString cjkFor.${weight}.embolden} \
         --slant-deg ${toString m.calibration.regular.slant_deg} \
         --pivot-y ${toString m.calibration.regular.slant_pivot_y}
     '';
