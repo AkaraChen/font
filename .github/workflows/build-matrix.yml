@@ -101,13 +101,19 @@ jobs:
           nix develop --command python3 tools/fingerprint.py check ${{ matrix.family }}
           rc=$?
           set -e
+          # Always publish what this run actually produced, whatever the verdict.
+          # Products are 25-50 MB per family and awkward to pull; the fingerprints
+          # are a few hundred KB, so drift can be diagnosed — and a baseline
+          # adopted — straight from this artifact.
+          nix develop --command python3 tools/fingerprint.py write ${{ matrix.family }} \
+            --out fingerprints-current/${{ matrix.family }}
           case "$rc" in
             0) echo "fingerprints match the baseline" ;;
             3)
-              # First green run bootstraps the baselines; they must then be
-              # committed, or this stays a warning forever.
-              echo "::warning title=No fingerprint baseline::${{ matrix.family }} has no committed baseline. Download the fingerprints artifact from this run and commit it under fingerprints/${{ matrix.family }}/."
-              nix develop --command python3 tools/fingerprint.py write ${{ matrix.family }}
+              # Baselines are authored by CI, not by a laptop: fontforge and
+              # skia-pathops do not produce identical output across platforms.
+              # The first run bootstraps them; they must then be committed.
+              echo "::warning title=No fingerprint baseline::${{ matrix.family }} has no committed baseline. Download the fingerprints-${{ matrix.family }} artifact from this run and commit it under fingerprints/${{ matrix.family }}/."
               ;;
             *) exit "$rc" ;;
           esac
@@ -117,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fingerprints-${{ matrix.family }}
-          path: fingerprints/${{ matrix.family }}/
+          path: fingerprints-current/${{ matrix.family }}/
           if-no-files-found: warn
 
       - name: Upload step timings

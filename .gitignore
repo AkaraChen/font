@@ -49,3 +49,6 @@ venv/
 *.swp
 .idea/
 .vscode/
+
+# Fingerprint working dir (CI writes the current run here)
+fingerprints-current/

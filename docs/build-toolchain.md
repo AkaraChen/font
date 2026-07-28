@@ -111,14 +111,35 @@ working. To hide them outright rather than collapse, change that line to
 `fingerprints/** -diff` — at the cost of not being able to review an intentional
 baseline change, which is what the normalised text format exists for.
 
-### Baseline provenance
+### Baseline provenance: CI is the only authority
+
+The first CI run answered the open question, and the answer was no: **the build
+is not reproducible across platforms.** All seven families built cleanly on
+`x86_64-linux`, and all seven products differed from baselines generated on
+`aarch64-darwin`.
+
+`pixel` localises it. Its fontTools-only intermediate is identical on both
+platforms; its fontforge-patched product is not — Linux emits **46661 glyphs
+against darwin's 46552**, from the same pinned fontforge, the same pinned
+`FontPatcher.zip`, the same arguments and the same input font. `casual` and
+`handwriting` have no fontforge step and still differed, so fontforge is not the
+only source; `skia-pathops` is the obvious suspect for the CJK embolden, though
+that is inferred from which families failed rather than diagnosed.
+
+So the toolchain pin buys reproducibility *on* a platform, not *across* them,
+and a baseline is only meaningful relative to the platform that produced it.
+`x86_64-linux` on GitHub Actions is the canonical one. Baselines are bootstrapped
+from the `fingerprints-<family>` artifact, which every run uploads regardless of
+verdict — see [`../fingerprints/README.md`](../fingerprints/README.md).
 
 Each `fingerprints/<family>/PROVENANCE` records the system and nixpkgs revision
-the baseline was produced on. The committed baselines were generated on
-`aarch64-darwin`. Whether Linux produces identical products is **not yet
-known** — the first CI run answers it. If it comes back red on platform
-differences rather than real drift, regenerate the baselines from the CI
-artifacts and treat the darwin/linux delta as its own finding.
+its baseline came from, so a mismatched platform is visible rather than
+mysterious.
+
+Which platform is *correct* is unresolved. Linux produces the more complete Nerd
+set for `pixel`, which points at darwin's patch being the deficient one — and
+therefore at a Mac maintainer's local builds not matching what gets released.
+That predates Phase 0; Phase 0 only made it visible.
 
 ## CI
 
