@@ -69,3 +69,15 @@ gates that with a HarfBuzz shaping test. Weight pairing and slant are measured, 
 (`./scripts/calibrate-stroke.sh`).
 
 Details: [`handwriting/README.md`](handwriting/README.md).
+
+## rounded/ （圆体）
+
+**Coding product: YuanTi NFM / 圆体** — **Iosevka Curly** (ss20 Curly Style, sans — not NSlab)
+Latin + **Resource Han Rounded SC** CJK + **Nerd Font Mono**, dual-width **EN 500 / CJK 1000**.
+
+```bash
+cd rounded && ./scripts/build.sh
+# → out/nerd/YuanTiNFM-{Regular,Bold}.ttf
+```
+
+Upstream pins: [`rounded/pins.env`](rounded/pins.env). Details: [`rounded/README.md`](rounded/README.md).
