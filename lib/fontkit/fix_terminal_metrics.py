@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
-"""Terminal-oriented OS/2 / head metric hygiene for dual-width (2:1) monos.
+"""Advertise a dual-width (2:1) mono as monospaced to the hosts that ask.
 
 Run as: python3 -m fontkit.fix_terminal_metrics FONT.ttf [...]
 
 Why:
-  Sarasa-style dual-width fonts legitimately mix advance 500 (half) and 1000
-  (full). FontTools / the Nerd patcher often leave OS/2.xAvgCharWidth as a
-  glyph-average (~800+) rather than the half-cell unit. Some terminal and GUI
-  layout paths treat that average as "the" monospaced cell width, which shows
-  up as a large empty band on the right of the window after switching fonts.
-
-  head.xMin/xMax also expand to rare multi-em glyphs (e.g. U+2E3B ⸻) and
-  combining ornaments; a few hosts use the font bbox when estimating cell
-  size. We recompute head bounds from glyphs whose advance is half or full
-  only (still honest for normal text; multi-em dashes keep their advances).
-
   post.isFixedPitch is the flag hosts actually read to answer "is this a
   monospaced font?" -- macOS Core Text (kCTFontTraitMonoSpace), fontconfig,
   Chromium/VS Code font pickers, and most terminals' "monospace only" filters.
@@ -23,6 +12,18 @@ Why:
   stops being offered as a mono font even though upstream Sarasa ships
   isFixedPitch=1 on exactly the same 2:1 grid. We restore it, and pin the
   PANOSE proportion byte to 9 (Monospaced) for the hosts that read PANOSE.
+
+  OS/2.xAvgCharWidth is left at the half-cell rather than the glyph average
+  (~800+ on a dual-width font), which is what a monospaced font is expected to
+  advertise. fontkit.verify2to1 --profile compact gates it.
+
+Not done here, deliberately:
+  This module used to also rewrite head.xMin/xMax from half/full-advance glyphs
+  only, to keep rare multi-em glyphs (U+2E3B ⸻) out of the font bbox. That was
+  a workaround for a "large empty band on the right of the terminal" report
+  which turned out to be a terminal bug, not a font one -- and the tight bbox
+  it wrote is non-conformant: OpenType says head's bbox covers *all* glyphs.
+  Removed in KIT-284. Do not reintroduce it without a font-side reproduction.
 
 Does NOT change per-glyph advances (Nerd PUA, CJK, ASCII stay as built).
 """
@@ -50,28 +51,13 @@ def half_unit(font: TTFont) -> int:
     return half
 
 
-def fix_font(
-    path: Path, *, dry_run: bool = False, keep_bbox: bool = False
-) -> list[str]:
-    """Apply the metric fixes to `path` in place.
-
-    keep_bbox pins the half/full-only head bbox computed below by disabling
-    TTFont.recalcBBoxes before the save. Only serif passes it. Without it
-    fontTools recomputes head from *every* glyph on save and the bbox written
-    here is discarded — which is what pixel / rounded / sans / typewriter have
-    always shipped, so the flag defaults to off to keep their products
-    byte-identical. See docs/build-toolchain.md; flipping it for the other four
-    is a deliberate product change, not a refactor.
-    """
+def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
+    """Apply the mono advertisement fixes to `path` in place."""
     lines: list[str] = []
     font = TTFont(path)
     try:
         half = half_unit(font)
-        full = half * 2
         os2 = font["OS/2"]
-        head = font["head"]
-        hmtx = font["hmtx"]
-        glyf = font["glyf"] if "glyf" in font else None
 
         old_avg = os2.xAvgCharWidth
         os2.xAvgCharWidth = half
@@ -95,46 +81,7 @@ def fix_font(
             )
             panose.bProportion = 9
 
-        if glyf is not None:
-            x_min = y_min = 10**9
-            x_max = y_max = -(10**9)
-            used = 0
-            for gname, (adv, _lsb) in hmtx.metrics.items():
-                if adv not in (half, full):
-                    continue
-                g = glyf.get(gname)
-                if g is None or g.numberOfContours == 0:
-                    continue
-                try:
-                    gx0, gy0, gx1, gy1 = g.xMin, g.yMin, g.xMax, g.yMax
-                except AttributeError:
-                    continue
-                x_min = min(x_min, gx0)
-                y_min = min(y_min, gy0)
-                x_max = max(x_max, gx1)
-                y_max = max(y_max, gy1)
-                used += 1
-            if used and x_min < x_max:
-                old = (head.xMin, head.yMin, head.xMax, head.yMax)
-                head.xMin, head.yMin, head.xMax, head.yMax = (
-                    int(x_min),
-                    int(y_min),
-                    int(x_max),
-                    int(y_max),
-                )
-                lines.append(
-                    f"{path.name}: head bbox {old} → "
-                    f"({head.xMin},{head.yMin},{head.xMax},{head.yMax}) "
-                    f"(from {used} half/full glyphs)"
-                )
-            else:
-                lines.append(f"{path.name}: head bbox unchanged (no glyf bounds)")
-
         if not dry_run:
-            if keep_bbox:
-                # TTFont.recalcBBoxes (constructor default True) recomputes head
-                # from *all* glyphs on save and undoes the half/full-only bbox.
-                font.recalcBBoxes = False
             font.save(path)
             lines.append(f"{path.name}: saved")
         else:
@@ -148,12 +95,6 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("fonts", nargs="+", type=Path)
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument(
-        "--keep-bbox",
-        action="store_true",
-        help="pin the half/full-only head bbox instead of letting fontTools "
-        "recompute it from every glyph on save (serif only — see fix_font)",
-    )
     args = ap.parse_args(argv)
 
     any_err = False
@@ -162,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: not a file: {path}", file=sys.stderr)
             any_err = True
             continue
-        for line in fix_font(path, dry_run=args.dry_run, keep_bbox=args.keep_bbox):
+        for line in fix_font(path, dry_run=args.dry_run):
             print(line)
     return 1 if any_err else 0
 

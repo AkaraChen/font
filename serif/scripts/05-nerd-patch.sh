@@ -139,15 +139,14 @@ if [[ -n "${PY}" ]]; then
   fi
 fi
 
-# Dual-width hygiene: xAvgCharWidth=half + head bbox from half/full only.
-# Mitigates terminal right-margin gaps when hosts use average/bbox as cell width.
-# --keep-bbox holds that bbox through the save; serif is the only family that
-# does, see lib/fontkit/fix_terminal_metrics.py.
+# The Nerd patch runs FontForge, which clears post.isFixedPitch on a
+# dual-width font and drops the product out of every "monospace only" picker.
+# Restore that, PANOSE bProportion and the half-cell xAvgCharWidth.
 if [[ -n "${PY}" ]]; then
   mapfile -t NAMED_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
   if [[ ${#NAMED_NERD[@]} -gt 0 ]]; then
-    log "fix terminal metrics (xAvgCharWidth / head bbox)"
-    "${PY}" -m fontkit.fix_terminal_metrics --keep-bbox "${NAMED_NERD[@]}"
+    log "fix terminal metrics (isFixedPitch / PANOSE / xAvgCharWidth)"
+    "${PY}" -m fontkit.fix_terminal_metrics "${NAMED_NERD[@]}"
   fi
 fi
 

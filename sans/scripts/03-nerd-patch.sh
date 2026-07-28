@@ -128,8 +128,8 @@ if [[ ${#NAMED_NERD[@]} -gt 0 ]]; then
   log "fix Nerd/PUA icon advances → half-cell"
   "${PY}" -m fontkit.fix_nerd_widths "${NAMED_NERD[@]}"
   # EAW-correct advances: terminals size cells from Unicode EAW, not font metrics.
-  # Geometric fit (no Sarasa Term donor on the 550 grid). Re-run metric hygiene
-  # after save because fontTools recomputes head bbox.
+  # Geometric fit (no Sarasa Term donor on the 550 grid). Metric hygiene is
+  # re-run after because the narrow pass saves the font again.
   log "narrow/widen symbols to match East_Asian_Width"
   "${PY}" -m fontkit.narrow_symbol_widths --no-donor "${NAMED_NERD[@]}"
   log "fix terminal metrics (isFixedPitch / PANOSE / xAvgCharWidth)"
