@@ -13,7 +13,7 @@ need_cmd zip
 NERD_OUT="${OUT_DIR}/nerd"
 DIST_DIR="${TYPEWRITER_ROOT}/dist"
 STAGE="${WORK_DIR}/release-stage"
-stem="${PRODUCT_STEM:-PrimeZhuqueNFM}"
+stem="${PRODUCT_STEM:-CourierPrimeZhuqueNFM}"
 
 mapfile -t FONTS < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name "${stem}-*.ttf" -o -name "${stem}-*.otf" \) | sort)
 if [[ ${#FONTS[@]} -eq 0 ]]; then
@@ -45,9 +45,9 @@ Nerd Font icons via ${NERD_FONTS_TAG} FontPatcher (--complete --single-width-gly
 Not an official Courier Prime, Zhuque, or Nerd Fonts product.
 
 Name recipe (source tokens, same style as LilexSansSC NFM):
-  Prime  = Courier Prime (Latin slab mono)
-  Zhuque = Zhuque Fangsong (CJK)
-  NFM    = Nerd Font Mono
+  CourierPrime = Courier Prime (Latin slab mono)
+  Zhuque       = Zhuque Fangsong (CJK)
+  NFM          = Nerd Font Mono
 
 Sources:
   Latin = Courier Prime (slab mono; UPM 2048→1000)

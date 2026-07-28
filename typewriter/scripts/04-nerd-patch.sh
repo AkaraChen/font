@@ -21,7 +21,7 @@ PATCHER_URL="${NERD_FONTS_PATCHER_URL}"
 mkdir -p "${NERD_OUT}" "${DOWNLOADS_DIR}"
 
 mapfile -t BASE_FONTS < <(
-  find "${OUT_DIR}" -maxdepth 1 -type f \( -name 'PrimeZhuqueDual-*.ttf' -o -name 'PrimeZhuqueDual-*.otf' \) | sort
+  find "${OUT_DIR}" -maxdepth 1 -type f \( -name 'CourierPrimeZhuqueDual-*.ttf' -o -name 'CourierPrimeZhuqueDual-*.otf' \) | sort
 )
 if [[ ${#BASE_FONTS[@]} -eq 0 ]]; then
   mapfile -t BASE_FONTS < <(
