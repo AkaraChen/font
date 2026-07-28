@@ -162,9 +162,19 @@ def verify_one(path: Path, epsilon: int, expect_half: int | None) -> int:
         bad=bad,
     )
 
-    # Dual-width product intentionally leaves isFixedPitch=0
+    # Hosts answer "is this mono?" from post.isFixedPitch + PANOSE proportion.
+    # Dual-width 2:1 still advertises fixed pitch (matches serif/pixel/handwriting).
     is_fp = font["post"].isFixedPitch
-    print(f"  post.isFixedPitch={is_fp} (expected 0 for dual-width)")
+    print(f"  post.isFixedPitch={is_fp} (expected 1)")
+    if is_fp != 1:
+        bad.append(f"post.isFixedPitch={is_fp} expected 1 (font will not list as mono)")
+    panose = font["OS/2"].panose
+    if panose.bFamilyType == 2 and panose.bProportion != 9:
+        bad.append(
+            f"PANOSE bProportion={panose.bProportion} expected 9 (Monospaced)"
+        )
+    else:
+        print(f"  PANOSE bProportion={panose.bProportion} (Monospaced)")
 
     font.close()
 
@@ -176,7 +186,7 @@ def verify_one(path: Path, epsilon: int, expect_half: int | None) -> int:
             print(f"    {m}", file=sys.stderr)
     if bad:
         ok = False
-        print(f"  BAD ADVANCES ({len(bad)}):", file=sys.stderr)
+        print(f"  BAD ADVANCES / FLAGS ({len(bad)}):", file=sys.stderr)
         for b in bad[:60]:
             print(f"    {b}", file=sys.stderr)
         if len(bad) > 60:

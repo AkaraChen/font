@@ -136,8 +136,18 @@ python3 scripts/verify-features.py out/LilexSansSCDual-*.ttf
 | --- | --- |
 | `A` / printable ASCII | **550** |
 | `中` / sample Han / fullwidth forms | **1100** (= 2× EN) |
-| `post.isFixedPitch` | **0** (dual-width; hosts that only list classic mono may hide it) |
+| `post.isFixedPitch` | **1** (dual-width 2:1 still advertises mono; hosts use this flag) |
+| PANOSE `bProportion` | **9** (Monospaced) |
+| `OS/2.xAvgCharWidth` | **550** (half-cell; avoids wide empty band on some hosts) |
 | GSUB `calt` + `.liga` glyphs | present (Lilex coding ligatures) |
+
+> **Why terminals used to hide this face:** early builds set `post.isFixedPitch=0`
+> because dual-width is not single-cell classic mono. That is the flag macOS Core
+> Text (`kCTFontTraitMonoSpace`), Chromium/VS Code pickers, and most terminals'
+> "monospace only" filters read — so the font never appeared. Sibling products
+> (`serif` / `pixel` / `handwriting`) already ship `isFixedPitch=1` + PANOSE 9
+> for the same 2:1 grid. **fontconfig** (Linux) still classifies any dual-width
+> font as proportional by scanning advances; nothing in the font can change that.
 
 ## Family / license
 
