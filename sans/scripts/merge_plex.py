@@ -306,14 +306,15 @@ def unify_metrics(
     os2.usWinAscent = os2_win_asc
     os2.usWinDescent = os2_win_desc
     os2.fsSelection |= 0x80  # USE_TYPO_METRICS
-    # Dual-width: not classic single-cell fixed pitch
-    font["post"].isFixedPitch = 0
+    os2.xAvgCharWidth = en_adv
+    # Coding product: advertise as mono so hosts answer "is this monospaced?"
+    # (macOS kCTFontTraitMonoSpace, Chromium/VS Code pickers, most terminals'
+    # "monospace only" filters). A 2:1 dual-width face is still a fixed grid
+    # as far as a terminal is concerned — same policy as serif / pixel /
+    # handwriting. (fontconfig still classifies dual-width by advance scan.)
+    font["post"].isFixedPitch = 1
     try:
-        os2.panose.bProportion = 9  # monospaced (host hints)
-    except Exception:
-        pass
-    try:
-        os2.xAvgCharWidth = en_adv
+        os2.panose.bProportion = 9  # Monospaced
     except Exception:
         pass
 
