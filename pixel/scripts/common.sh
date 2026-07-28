@@ -7,6 +7,15 @@ REPO_ROOT="$(cd "${PIXEL_ROOT}/.." && pwd)"
 # shellcheck disable=SC1091
 source "${PIXEL_ROOT}/pins.env"
 
+# Pinned artifacts come from the Nix store when it has been realised
+# (FONTKIT_SRC_CACHE), and from curl when it has not. Same sha256 gate either
+# way — see tools/src-cache.sh.
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/tools/src-cache.sh"
+
+download_file() { src_fetch "$@"; }
+download_zip() { src_fetch "$@"; }
+
 WORK_DIR="${PIXEL_ROOT}/work"
 DOWNLOADS_DIR="${WORK_DIR}/downloads"
 EXTRACT_DIR="${WORK_DIR}/src"
@@ -46,22 +55,6 @@ verify_sha256() {
   [[ "${got}" == "${expected}" ]] || die "sha256 mismatch for ${file}: expected ${expected}, got ${got}"
 }
 
-download_file() {
-  local url="$1" dest="$2" sha="$3"
-  if [[ -f "${dest}" ]]; then
-    if [[ "$(sha256_of "${dest}")" == "${sha}" ]]; then
-      log "cached $(basename "${dest}")"
-      return 0
-    fi
-    log "stale cache for $(basename "${dest}"), re-downloading"
-    rm -f "${dest}"
-  fi
-  need_cmd curl
-  log "downloading ${url}"
-  curl -fL --retry 3 --retry-delay 2 -o "${dest}.partial" "${url}"
-  mv "${dest}.partial" "${dest}"
-  verify_sha256 "${dest}" "${sha}"
-}
 
 ensure_python() {
   # A pre-provisioned interpreter (the Nix devShell sets this) replaces the venv

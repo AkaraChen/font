@@ -1,5 +1,5 @@
 {
-  description = "AKR fonts — pinned build toolchain + the shared fontkit build steps";
+  description = "AKR fonts — pinned toolchain, pinned sources, shared fontkit build steps";
 
   inputs = {
     # Stable channel on purpose: this is a toolchain pin, not a place to chase
@@ -12,15 +12,68 @@
     let
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+
+      granularity = import ./nix/granularity.nix { inherit (nixpkgs) lib; };
+      sourcesFor = pkgs: import ./nix/sources { inherit pkgs; root = ./.; };
+      fontkitFor = pkgs: pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
     in
     {
+      # The derivation-granularity contract (nix/granularity.nix). Exported as a
+      # flake output because Phase 3 builds against it from outside this file,
+      # and because `nix eval .#granularity.steps` is how you answer "what makes
+      # this step rebuild?" without reading Nix.
+      lib = { inherit granularity; };
+
+      packages = forAllSystems (pkgs:
+        let
+          sources = sourcesFor pkgs;
+        in
+        {
+          # The shared build steps, as a buildPythonPackage. The per-step
+          # derivations in Phase 3 depend on this rather than on a checkout.
+          fontkit = fontkitFor pkgs;
+
+          # Every pinned upstream input, content-addressed. This is the GC root
+          # CI keeps: one `nix build .#source-cache` materialises the whole
+          # source layer, and tools/src-cache.sh serves every family out of it.
+          source-cache = import ./nix/source-cache.nix { inherit pkgs sources; };
+
+          # The single shared patcher — five families, one download.
+          font-patcher = sources.fontPatcher;
+
+          # serif's Sarasa tree, replacing `git clone --depth 1`. 304 MiB; the
+          # largest input in the repo and the reason docs/caching.md splits the
+          # CI cache into layers.
+          sarasa-src = sources.sarasaSrc;
+        }
+        # Per-family source sets, for `nix build .#sources-sans`.
+        // nixpkgs.lib.mapAttrs'
+          (family: drvs:
+            nixpkgs.lib.nameValuePair "sources-${family}"
+              (pkgs.linkFarm "sources-${family}"
+                (nixpkgs.lib.mapAttrsToList (name: path: { inherit name path; }) drvs)))
+          sources.perFamily);
+
+      # `just check` (nix flake check) builds fontkit, which runs its pytest
+      # suite — the only automated gate on the shared build steps that does not
+      # need a multi-hour font build first — alongside the pure-eval caching
+      # checks in nix/checks.nix.
+      checks = forAllSystems (pkgs:
+        {
+          fontkit = fontkitFor pkgs;
+        }
+        // import ./nix/checks.nix {
+          inherit pkgs granularity;
+          sources = sourcesFor pkgs;
+        });
+
       devShells = forAllSystems (pkgs:
         let
           # The five build steps every family shares, formerly 17 near-identical
           # files under <family>/scripts/. Packaged so a bare `nix develop` can
           # run `python3 -m fontkit.<step>` and so Phase 1's per-step
           # derivations can depend on it without a repo checkout.
-          fontkit = pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
+          fontkit = fontkitFor pkgs;
 
           # Every Python dependency that was previously `pip install`-ed from one of
           # the eight scattered, unpinned call sites in */scripts/common.sh.
@@ -104,17 +157,6 @@
             '';
           };
         });
-
-      packages = forAllSystems (pkgs: {
-        fontkit = pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
-      });
-
-      # `just check` (nix flake check) builds this, which runs fontkit's pytest
-      # suite. Those tests are the only automated gate on the shared build steps
-      # that does not need a multi-hour font build first.
-      checks = forAllSystems (pkgs: {
-        fontkit = pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
-      });
 
       formatter = forAllSystems (pkgs: pkgs.nixpkgs-fmt);
     };

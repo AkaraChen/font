@@ -6,8 +6,20 @@
 # tag's products and post-processes them. Six of the seven families had no
 # automated verification at all.
 #
-# Every step is timed. Those numbers are the input to the caching decisions in
-# KIT-265: the plan has no measured wall-clock data yet, only script reading.
+# Every step is timed.
+#
+# Caching (KIT-275) is deliberately layered rather than one snapshot of /nix,
+# because GitHub Actions cache is capped at 10 GB per repository and evicts
+# anything untouched for 7 days. See docs/caching.md for the full reasoning and
+# the measured numbers; the short version:
+#
+#   * two small "warmer" jobs SAVE — sources (keyed on pins.env) and toolchain
+#     (keyed on flake.lock + flake.nix)
+#   * the seven family jobs RESTORE both and save nothing
+#
+# That last line is the whole 10 GB story. Seven family jobs each saving their
+# own multi-gigabyte store snapshot would blow the repo budget on a single push
+# and evict the layers that actually pay for themselves.
 name: Build matrix
 
 on:
@@ -23,10 +35,17 @@ on:
 
 permissions:
   contents: read
+  # cache-nix-action purges expired entries, and the cache-budget job reads the
+  # repo's cache list to check it against the 10 GB ceiling.
+  actions: write
 
 concurrency:
   group: build-matrix-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  # Bump to invalidate every layer at once without touching pins or the flake.
+  CACHE_EPOCH: v1
 
 jobs:
   # Cheap gate, runs in seconds: the shared build steps under lib/fontkit are
@@ -55,8 +74,92 @@ jobs:
       - name: Build the fontkit package
         run: nix build .#fontkit --print-build-logs
 
+  # ---------------------------------------------------------------------------
+  # Layer 1 — pinned upstream sources.
+  #
+  # Biggest and slowest-changing: 447 MiB for the content-addressed cache plus
+  # 304 MiB for the Sarasa tree (measured, `nix path-info -S`). Keyed on the
+  # pins.env files alone, so a toolchain bump does not re-download 750 MiB of
+  # fonts. Phase 4 (KIT-278) swaps pins.env for font.toml — update hashFiles then.
+  # ---------------------------------------------------------------------------
+  sources:
+    name: Sources layer
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Restore / save source layer
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/pins.env') }}
+          # No prefix fallback on purpose: a partial source layer from an older
+          # pin set is worse than a clean fetch — it would be carried forward,
+          # counted against the 10 GB budget, and never used.
+          gc-max-store-size-linux: 3G
+          purge: true
+          purge-prefixes: nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-
+          purge-created: P7D
+
+      - name: Realise pinned sources
+        run: |
+          # --out-link, not --no-link: these must be GC roots, or the action's
+          # pre-save `nix store gc` deletes exactly what we are trying to cache.
+          nix build --out-link result-sources .#source-cache
+          nix build --out-link result-sarasa  .#sarasa-src
+
+      - name: Report layer size
+        run: tools/cache-report.sh sources result-sources result-sarasa
+
+  # ---------------------------------------------------------------------------
+  # Layer 2 — the pinned toolchain (devShell closure).
+  # ---------------------------------------------------------------------------
+  toolchain:
+    name: Toolchain layer
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Restore / save toolchain layer
+        uses: nix-community/cache-nix-action@v7
+        with:
+          # flake.nix is in the key as well as flake.lock: the harfbuzz-with-cairo
+          # override lives in flake.nix, and editing it rebuilds the shell without
+          # moving the lock.
+          primary-key: nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
+          gc-max-store-size-linux: 6G
+          purge: true
+          purge-prefixes: nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-
+          purge-created: P7D
+
+      - name: Realise devShell
+        run: |
+          # --profile, not `nix build` on the shell derivation: building a
+          # mkShell gives an output that does not *reference* the toolchain, so
+          # its closure would measure as near-empty and nothing would be rooted
+          # for the pre-save GC. A profile roots the whole environment, which is
+          # exactly what this layer is supposed to keep.
+          nix develop --profile result-shell --command true
+
+      - name: Report layer size
+        run: tools/cache-report.sh toolchain result-shell
+
   build:
     name: ${{ matrix.family }}
+    needs: [sources, toolchain]
     runs-on: ubuntu-latest
     # serif runs the full upstream Sarasa toolchain (clone + quilt + npm build);
     # it is by far the longest pole. No family has a measured number yet, which
@@ -95,9 +198,24 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      # Binary-cache wiring is deliberately out of scope here — that is KIT-265,
-      # which needs the timings this workflow produces before it can pick a
-      # layering strategy against GHA cache's 10 GB / 7-day limits.
+      # Restore-only. `save: false` is the single most important line in this
+      # file: with seven families, saving here would write seven near-identical
+      # multi-gigabyte snapshots and evict the whole repo budget every push.
+      #
+      # No binary cache — cachix / attic were both considered and declined for
+      # this repo (KIT-275). What is cached is the store itself, in two layers.
+      - name: Restore cached layers
+        if: steps.gate.outputs.run == 'true'
+        uses: nix-community/cache-nix-action/restore@v7
+        with:
+          # This key is never written (save: false above is implied by using the
+          # restore-only action), so it always misses and always falls through to
+          # the two prefixes below — which is the intent: take both layers.
+          primary-key: nix-build-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ matrix.family }}-never-saved
+          restore-prefixes-all-matches: |
+            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/pins.env') }}
+            nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
+
       - name: Realise devShell
         if: steps.gate.outputs.run == 'true'
         run: |
@@ -194,3 +312,50 @@ jobs:
                   echo "| $fam | \`$step\` | $secs | $st |"
                 done
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # The 10 GB ceiling is a repository-wide budget with no warning when you cross
+  # it — GitHub just starts evicting, oldest first, and the symptom is a build
+  # that mysteriously got slow again. So: measure it every run, in the open.
+  #
+  # "不要静默截断" — whatever the caching strategy drops has to be legible here.
+  # ---------------------------------------------------------------------------
+  cache-budget:
+    name: Cache budget
+    needs: [sources, toolchain, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Account for GitHub Actions cache usage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          limit=$(( 10 * 1024 * 1024 * 1024 ))
+
+          gh cache list --limit 100 \
+            --json key,sizeInBytes,createdAt,lastAccessedAt > caches.json
+
+          total=$(jq '[.[].sizeInBytes] | add // 0' caches.json)
+          pct=$(( total * 100 / limit ))
+
+          {
+            echo "## GitHub Actions cache budget"
+            echo
+            echo "Using **$(numfmt --to=iec "$total")** of the 10 GiB repository"
+            echo "ceiling (${pct}%). Entries are evicted after 7 days without a read."
+            echo
+            echo "| key | size | created | last read |"
+            echo "| --- | ---: | --- | --- |"
+            jq -r 'sort_by(-.sizeInBytes)[]
+              | "| `\(.key)` | \(.sizeInBytes) | \(.createdAt) | \(.lastAccessedAt) |"' caches.json \
+              | while IFS='|' read -r _ key size created accessed _; do
+                  printf '| %s | %s | %s | %s |\n' "$key" \
+                    "$(numfmt --to=iec "$(echo "$size" | tr -d ' ')")" "$created" "$accessed"
+                done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if (( pct >= 80 )); then
+            echo "::warning title=Cache budget::${pct}% of the 10 GiB repository cache is in use. Eviction is oldest-first and silent — drop a layer or lower gc-max-store-size before it starts costing rebuilds."
+          fi

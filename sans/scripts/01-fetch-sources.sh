@@ -13,23 +13,6 @@ SC_BOLD="${DOWNLOADS_DIR}/IBMPlexSansSC-Bold.ttf"
 
 download_zip "${LILEX_ZIP_URL}" "${LILEX_ZIP}" "${LILEX_ZIP_SHA256}"
 
-download_file() {
-  local url="$1" dest="$2" sha="$3"
-  if [[ -f "${dest}" ]]; then
-    if [[ "$(sha256_of "${dest}")" == "${sha}" ]]; then
-      log "cached $(basename "${dest}")"
-      return 0
-    fi
-    log "stale cache for $(basename "${dest}"), re-downloading"
-    rm -f "${dest}"
-  fi
-  need_cmd curl
-  log "downloading ${url}"
-  curl -fL --retry 3 --retry-delay 2 -o "${dest}.partial" "${url}"
-  mv "${dest}.partial" "${dest}"
-  verify_sha256 "${dest}" "${sha}"
-}
-
 download_file "${PLEX_SANS_SC_TTF_REGULAR_URL}" "${SC_REG}" "${PLEX_SANS_SC_TTF_REGULAR_SHA256}"
 download_file "${PLEX_SANS_SC_TTF_BOLD_URL}" "${SC_BOLD}" "${PLEX_SANS_SC_TTF_BOLD_SHA256}"
 

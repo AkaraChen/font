@@ -10,13 +10,7 @@ need_cmd python3
 ensure_dirs
 
 SRC_TTF="${DOWNLOADS_DIR}/${LXGW_ASSET}"
-if [[ ! -f "${SRC_TTF}" ]]; then
-  log "downloading ${LXGW_URL}"
-  curl -fL --retry 3 -o "${SRC_TTF}.partial" "${LXGW_URL}"
-  mv "${SRC_TTF}.partial" "${SRC_TTF}"
-else
-  log "using cached ${SRC_TTF}"
-fi
+download_file "${LXGW_URL}" "${SRC_TTF}" "${LXGW_SHA256}"
 
 # Python venv: fonttools + skia-pathops.
 # A pre-provisioned interpreter (the Nix devShell sets FONTKIT_PYTHON) replaces

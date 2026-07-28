@@ -72,13 +72,10 @@ ensure_local_patcher() {
   if [[ -f "${PATCHER_DIR}/font-patcher" ]]; then
     return 0
   fi
-  if [[ ! -f "${PATCHER_ZIP}" ]]; then
-    log "downloading FontPatcher ${NERD_FONTS_TAG}"
-    curl -fL --retry 3 -o "${PATCHER_ZIP}.partial" "${PATCHER_URL}"
-    mv "${PATCHER_ZIP}.partial" "${PATCHER_ZIP}"
-  else
-    log "using cached ${PATCHER_ZIP}"
-  fi
+  # One pinned zip, five families, one store path. download_file resolves it out
+  # of the Nix source cache when that is realised (tools/src-cache.sh) and falls
+  # back to curl otherwise — and unlike the old bare curl, it is now hash-gated.
+  download_file "${PATCHER_URL}" "${PATCHER_ZIP}" "${NERD_FONTS_PATCHER_SHA256}"
   rm -rf "${PATCHER_DIR}"
   mkdir -p "${PATCHER_DIR}"
   need_cmd unzip

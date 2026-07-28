@@ -7,6 +7,15 @@ REPO_ROOT="$(cd "${SERIF_ROOT}/.." && pwd)"
 # shellcheck disable=SC1091
 source "${SERIF_ROOT}/pins.env"
 
+# Pinned artifacts come from the Nix store when it has been realised
+# (FONTKIT_SRC_CACHE), and from curl when it has not. Same sha256 gate either
+# way — see tools/src-cache.sh.
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/tools/src-cache.sh"
+
+download_file() { src_fetch "$@"; }
+download_zip() { src_fetch "$@"; }
+
 WORK_DIR="${SERIF_ROOT}/work"
 SARASA_DIR="${WORK_DIR}/Sarasa-Gothic"
 DOWNLOADS_DIR="${WORK_DIR}/downloads"
@@ -27,6 +36,23 @@ export PYTHONPATH="${REPO_ROOT}/lib${PYTHONPATH:+:${PYTHONPATH}}"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+# serif fetched LXGWNeoZhiSongPlus.ttf and the Sarasa Term donor with a bare
+# curl and no integrity check at all — the only family that did. Both now have
+# a sha256 in pins.env, and both go through src_fetch like everywhere else.
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
+
+verify_sha256() {
+  local file="$1" expected="$2" got
+  got="$(sha256_of "${file}")"
+  [[ "${got}" == "${expected}" ]] || die "sha256 mismatch for ${file}: expected ${expected}, got ${got}"
 }
 
 ensure_dirs() {
