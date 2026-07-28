@@ -184,6 +184,79 @@ in
       bad == [ ]
     ) "a family declares a step that is not in nix/granularity.nix";
 
+  # --- Phase 6 (KIT-281) ----------------------------------------------------
+
+  # A profile is a set of vertical metrics before it is anything else, and both
+  # Nix and Python read the same table. Enforced on the eval side too so a
+  # missing `[metrics.text]` is a `nix flake check` failure in seconds rather
+  # than a merge step that dies an hour into a build.
+  every-built-profile-has-metrics = ok "every-built-profile-has-metrics"
+    (
+      lib.all
+        (f:
+          let m = sources.manifests.${f}.data;
+          in !(m ? merge) || lib.all (p: m.metrics or { } ? ${p}) m.build.profiles)
+        sources.families
+    ) "a family declares a profile with no [metrics.<profile>] table";
+
+  # Two profiles must not ship under one family name: a host would treat them as
+  # two styles of one family and pick either of them for Bold.
+  second-profile-is-renamed = ok "second-profile-is-renamed"
+    (
+      lib.all
+        (f:
+          let m = sources.manifests.${f}.data;
+          in lib.all
+            (p: m.naming ? ${p} && m.naming.${p} ? family)
+            (lib.filter (p: p != "coding") m.build.profiles))
+        sources.families
+    ) "a family builds a non-coding profile without a [naming.<profile>] rename";
+
+  # "不支持的显式声明，不是静默缺失" — an axis value a family cannot produce is
+  # declared with a reason, and a declared value is never also disowned.
+  unsupported-is-declared-with-a-reason = ok "unsupported-is-declared-with-a-reason"
+    (
+      lib.all
+        (f:
+          let
+            m = sources.manifests.${f}.data;
+            entries = m.build.unsupported or [ ];
+          in
+          lib.all
+            (e:
+              e ? axis && e ? values && e ? reason
+              && e.reason != ""
+              && lib.length e.values > 0
+              && lib.all (v: !(lib.elem v m.build.${e.axis})) e.values)
+            entries)
+        sources.families
+    ) "a build.unsupported entry has no reason, or disowns a value the family also declares";
+
+  # The three families that cannot take a Light say so. Without this the check
+  # is satisfied by deleting the declarations, which is the failure mode the
+  # completion criterion names.
+  light-impossibility-is-on-the-record = ok "light-impossibility-is-on-the-record"
+    (
+      lib.all
+        (f:
+          let m = sources.manifests.${f}.data;
+          in lib.any
+            (e: e.axis == "weights" && lib.elem "light" e.values)
+            (m.build.unsupported or [ ]))
+        [ "serif" "typewriter" "pixel" ]
+    ) "serif / typewriter / pixel must declare that Light is impossible, not just omit it";
+
+  # The mirror of `nerd-rejects-profile`: Phase 6 gave src-latin a profile axis
+  # because "no Nerd patch" is a different upstream file, not an un-patch step.
+  # Region is still not an axis, and must not become one.
+  src-latin-rejects-region = ok "src-latin-rejects-region"
+    (throws (mkName "src-latin" {
+      family = "handwriting";
+      profile = "text";
+      region = "sc";
+      weight = "Light";
+    })) "src-latin accepted a region axis — five regions would fetch five copies";
+
   manifest-source-url = ok "manifest-source-url"
     (
       let

@@ -46,6 +46,26 @@ git add fingerprints/<family> && git commit -m "chore: adopt <family> fingerprin
 
 After that the family is gated for real: any later drift fails the build.
 
+### A family that gains a new product
+
+Same situation, one product at a time. Phase 6 (KIT-281) gave handwriting three
+`text` products next to its two `coding` ones; those three have nothing to be
+compared against, and adopting a darwin-authored baseline for them is exactly
+what the section above says not to do.
+
+So `check` reports a product with no baseline entry as `NEW` and exits **3**,
+the same "adopt one from CI" code an empty directory produces. It cannot mask a
+regression, which is the only thing that would make this a loophole:
+
+| | verdict |
+| --- | --- |
+| a baselined product changed | `CHANGED`, exit **1** |
+| a baselined product disappeared | `MISSING`, exit **1** |
+| a product with no baseline | `NEW`, exit **3** |
+
+Phase 6's own completion criterion — *"coding 版指纹不变"* — is checked by the
+first row, not weakened by the third.
+
 ## Open question
 
 Which platform is *correct* is not settled. Linux produces the more complete

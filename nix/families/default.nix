@@ -77,6 +77,11 @@ let
           lib.mapAttrsToList (name: _: "--license ${rel.licenseDir}/${name}") (
             builtins.readDir rel.licenseDir
           );
+      # An archive ships every format its matrix entry declares, so the `format`
+      # axis names them all rather than naming one and quietly shipping two.
+      # Six families declare only `ttf` and their derivation names do not move.
+      formats = rel.formats or [ "ttf" ];
+      globs = lib.concatMapStringsSep " " (f: "${rel.fontDir}/*.${f}") formats;
     in
     support.step "packaged"
       {
@@ -86,7 +91,7 @@ let
           region
           weight
           ;
-        format = "ttf";
+        format = lib.concatStringsSep "-" formats;
       }
       {
         buildCommand = ''
@@ -105,7 +110,7 @@ let
             --out $out \
             --readme README.txt \
             ${lib.concatStringsSep " \\\n            " licenses} \
-            ${rel.fontDir}/*.ttf
+            ${globs}
         '';
       };
 
@@ -119,8 +124,26 @@ in
   # `nix build .#sans` → the products, in the out/ layout.
   outputs = lib.mapAttrs (_: fam: fam.out) built;
 
-  # `nix build .#sans-release` → the zip a GitHub Release ships.
-  releases = lib.mapAttrs' (family: fam: lib.nameValuePair "${family}-release" (packaged family fam.release)) built;
+  # `nix build .#sans-release`           → the zip a GitHub Release ships.
+  # `nix build .#handwriting-text-release` → a second profile's zip.
+  #
+  # Two profiles are two products, so they are two archives: they have different
+  # family names, different weight sets and different formats, and a reader
+  # downloading a reading face should not also get 4000 Nerd icons.
+  releases =
+    lib.mapAttrs'
+      (family: fam: lib.nameValuePair "${family}-release" (packaged family fam.release))
+      built
+    // lib.listToAttrs (
+      lib.concatLists (
+        lib.mapAttrsToList
+          (family: fam:
+            lib.mapAttrsToList
+              (name: rel: lib.nameValuePair "${family}-${name}-release" (packaged family rel))
+              (fam.extraReleases or { }))
+          built
+      )
+    );
 
   # `nix build .#sans-merged-Bold` → one step, for bisecting a fingerprint diff
   # or feeding a calibration run.

@@ -79,14 +79,21 @@ Details: [`pixel/README.md`](pixel/README.md).
 pre-patched Nerd icons) + **霞鹜文楷 LXGW WenKai** CJK, **Nerd Font Mono**, 2:1 dual width
 (EN 500 / CJK 1000), CJK sheared **7.5°** to match Radon's measured lean.
 
+**Text product: RadonWenKai Text** (Light / Regular / Bold) — the same two designs as a
+**reading** face. No 2:1 declaration, no Nerd icons, East_Asian_Width left alone so `…` and `—`
+keep WenKai's full width, and a typographic line box. The first `text` profile in the repo
+(Phase 6, KIT-281), and the first family with a Light.
+
 ```bash
 just build handwriting
 # → out/RadonWenKaiNFM-{Regular,Bold}.ttf
+#   out/RadonWenKaiText-{Light,Regular,Bold}.{ttf,woff2}
 ```
 
-Monaspace parks its ligatures in `ss01`–`ss10`; the build folds them into default `calt` and
-gates that with a HarfBuzz shaping test. Weight pairing and slant are measured, not guessed
-(`./scripts/calibrate-stroke.sh`).
+Monaspace parks its ligatures in `ss01`–`ss10`; the coding build folds them into default `calt`
+and gates that with a HarfBuzz shaping test, while the text build leaves them opt-in. Weight
+pairing and slant are measured, not guessed (`./scripts/calibrate-stroke.sh`) — which is how
+Light ended up paired with WenKai *Regular* rather than WenKai Light.
 
 Details: [`handwriting/README.md`](handwriting/README.md).
 

@@ -15,6 +15,14 @@ weights = ["regular", "bold"]
 formats = ["ttf"]
 slopes = ["upright"]
 
+# Neither donor has one. Courier Prime ships exactly Regular / Bold / Italic /
+# BoldItalic, and 朱雀仿宋 is a single Regular master whose Bold this build makes
+# with pathops — an operation that only thickens.
+[[build.unsupported]]
+axis = "weights"
+values = ["light"]
+reason = "Courier Prime ships only Regular/Bold/Italic/BoldItalic and Zhuque Fangsong is a single master thickened with pathops; neither side has a Light and stroke embolden has no negative strength"
+
 [sources.courier_prime]
 role = "latin"
 repository = "https://github.com/quoteunquoteapps/CourierPrime"

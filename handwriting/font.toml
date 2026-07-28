@@ -2,12 +2,15 @@ schema_version = 1
 family = "handwriting"
 
 [build]
-profiles = ["coding"]
+profiles = ["coding", "text"]
 regions = ["sc"]
-weights = ["regular", "bold"]
-formats = ["ttf"]
+weights = ["light", "regular", "bold"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
+# The terminal face. No Light: a Light coding face is a legitimate product but
+# nobody has calibrated one, and the matrix is what is built, not what is
+# possible.
 [[build.matrix]]
 profile = "coding"
 regions = ["sc"]
@@ -15,11 +18,34 @@ weights = ["regular", "bold"]
 formats = ["ttf"]
 slopes = ["upright"]
 
+# The reading face — the first `text` profile in the repo. LXGW WenKai is a
+# 楷体 designed for prose to begin with, which is why handwriting goes first.
+[[build.matrix]]
+profile = "text"
+regions = ["sc"]
+weights = ["light", "regular", "bold"]
+formats = ["ttf", "woff2"]
+slopes = ["upright"]
+
+# Declared rather than silently absent. A real OTF is CFF and these products are
+# quadratic by construction — the CJK donor is TrueType and prepare_latin.py
+# converts Monaspace's cubics with cu2qu because one font cannot hold both
+# outline formats. Re-converting 45k Han glyphs back to cubics would ship a
+# worse font under the name of a better format.
+[[build.unsupported]]
+axis = "formats"
+values = ["otf"]
+reason = "products are quadratic (cu2qu from the Latin donor, TrueType CJK); a CFF OTF would need a second lossy curve conversion of every imported Han glyph"
+
 [sources.monaspace]
 role = "latin"
 repository = "https://github.com/githubnext/monaspace"
 version = "v1.400"
 
+# The coding profile takes the pre-patched Nerd build; the text profile takes
+# the plain static build from the same release. That one difference is the whole
+# of "Nerd Font patch: coding 是 / text 否" for this family — there is no
+# un-patch step, there is a different donor.
 [sources.monaspace.artifacts.regular]
 file = "MonaspaceRadonNF-Regular.otf"
 fetch = "zip-member"
@@ -33,6 +59,27 @@ fetch = "zip-member"
 url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-nerdfonts-v1.400.zip"
 sha256 = "81e3e1e8815073a0c979ce1ba327f91b74606d81478fe271d160fcad22fd60eb"
 member = "NerdFonts/Monaspace Radon/MonaspaceRadonNF-Bold.otf"
+
+[sources.monaspace.artifacts.text_light]
+file = "MonaspaceRadon-Light.otf"
+fetch = "zip-member"
+url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-static-v1.400.zip"
+sha256 = "37f20a2b57c4a6898c97c2bf2dcd67086c61106c13e0b8e580f913a3aa1be5da"
+member = "Static Fonts/Monaspace Radon/MonaspaceRadon-Light.otf"
+
+[sources.monaspace.artifacts.text_regular]
+file = "MonaspaceRadon-Regular.otf"
+fetch = "zip-member"
+url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-static-v1.400.zip"
+sha256 = "08f34b2865c89fb04900bfa6573513493359270dc5a9497769be6fc447d5d0b8"
+member = "Static Fonts/Monaspace Radon/MonaspaceRadon-Regular.otf"
+
+[sources.monaspace.artifacts.text_bold]
+file = "MonaspaceRadon-Bold.otf"
+fetch = "zip-member"
+url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-static-v1.400.zip"
+sha256 = "22b144cf8308b1ad78cd3c56d9a5d3aa939d51efe293b65898c18504a527c87e"
+member = "Static Fonts/Monaspace Radon/MonaspaceRadon-Bold.otf"
 
 [sources.wenkai]
 role = "cjk"
@@ -71,6 +118,18 @@ id16 = "RadonWenKai NFM"
 id17 = "{weight}"
 rfn_note = "Monaspace reserves Radon and LXGW reserves upstream names; rename before public OFL redistribution."
 
+# A separate family, not a style of the coding one. Installed side by side they
+# have to be two entries in a font menu: the NFM face claims the terminal grid
+# and carries 4000 Nerd icons, the Text face does neither, and a host that
+# thought they were one family would pick either of them for "Bold".
+[naming.text]
+family = "RadonWenKai Text"
+ps = "RadonWenKaiText"
+stem = "RadonWenKaiText"
+style = "Text"
+variant = "text"
+id16 = "RadonWenKai Text"
+
 [merge]
 version = "1.000"
 # {slant} is filled from [calibration.<weight>].slant_deg, per weight — the CJK
@@ -93,6 +152,13 @@ widen_wide_base_glyphs = true
 drop_vertical_metrics = true
 check_glyph_budget = true
 
+# name ID 5 has to name the donor this profile actually used, and the text
+# profile's Latin is the plain Radon rather than the pre-patched NF build.
+# Everything else about the merge is either the family's (above) or the scene's
+# (fontkit.merge.PROFILE_RULES) and is not restated here.
+[merge.text]
+sources_note = "Monaspace Radon + LXGW WenKai {slant}° slant"
+
 [metrics.coding]
 hhea_ascent = 950
 hhea_descent = -250
@@ -102,6 +168,52 @@ os2_typo_descender = -220
 os2_typo_line_gap = 0
 os2_win_ascent = 1032
 os2_win_descent = 290
+
+# The reading line box. Same ink as the coding profile — the ascender and
+# descender are properties of the two designs, not of the scene — but with
+# leading, which is the whole difference: a terminal packs lines against each
+# other and prose does not. 880 + 220 + 200 = 1.30 em, which is where Han stops
+# looking cramped without the paragraph coming apart.
+#
+# hhea repeats typo rather than carrying the old 950/-250: USE_TYPO_METRICS is
+# set, so anything reading hhea instead is a host that got it wrong, and it
+# should get the same answer.
+[metrics.text]
+hhea_ascent = 880
+hhea_descent = -220
+hhea_line_gap = 200
+os2_typo_ascender = 880
+os2_typo_descender = -220
+os2_typo_line_gap = 200
+os2_win_ascent = 1032
+os2_win_descent = 290
+
+# Per weight, never Regular's numbers reused: the CJK master and the embolden
+# strength are what match WenKai's stroke to Radon's at that weight. This table
+# is shared by both profiles on purpose — `cjk-prepared` has no `profile` axis
+# (nix/granularity.nix), because optical stroke matching is about ink and does
+# not change when the font is read instead of typed into.
+
+# Measured, not assumed — and the measurement contradicted the plan. KIT-281
+# expected Radon Light × WenKai **Light**, on the grounds that both upstreams
+# ship one. Scanline vertical-stem medians say otherwise (UPM 1000, the same
+# method and the same seven glyphs as the Regular/Bold rows in the README):
+#
+#   Radon Light, on the product grid   61.6     (Radon Regular 73.3 × 73.77/87.71)
+#   WenKai Light                       55.3     Δ −6.3   too light
+#   WenKai Regular                     65.8     Δ +4.2   ← and +4.3 is exactly
+#                                                          the Regular pairing's
+#                                                          accepted offset
+#
+# So Light pairs with WenKai **Regular**, one step up, for the same reason
+# Regular pairs with Medium: Monaspace runs heavy for its nominal weight and
+# WenKai runs light, so the CJK side is always taken one notch above the name.
+# Unstroked, like Regular — a real design weight beats a stroked one.
+[calibration.light]
+source_weight = "regular"
+embolden = 0
+slant_deg = 7.5
+slant_pivot_y = 375
 
 [calibration.regular]
 source_weight = "medium"

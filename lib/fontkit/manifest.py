@@ -90,6 +90,36 @@ class Grid(StrictModel):
         return self
 
 
+class NamingOverride(StrictModel):
+    """What a non-default profile renames.
+
+    A `text` face is a *different product*, not a style of the coding one: it
+    carries no Nerd icons and does not claim the terminal grid, so shipping it
+    under the coding family name would put two incompatible faces in one family
+    menu. Only the fields that actually differ are listed; everything else —
+    copyright, the RFN note, the version — is inherited.
+    """
+
+    family: str | None = None
+    ps: str | None = None
+    stem: str | None = None
+    style: str | None = None
+    variant: str | None = None
+    id16: str | None = None
+    id17: str | None = None
+    base_family: str | None = None
+    base_ps: str | None = None
+    suffix: str | None = None
+    product_name_zh: str | None = None
+
+    @field_validator("family", "base_family", "id16")
+    @classmethod
+    def windows_family_name_limit(cls, value: str | None) -> str | None:
+        if value is not None and len(value) > 31:
+            raise ValueError("Windows family names must be at most 31 characters")
+        return value
+
+
 class Naming(StrictModel):
     family: str
     ps: str
@@ -106,6 +136,8 @@ class Naming(StrictModel):
     suffix: str = ""
     version: str = "0.1.0"
     product_name_zh: str | None = None
+    # `[naming.text]` — the coding profile is the base and has no override.
+    text: NamingOverride | None = None
 
     @field_validator("family", "base_family", "id16")
     @classmethod
@@ -166,6 +198,9 @@ class Merge(StrictModel):
     drop_vertical_metrics: bool = False
     check_glyph_budget: bool = False
 
+    # `[merge.text]` — the coding profile is the base and has no override.
+    text: MergeOverride | None = None
+
     @field_validator("glyph_prefix")
     @classmethod
     def prefix_cannot_collide_with_a_real_glyph_name(cls, value: str) -> str:
@@ -185,6 +220,20 @@ class Merge(StrictModel):
         return self
 
 
+class MergeOverride(StrictModel):
+    """What a non-default profile changes about the merge.
+
+    Almost nothing belongs here. The cell policy, the grid declaration and which
+    ambiguous punctuation comes from the CJK donor are properties of the *scene*
+    and live in `fontkit.merge.PROFILE_RULES`, where they are stated once for
+    every family. What is left is genuinely per-family-per-profile: the
+    provenance string in name ID 5, which has to name the donor this profile
+    actually used.
+    """
+
+    sources_note: str | None = None
+
+
 class Nerd(StrictModel):
     version: str
     commit: str = Field(min_length=40, max_length=40)
@@ -199,6 +248,26 @@ class MatrixEntry(StrictModel):
     slopes: list[Slope]
 
 
+Axis = Literal["profiles", "regions", "weights", "formats", "slopes"]
+
+
+class Unsupported(StrictModel):
+    """An axis value this family **cannot** produce, and why.
+
+    Not the same thing as an axis value nobody has got round to building yet.
+    Four of the seven families can take a Light because both donors ship one;
+    serif, typewriter and pixel cannot, and their Bold is a single CJK master
+    thickened with pathops — stroke embolden has no negative strength, so there
+    is no arithmetic that makes a Light out of it. That is a permanent property
+    of the pins, so it is declared here rather than being a gap in `weights`
+    that reads as an oversight.
+    """
+
+    axis: Axis
+    values: list[str] = Field(min_length=1)
+    reason: str = Field(min_length=1)
+
+
 class Build(StrictModel):
     profiles: list[Profile]
     regions: list[Region]
@@ -206,6 +275,19 @@ class Build(StrictModel):
     formats: list[Format]
     slopes: list[Slope]
     matrix: list[MatrixEntry]
+    unsupported: list[Unsupported] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def unsupported_is_not_also_declared(self) -> Self:
+        for entry in self.unsupported:
+            declared = set(getattr(self, entry.axis))
+            both = declared & set(entry.values)
+            if both:
+                raise ValueError(
+                    f"build.{entry.axis} both declares and disowns {sorted(both)} — "
+                    "a value is either built or explicitly impossible, never both"
+                )
+        return self
 
 
 class Manifest(StrictModel):
@@ -265,6 +347,59 @@ class Manifest(StrictModel):
                 f"matrix weights have no calibration entry: {sorted(missing_calibration)}"
             )
         return self
+
+    @model_validator(mode="after")
+    def every_built_profile_has_a_line_box(self) -> Self:
+        """A profile is a set of metrics before it is anything else.
+
+        Only families that go through `fontkit.merge` are asked: serif's
+        products come out of the upstream Sarasa toolchain with their own
+        vertical metrics and have never had a `[metrics.*]` table.
+        """
+        if self.merge is None:
+            return self
+        missing = [p for p in self.build.profiles if p not in self.metrics]
+        if missing:
+            raise ValueError(
+                f"declared profiles with no [metrics.<profile>] table: {sorted(missing)}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def a_second_profile_is_a_second_product(self) -> Self:
+        """Two profiles must not ship under one family name.
+
+        A `text` face has no Nerd icons and does not claim the terminal grid.
+        Installed alongside the coding face under the same name, a host would
+        treat them as two styles of one family and pick either for "Bold".
+        """
+        for profile in self.build.profiles:
+            if profile == "coding":
+                continue
+            override = getattr(self.naming, profile, None)
+            if override is None or not override.family:
+                raise ValueError(
+                    f"profile {profile!r} is built but [naming.{profile}] does not "
+                    "rename the family — it would collide with the coding face"
+                )
+        return self
+
+
+def naming_for(manifest: Manifest, profile: str) -> Naming:
+    """The naming one profile ships under.
+
+    `coding` is the base table; any other profile layers `[naming.<profile>]`
+    over it, so the fields that are genuinely shared (copyright, the reserved
+    font name note, the version) are stated once.
+    """
+    base = manifest.naming
+    override = getattr(base, profile, None) if profile != "coding" else None
+    if override is None:
+        return base
+    merged = base.model_dump()
+    merged.pop(profile, None)
+    merged.update({k: v for k, v in override.model_dump().items() if v is not None})
+    return Naming.model_validate(merged)
 
 
 def load_manifest(path: str | Path) -> Manifest:

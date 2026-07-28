@@ -1,25 +1,94 @@
-# handwriting — RadonWenKai NFM
+# handwriting — RadonWenKai NFM / RadonWenKai Text
 
-Handwriting-flavoured coding mono: **Monaspace Radon** Latin + **霞鹜文楷 LXGW WenKai** CJK,
-strict **2:1** dual width, **Nerd icons**, ligatures **on by default**, and a CJK side sheared
-to Radon's own lean.
+**Monaspace Radon** Latin + **霞鹜文楷 LXGW WenKai** CJK, in two profiles that are two
+different products:
+
+- **RadonWenKai NFM** — the coding face. Strict **2:1** dual width, **Nerd icons**,
+  ligatures **on by default**.
+- **RadonWenKai Text** — the reading face (Phase 6, KIT-281). No 2:1 declaration, no
+  Nerd icons, East_Asian_Width left alone, a typographic line box, and a **Light**.
+
+Both share the CJK side sheared to Radon's own lean, and both share the optical stroke
+matching that shear is calibrated with.
 
 ![sample](samples/rendered/sample-dark.png)
 
 | Component | Source | Pin |
 | --- | --- | --- |
-| Latin / icons | [Monaspace Radon **NF**](https://github.com/githubnext/monaspace) (pre-patched Nerd build) | **v1.400** |
-| CJK | [LXGW WenKai 霞鹜文楷](https://github.com/lxgw/LxgwWenKai) Medium | **v1.522** |
+| Latin / icons (coding) | [Monaspace Radon **NF**](https://github.com/githubnext/monaspace) (pre-patched Nerd build) | **v1.400** |
+| Latin (text) | [Monaspace Radon](https://github.com/githubnext/monaspace) (plain static build, same release) | **v1.400** |
+| CJK | [LXGW WenKai 霞鹜文楷](https://github.com/lxgw/LxgwWenKai) | **v1.522** |
 | Grid | EN cell / CJK cell | **500 / 1000** (UPM 1000) |
 | CJK slant | measured from Radon's stems | **7.5°** |
-| Weight match | measured stems, Latin vs CJK | Regular: WenKai **Medium**, no embolden · Bold: Medium **+ s=15** |
-| Ligatures | Radon `liga` + `calt` **+ ss01–ss10 folded into calt** | on by default |
-| Product | Regular + Bold | `out/RadonWenKaiNFM-{Regular,Bold}.ttf` |
+| Weight match | measured stems, Latin vs CJK | Light: WenKai **Regular** · Regular: **Medium** · Bold: Medium **+ s=15** — all unstroked except Bold |
+| Ligatures | coding: `liga` + `calt` **+ ss01–ss10 folded into calt** · text: `liga`, sets stay opt-in | |
+| Products | coding Regular + Bold · text Light + Regular + Bold | `out/RadonWenKaiNFM-{Regular,Bold}.ttf`, `out/RadonWenKaiText-{Light,Regular,Bold}.{ttf,woff2}` |
 
 ```bash
 just build handwriting
-# → out/RadonWenKaiNFM-{Regular,Bold}.ttf   (~3.5 min, ~330 MiB of upstream never downloaded)
+# → out/RadonWenKaiNFM-{Regular,Bold}.ttf
+#   out/RadonWenKaiText-{Light,Regular,Bold}.{ttf,woff2}
+#   (~330 MiB of upstream never downloaded)
 ```
+
+## Two profiles, and what actually differs
+
+The judgement call in every row: does this constraint serve the **terminal cell** or does it
+serve **reading**? The first kind is switched off for `text`; the second kind is shared.
+
+| | coding | text |
+| --- | --- | --- |
+| strict 2:1 EN\:CJK | hard gate | not applicable |
+| `post.isFixedPitch` / PANOSE mono | declared | **actively withdrawn** |
+| East_Asian_Width forced onto cells | yes | no — … and — keep WenKai's full width |
+| Nerd patch | yes (upstream NF donor) | no (plain donor) |
+| ss01–ss10 folded into `calt` | yes | no |
+| upstream hinting | dropped | kept |
+| line box | terminal-tight (gap 0) | typographic (gap 200, 1.30 em) |
+| **CJK↔Latin optical stroke match** | **yes** | **yes** |
+| formats | `ttf` | `ttf` `woff2` |
+
+Two of those are worth spelling out, because they are where a shared implementation would
+have been wrong:
+
+**`isFixedPitch` has to be cleared, not merely left alone.** Both donors are monospaced by
+design, so the flag and PANOSE bProportion=9 arrive *set* from the Latin side. A text face
+that inherited them would be listed by every "monospace only" font picker — macOS Core Text,
+Chromium, VS Code — as a terminal font it is not. `fontkit.merge.declare_proportional` is the
+mirror of `declare_strict_2to1` for exactly this reason.
+
+**The two gates contradict each other on purpose.** U+2026 … is East_Asian_Width=Ambiguous.
+A terminal gives Ambiguous one cell, so `verify-2to1` is satisfied by Radon's narrow ellipsis;
+prose set by a CJK face wants the full-width 省略号, so `verify-text` fails that same advance.
+Neither gate is a `--profile` flag on the other; a correct text product fails every assertion
+the coding gate makes.
+
+The candidate set for "take it from the CJK donor" is short and named — `·` `—` `‘` `’` `“` `”`
+`…` — and membership is not enough. The merge asks the donor whether it drew the glyph for a
+whole cell: LXGW WenKai draws … and — at 1000 but `‘ ’ “ ” ·` at **350**, as part of its own
+proportional Latin. Importing that 350 would put WenKai's Latin quotes next to Radon's Latin
+letters, which is worse than either font alone, so the merge declines them and keeps Radon's.
+
+## Light
+
+Only four of the seven families can take a Light at all; serif, typewriter and pixel say so
+in their `font.toml` under `[[build.unsupported]]` rather than leaving a gap. handwriting can,
+and the pairing was measured rather than assumed — the plan said Radon Light × WenKai **Light**
+because both upstreams ship one, and the measurement disagreed:
+
+| CJK candidate | v-stem | Δ vs Radon Light on the product grid (61.6) |
+| --- | ---: | ---: |
+| WenKai Light | 55.3 | −6.3 |
+| **WenKai Regular** | 65.8 | **+4.2** |
+
+`+4.2` is the same offset the Regular pairing already accepts (`+4.3`), and for the same
+reason: Monaspace runs heavy for its nominal weight and WenKai runs light, so the CJK side is
+taken one notch above the name — Light→Regular exactly as Regular→Medium. Light ships
+unstroked; only Bold is emboldened, because WenKai has nothing above Medium.
+
+Light is a **text-only** weight. A Light coding face is a legitimate product, but nobody has
+calibrated one against a terminal, and `[[build.matrix]]` lists what is built rather than what
+is possible.
 
 ## The four things this build actually had to solve
 
@@ -118,14 +187,18 @@ repo rather than once per build.
 
 ## Character policy
 
-| Source | Role |
-| --- | --- |
-| **Radon** (base font, kept whole) | ASCII, Latin, Greek/Cyrillic, programming symbols, box drawing, **Nerd icons**, **all layout tables** |
-| **WenKai** (imported, sheared) | Han, CJK punctuation, fullwidth forms, kana, bopomofo, every East_Asian_Width W/F codepoint, and anything Radon lacks |
+| Source | Role (coding) | Role (text) |
+| --- | --- | --- |
+| **Radon** (base font, kept whole) | ASCII, Latin, Greek/Cyrillic, programming symbols, box drawing, **Nerd icons**, **all layout tables** | the same, minus the icons — the text donor is the un-patched build |
+| **WenKai** (imported, sheared) | Han, CJK punctuation, fullwidth forms, kana, bopomofo, every East_Asian_Width W/F codepoint, and anything Radon lacks | Han, CJK punctuation, fullwidth forms, kana, bopomofo — plus … and —, and **nothing** Radon already draws |
+
+The text column is narrower on purpose. `cjk-side-or-missing`'s "or missing" clause exists to
+fill terminal gaps; a reading face wants its Latin to be one design rather than a patchwork of
+two, so nothing is taken merely because Radon lacks it.
 
 Radon stays the **base** font, which is why `GSUB`/`GDEF` never has to be merged and the
-ligatures survive at all. Imported advances follow **East_Asian_Width**, because that is what a
-terminal sizes cells by (it never asks the font): `W`/`F` → full cell, everything else → half
+ligatures survive at all. In the **coding** profile imported advances follow
+**East_Asian_Width**, because that is what a terminal sizes cells by (it never asks the font): `W`/`F` → full cell, everything else → half
 cell, with proportional fallbacks x-compressed to fit (1 121 glyphs). Glyphs WenKai already
 draws for their cell keep their designed side bearings — no recentring, since CJK bearings are
 deliberately asymmetric and sheared outlines are *meant* to overhang slightly.
@@ -211,13 +284,19 @@ rasterises glyph outlines with FreeType.
 ## Release package
 
 ```bash
-just release handwriting
-# → dist/RadonWenKaiNFM-0.1.0.zip
+just release handwriting          # → dist/RadonWenKaiNFM-0.1.0.zip
+nix build .#handwriting-text-release   # → dist/RadonWenKaiText-0.1.0.zip
 ```
+
+Two profiles are two archives. They have different family names, different weight sets and
+different formats, and someone downloading a reading face should not also get 4 000 Nerd icons.
 
 ## Family / license
 
-- **Product family:** `RadonWenKai NFM` (Regular / Bold), PostScript `RadonWenKaiNFM-*`
+- **Product families:** `RadonWenKai NFM` (Regular / Bold) and `RadonWenKai Text`
+  (Light / Regular / Bold), PostScript `RadonWenKaiNFM-*` / `RadonWenKaiText-*`. Separate
+  families on purpose — installed side by side under one name, a host would treat them as two
+  styles of one family and pick either for "Bold".
 - Upstream is **SIL OFL 1.1** on both sides; `licenses/` copies travel with the product
 - ⚠ **Reserved font names.** Monaspace reserves `Monaspace` **and its subfamily names, including
   `Radon`**; WenKai reserves 霞鹜 / 霞鶩 / 落霞孤鹜 / 落霞孤鶩 / `LXGW` (the Latin "WenKai" is not
@@ -235,3 +314,10 @@ just release handwriting
 5. `ss10`'s contents are unidentified — folded into `calt` on the assumption it is a ligature set
 6. Ambiguous-width (`EAW=A`) codepoints are left at whatever the source gives; terminals let
    users choose 1 or 2 cells for those
+7. **text profile:** no OTF. The products are quadratic by construction (cu2qu on the Latin
+   side, TrueType CJK), so a CFF OTF would need a second lossy curve conversion of every
+   imported Han glyph. Declared in `font.toml` under `[[build.unsupported]]`
+8. **text profile:** Monaspace ships no `GPOS` at all — it is a monospaced design — so "keep the
+   Latin donor's kerning" is vacuous here rather than achieved. `verify-text --require-gpos`
+   exists for the families whose Latin donor does kern
+9. No **coding** Light: possible, but not calibrated against a terminal

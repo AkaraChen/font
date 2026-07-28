@@ -26,7 +26,7 @@ let
   ps = naming.ps;
   basePs = naming.base_ps;
 
-  srcLatin = weight: step "src-latin" { inherit family weight; } {
+  srcLatin = weight: step "src-latin" { inherit family profile weight; } {
     buildCommand = ''
       mkdir -p $out
       cp ${sources.perFamily.typewriter."CourierPrime-${weight}.ttf"} \

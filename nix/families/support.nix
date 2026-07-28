@@ -54,11 +54,23 @@ let
   # is why those two are in the checkout.
   patcher = sources.fontPatcher;
 
-  # Every family builds the coding profile of the Simplified master. Phase 6
-  # adds `text`, Phase 7 adds the other regions; both arrive as more values for
-  # these two names rather than as more steps.
+  # The default scene and master. Six of the seven families build only this one,
+  # and say so by taking these names; handwriting reads `[[build.matrix]]`
+  # instead because Phase 6 (KIT-281) gave it a second profile. Phase 7 adds the
+  # other regions the same way.
   profile = "coding";
   region = "sc";
+
+  # `[naming]` with `[naming.<profile>]` layered over it — the same resolution
+  # `fontkit.manifest.naming_for` does, because both sides read the same TOML and
+  # a product's file name (Nix) and its name table (Python) must not disagree
+  # about what family it belongs to.
+  namingFor =
+    m: profile:
+    let
+      override = m.naming.${profile} or { };
+    in
+    (builtins.removeAttrs m.naming [ "coding" "text" ]) // override;
 
   # granularity.mkStep, plus the defaults a font build step always wants.
   #
@@ -110,6 +122,7 @@ in
     file
     emboldenOrCopy
     weightName
+    namingFor
     ;
 
   inherit (pkgs) fontforge;

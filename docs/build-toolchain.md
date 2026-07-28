@@ -369,11 +369,13 @@ Three things the engine keeps deliberately separate, because they are separate
 questions:
 
 - **`apply_vertical_metrics`** — the line box. Every profile wants it.
-- **`declare_strict_2to1`** — `post.isFixedPitch`, PANOSE `bProportion`,
-  `xAvgCharWidth`. **coding only.** Strict 2:1 serves the terminal cell; a
-  reading face has no cell to be strict about. Optical stroke matching between
-  Latin and CJK — which *both* profiles want — is the other half of the old
-  `unify_metrics`, and it lives one step earlier as
+- **`declare_strict_2to1`** / **`declare_proportional`** — `post.isFixedPitch`,
+  PANOSE `bProportion`, `xAvgCharWidth`. Which one runs is the profile's
+  decision. Strict 2:1 serves the terminal cell; a reading face has no cell to
+  be strict about, and has to *withdraw* the claim rather than merely omit it,
+  because monospaced donors arrive with the flag set. Optical stroke matching
+  between Latin and CJK — which *both* profiles want — is the other half of the
+  old `unify_metrics`, and it lives one step earlier as
   `[calibration.<weight>].embolden`, which is what lets `cjk-prepared` be shared
   across profiles.
 - **`apply_slope`** — `post.italicAngle`, OS/2 `fsSelection` ITALIC and
@@ -394,6 +396,55 @@ each weight's derivation runs the merge and keeps its own face. That costs a
 second merge and buys a per-weight cache entry: a Bold-only pin change stops
 rebuilding Regular. A step that took both weights would have had to declare no
 `weight` axis at all, which is a false statement about what makes it rebuild.
+
+`fontkit merge` also takes `--weight/--latin/--cjk` triples, which build exactly
+the faces asked for. handwriting uses that form (Phase 6): at two weights the
+throwaway merge was invisible, at three it would be two thirds of the work.
+
+## Profiles (Phase 6, KIT-281)
+
+A profile is a *scene*, and the whole of it is one table in `fontkit.merge`:
+
+```python
+PROFILE_RULES = {
+    "coding": ProfileRules(declares_fixed_grid=True,  forces_cell_widths=True,
+                           import_policy=None, placement=None),
+    "text":   ProfileRules(declares_fixed_grid=False, forces_cell_widths=False,
+                           import_policy="cjk-side-plus-cjk-punctuation",
+                           placement="native"),
+}
+```
+
+A family says what its *donors* need (`[merge]`); the profile says what the
+*scene* needs. Where they disagree the scene wins, because "which cell does an
+ellipsis get" is a question about the reader, not about LXGW WenKai. `None`
+means "keep the family's own value", so adding a profile does not require every
+family to restate anything.
+
+What a profile additionally owns in `font.toml`:
+
+| | |
+| --- | --- |
+| `[metrics.<profile>]` | required for every declared profile — a profile is a line box before it is anything else |
+| `[naming.<profile>]` | required for every non-`coding` profile: two profiles under one family name would collide in a font menu |
+| `[merge.<profile>]` | optional, and deliberately tiny — only `sources_note`, the provenance string in name ID 5, which has to name the donor that profile used |
+
+Two gates, not one gate with a flag: `fontkit verify-2to1` and `fontkit
+verify-text`. Every assertion the coding gate makes is a claim about a terminal
+cell, and a correct text product fails all of them. They contradict each other
+outright on `U+2026 …` — East\_Asian\_Width Ambiguous, one cell in a terminal,
+full width in Chinese prose — which is the clearest reason they cannot be
+merged.
+
+### "不支持的显式声明，不是静默缺失"
+
+`[[build.unsupported]]` records an axis value a family **cannot** produce, with a
+reason. It is not the same as a value nobody has built yet — `[[build.matrix]]`
+already says what is built. serif, typewriter and pixel declare that `light` is
+impossible (single CJK masters thickened with pathops; stroke embolden has no
+negative strength), and handwriting declares that `otf` is (the products are
+quadratic by construction). `nix/checks.nix` refuses a declaration without a
+reason, and refuses one that disowns a value the family also builds.
 
 ### The coupling that stopped being possible
 

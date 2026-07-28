@@ -13,6 +13,7 @@
 , fonttools
 , pydantic
 , skia-pathops
+, brotli
 , pytestCheckHook
 }:
 
@@ -43,6 +44,10 @@ buildPythonPackage {
     fonttools
     pydantic
     skia-pathops
+    # fontTools writes a WOFF2 through brotli, and `fontkit convert` is a build
+    # step: the narrow build interpreter (nix/families/support.nix) has to be
+    # able to run it without reaching for the devShell's wider set.
+    brotli
   ];
 
   nativeCheckInputs = [ pytestCheckHook ];
@@ -63,6 +68,8 @@ buildPythonPackage {
     "fontkit.narrow_symbol_widths"
     "fontkit.rename_nerd_family"
     "fontkit.verify2to1"
+    "fontkit.verify_text"
+    "fontkit.convert"
     "fontkit.embolden"
     "fontkit.measure"
     "fontkit.manifest"

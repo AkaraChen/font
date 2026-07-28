@@ -15,6 +15,15 @@ weights = ["regular", "bold"]
 formats = ["ttf"]
 slopes = ["upright"]
 
+# Not "nobody has built it yet" — it cannot be built from these pins. Neo
+# ZhiSong is a single master, and this family's Bold is that master thickened
+# with pathops. A Light needs the opposite operation and stroke embolden has no
+# negative strength, so there is no arithmetic that produces one.
+[[build.unsupported]]
+axis = "weights"
+values = ["light"]
+reason = "Neo ZhiSong ships one master; the Bold is pathops-thickened from it and stroke embolden has no negative strength, so a Light cannot be derived"
+
 [sources.sarasa]
 role = "latin"
 repository = "https://github.com/be5invis/Sarasa-Gothic.git"
