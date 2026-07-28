@@ -23,7 +23,7 @@ fi
 
 # Gate before packaging (2:1 + nerd + EAW + features)
 PY="$(python_bin)"
-"${PY}" "${SANS_ROOT}/scripts/verify-2to1.py" \
+"${PY}" -m fontkit.verify2to1 \
   --expect-half "${EN_ADV}" --check-nerd --check-eaw "${FONTS[@]}"
 "${PY}" "${SANS_ROOT}/scripts/verify-features.py" "${FONTS[@]}"
 

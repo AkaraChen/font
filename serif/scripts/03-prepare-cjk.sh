@@ -64,12 +64,12 @@ print(f"saved {dst} UPM={TTFont(dst)['head'].unitsPerEm}")
 PY
 
 log "embolden Regular s=${CJK_EMBOLDEN_REGULAR}"
-"${PY}" "${SERIF_ROOT}/tools/embolden_cjk.py" \
+"${PY}" -m fontkit.embolden \
   "${BASE_SCALED}" "${REG_OUT}" \
   --strength "${CJK_EMBOLDEN_REGULAR}"
 
 log "embolden Bold s=${CJK_EMBOLDEN_BOLD}"
-"${PY}" "${SERIF_ROOT}/tools/embolden_cjk.py" \
+"${PY}" -m fontkit.embolden \
   "${BASE_SCALED}" "${BOLD_OUT}" \
   --strength "${CJK_EMBOLDEN_BOLD}"
 

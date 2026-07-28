@@ -116,31 +116,27 @@ fi
 log "nerd products (pre-rename):"
 ls -lh "${NERD_OUT}"/*.{ttf,otf} 2>/dev/null || ls -lh "${NERD_OUT}/"
 
-RENAME="${SANS_ROOT}/scripts/rename_nerd_family.py"
 mapfile -t RAW_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
 if [[ ${#RAW_NERD[@]} -gt 0 ]]; then
   log "shorten Nerd family names → ${FAMILY_NAME}"
-  "${PY}" "${RENAME}" \
+  "${PY}" -m fontkit.rename_nerd_family \
     --family "${FAMILY_NAME}" \
     --family-ps "${FAMILY_PS}" \
     --rename-file \
     "${RAW_NERD[@]}"
 fi
 
-FIX_NERD="${SANS_ROOT}/scripts/fix-nerd-widths.py"
-NARROW="${SANS_ROOT}/scripts/narrow-symbol-widths.py"
-FIX_METRICS="${SANS_ROOT}/scripts/fix-terminal-metrics.py"
 mapfile -t NAMED_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
 if [[ ${#NAMED_NERD[@]} -gt 0 ]]; then
   log "fix Nerd/PUA icon advances → half-cell"
-  "${PY}" "${FIX_NERD}" "${NAMED_NERD[@]}"
+  "${PY}" -m fontkit.fix_nerd_widths "${NAMED_NERD[@]}"
   # EAW-correct advances: terminals size cells from Unicode EAW, not font metrics.
   # Geometric fit (no Sarasa Term donor on the 550 grid). Re-run metric hygiene
   # after save because fontTools recomputes head bbox.
   log "narrow/widen symbols to match East_Asian_Width"
-  "${PY}" "${NARROW}" --no-donor "${NAMED_NERD[@]}"
+  "${PY}" -m fontkit.narrow_symbol_widths --no-donor "${NAMED_NERD[@]}"
   log "fix terminal metrics (isFixedPitch / PANOSE / xAvgCharWidth)"
-  "${PY}" "${FIX_METRICS}" "${NAMED_NERD[@]}"
+  "${PY}" -m fontkit.fix_terminal_metrics "${NAMED_NERD[@]}"
 fi
 
 log "nerd products:"

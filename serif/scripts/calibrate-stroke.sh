@@ -88,8 +88,6 @@ STRENGTHS_REG="${STRENGTHS_REG:-0,4,6,7,7.5,8,9,10,12,14}"
 STRENGTHS_BOLD="${STRENGTHS_BOLD:-16,20,22,24,26,28,32}"
 export SERIF_ROOT PY LATIN_REG LATIN_BOLD CJK_SCALED CAL_DIR CJK_TARGET_UPM
 export STRENGTHS_REG STRENGTHS_BOLD
-export MEASURE_PY="${SERIF_ROOT}/tools/measure_stroke_width.py"
-export EMBOLDEN_PY="${SERIF_ROOT}/tools/embolden_cjk.py"
 
 "${PY}" - <<'PY'
 from __future__ import annotations
@@ -100,9 +98,8 @@ from pathlib import Path
 from fontTools.ttLib import TTFont
 from fontTools.subset import Subsetter, Options
 
-sys.path.insert(0, str(Path(os.environ["SERIF_ROOT"]) / "tools"))
-from embolden_cjk import embolden_font
-from measure_stroke_width import (
+from fontkit.embolden import embolden_font
+from fontkit.measure import (
     DEFAULT_CJK,
     DEFAULT_LATIN,
     measure_set,

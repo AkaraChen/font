@@ -1,8 +1,11 @@
-# Build toolchain (Phase 0)
+# Build toolchain
 
-Phase 0 of the pipeline modernisation plan (KIT-263 → KIT-274). It pins the
-toolchain and builds a regression net **before** any of the 14k lines get
-refactored. **No build logic changed in this phase.**
+Phases 0 and 2 of the pipeline modernisation plan (KIT-263). Phase 0 (KIT-274)
+pinned the toolchain and built a regression net **before** any of the 14k lines
+got refactored; it changed no build logic. Phase 2 (KIT-276) then collapsed the
+17 duplicated per-family scripts into [`lib/fontkit`](#fontkit-the-shared-build-steps),
+with every per-family behavioural difference expressed as a flag so the products
+do not move.
 
 ## Quick start
 
@@ -12,6 +15,7 @@ just build sans       # run sans/scripts/build.sh in it, one step at a time, tim
 just verify sans      # diff the products against the committed fingerprints
 just fingerprint sans # rewrite the baseline (only when a change is intended)
 just timings sans     # per-step wall-clock from the last build
+just test             # fontkit unit tests — seconds, no font build
 ```
 
 `nix` needs flakes enabled. The `just` recipes pass
@@ -141,10 +145,71 @@ set for `pixel`, which points at darwin's patch being the deficient one — and
 therefore at a Mac maintainer's local builds not matching what gets released.
 That predates Phase 0; Phase 0 only made it visible.
 
+## fontkit: the shared build steps
+
+Five scripts existed in 17 copies under `<family>/scripts/`. Most copies were
+byte-identical; serif's and pixel's had drifted, so a fix landed in one copy and
+the other three kept the bug. They now live once, in `lib/fontkit/`, and run as
+`python3 -m fontkit.<module>`:
+
+| module | replaces | families |
+| --- | --- | --- |
+| `fontkit.fix_nerd_widths` | `fix-nerd-widths.py` ×4 | pixel rounded sans typewriter |
+| `fontkit.fix_terminal_metrics` | `fix-terminal-metrics.py` ×5 | + serif |
+| `fontkit.verify2to1` | `verify-2to1.py` ×4 | all seven |
+| `fontkit.narrow_symbol_widths` | `narrow-symbol-widths.py` ×4 | rounded sans serif typewriter |
+| `fontkit.rename_nerd_family` | `rename_nerd_family.py` ×4 | pixel rounded sans serif typewriter |
+| `fontkit.measure` / `fontkit.embolden` | `serif/tools/*` | six families imported them by hardcoded path |
+
+`<family>/scripts/common.sh` puts `lib/` on `PYTHONPATH`, so the working copy is
+what runs — an edit is live without a Nix rebuild, and CI gates the committed
+code. `nix/fontkit.nix` packages the same tree as a `buildPythonPackage` for the
+devShell and for the per-step derivations KIT-275 introduces, which have no
+checkout to point at.
+
+### The differences that survived as flags
+
+Phase 2's completion criterion is that all seven fingerprints stay put, so the
+drifted copies could not simply be dropped in favour of the majority. Four
+genuine behaviour differences became flags:
+
+| flag | who passes it | what it does |
+| --- | --- | --- |
+| `fix_terminal_metrics --keep-bbox` | serif | disables `TTFont.recalcBBoxes` so the half/full-only `head` bbox survives the save |
+| `narrow_symbol_widths --protect-ambiguous` | serif | never narrows an outline also reachable from an `EAW=A` codepoint |
+| `narrow_symbol_widths --widen-shared skip` | serif | leaves a shared `W`/half outline alone instead of forking a full-width copy |
+| `verify2to1 --profile dense` | serif handwriting casual | denser CJK sampling, four more bracket marks, Nerd-range (not whole-PUA) icon scan, no `xAvgCharWidth` check |
+
+**`--keep-bbox` is a live bug in the other four families**, not a preference:
+pixel, rounded, sans and typewriter compute the tight `head` bbox and then let
+fontTools recompute it from every glyph during the save, so the value they
+compute is discarded. The default therefore keeps discarding it. Fixing that is
+a deliberate product change with its own fingerprint churn — not this phase.
+
+`lib/tests/` pins each of these against synthetic fonts; `just test` runs them
+in about a second, and `nix flake check` runs them again against the installed
+package.
+
+### The interpreter's Unicode version is a build input
+
+Every narrow/widen decision reads `unicodedata.east_asian_width`, and
+`unicodedata` ships **with the interpreter**. A nixpkgs bump therefore moves the
+Unicode version under the build: U+2630 ☰ is `EAW=N` through Unicode 15.1 and
+`W` from 16.0, so the same source font gains or loses a full-cell glyph
+depending on which Python built it. This is a second, less obvious reason the
+devShell pins `python3` — and `just update` is a deliberate act that must be
+followed by a rebuild and a fingerprint diff.
+
+`lib/tests/test_eaw_assumptions.py` asserts the width class of every codepoint
+the fixtures rely on, so a pin bump that moves one fails with the version in the
+message instead of as a confusing behavioural assertion.
+
 ## CI
 
-`.github/workflows/build-matrix.yml` builds all seven families from source on
-every push and PR. Before this, `release-nfm.yml` was the only workflow: serif
+`.github/workflows/build-matrix.yml` runs the fontkit unit tests first — the
+shared steps are the one thing that can break all seven families at once, and a
+three-hour font build is not a feedback loop for that — then builds all seven
+families from source on every push and PR. Before this, `release-nfm.yml` was the only workflow: serif
 only, and it does not build from source — it downloads the previous tag's
 products and post-processes them. Six families had no automated verification.
 

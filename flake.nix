@@ -1,5 +1,5 @@
 {
-  description = "AKR fonts — pinned build toolchain (Phase 0: devShell only)";
+  description = "AKR fonts — pinned build toolchain + the shared fontkit build steps";
 
   inputs = {
     # Stable channel on purpose: this is a toolchain pin, not a place to chase
@@ -16,6 +16,12 @@
     {
       devShells = forAllSystems (pkgs:
         let
+          # The five build steps every family shares, formerly 17 near-identical
+          # files under <family>/scripts/. Packaged so a bare `nix develop` can
+          # run `python3 -m fontkit.<step>` and so Phase 1's per-step
+          # derivations can depend on it without a repo checkout.
+          fontkit = pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
+
           # Every Python dependency that was previously `pip install`-ed from one of
           # the eight scattered, unpinned call sites in */scripts/common.sh.
           # `pathops` is skia-pathops; nixpkgs already builds it (gn + ninja + Skia,
@@ -29,12 +35,14 @@
             numpy
             uharfbuzz
             wcwidth
+            # `just test` runs lib/tests against the working copy.
+            pytest
             # afdko ships otc2otf / otf2ttf as console scripts, which Sarasa's
             # verdafile.mjs calls during source prep. It was never in this repo's
             # need_cmd list — serif only ever built because the maintainer's
             # machine happened to have AFDKO installed.
             afdko
-          ]);
+          ] ++ [ fontkit ]);
 
           # nixpkgs hard-disables cairo in harfbuzz ("development purposes only"),
           # which drops hb-view — the one harfbuzz binary pixel/scripts/preview.sh
@@ -96,6 +104,17 @@
             '';
           };
         });
+
+      packages = forAllSystems (pkgs: {
+        fontkit = pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
+      });
+
+      # `just check` (nix flake check) builds this, which runs fontkit's pytest
+      # suite. Those tests are the only automated gate on the shared build steps
+      # that does not need a multi-hour font build first.
+      checks = forAllSystems (pkgs: {
+        fontkit = pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
+      });
 
       formatter = forAllSystems (pkgs: pkgs.nixpkgs-fmt);
     };

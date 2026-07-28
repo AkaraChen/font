@@ -13,11 +13,16 @@ EXTRACT_DIR="${WORK_DIR}/src"
 STAGE_DIR="${WORK_DIR}/stage"
 VENV_DIR="${WORK_DIR}/venv"
 OUT_DIR="${SANS_ROOT}/out"
-# Stroke measuring / embolden tools are shared with serif/ — not duplicated here.
-SERIF_TOOLS="${REPO_ROOT}/serif/tools"
 
 log() { printf '==> %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+# fontkit: the build steps shared by every family (lib/fontkit), invoked as
+# `"${PY}" -m fontkit.<step>`. The working copy wins over any installed copy on
+# purpose — an edit is live without a Nix rebuild, and CI gates the code that is
+# actually committed. The Nix package exists for derivations that have no
+# checkout; see nix/fontkit.nix.
+export PYTHONPATH="${REPO_ROOT}/lib${PYTHONPATH:+:${PYTHONPATH}}"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
@@ -76,7 +81,7 @@ ensure_python() {
   mkdir -p "${WORK_DIR}"
   log "creating venv at ${VENV_DIR}"
   # Prefer uv (works without distro ensurepip); fall back to python -m venv.
-  # skia-pathops: CJK optical-weight embolden (shared serif/tools/embolden_cjk.py).
+  # skia-pathops: CJK optical-weight embolden (lib/fontkit/embolden.py).
   if command -v uv >/dev/null 2>&1; then
     uv venv "${VENV_DIR}"
     uv pip install --python "${VENV_DIR}/bin/python" -q 'fonttools>=4.50' brotli skia-pathops

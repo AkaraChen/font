@@ -18,9 +18,7 @@ done
 
 # Optical weight: pathops embolden full-cell CJK before merge (KIT-259).
 # Strengths measured by ./scripts/calibrate-stroke.sh against Lilex at product
-# X-scale. 0 = leave the SC master alone. Tools live under serif/tools/.
-[[ -f "${SERIF_TOOLS}/embolden_cjk.py" ]] \
-  || die "missing ${SERIF_TOOLS}/embolden_cjk.py (serif tools required for weight match)"
+# X-scale. 0 = leave the SC master alone.
 CJK_EMBOLDEN_REGULAR="${CJK_EMBOLDEN_REGULAR:-0}"
 CJK_EMBOLDEN_BOLD="${CJK_EMBOLDEN_BOLD:-0}"
 SC_REG_IN="${EXTRACT_DIR}/IBMPlexSansSC-Regular.ttf"
@@ -32,7 +30,7 @@ embolden_sc() {
   local src="$1" dst="$2" strength="$3" label="$4"
   if awk "BEGIN { exit !(${strength} > 0) }"; then
     log "embolden CJK ${label} s=${strength}"
-    "${PY}" "${SERIF_TOOLS}/embolden_cjk.py" "${src}" "${dst}" --strength "${strength}"
+    "${PY}" -m fontkit.embolden "${src}" "${dst}" --strength "${strength}"
   else
     log "CJK ${label}: no embolden (s=0), use source master"
     cp -f "${src}" "${dst}"
@@ -84,9 +82,9 @@ mapfile -t DUAL_FONTS < <(
 )
 if [[ ${#DUAL_FONTS[@]} -gt 0 ]]; then
   log "narrow/widen Dual intermediate to match East_Asian_Width"
-  "${PY}" "${SANS_ROOT}/scripts/narrow-symbol-widths.py" --no-donor "${DUAL_FONTS[@]}"
+  "${PY}" -m fontkit.narrow_symbol_widths --no-donor "${DUAL_FONTS[@]}"
   log "fix Dual terminal metrics"
-  "${PY}" "${SANS_ROOT}/scripts/fix-terminal-metrics.py" "${DUAL_FONTS[@]}"
+  "${PY}" -m fontkit.fix_terminal_metrics "${DUAL_FONTS[@]}"
 fi
 
 log "intermediate products:"

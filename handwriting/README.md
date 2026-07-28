@@ -56,7 +56,7 @@ drifting right at the top. For reference, Radon *Italic* measures ~18°, i.e. it
 ### 3. Weight: Monaspace runs heavy, WenKai has no Bold
 
 Stem widths are measured, not eyeballed — scanline vertical-stem medians at UPM 1000
-(`scripts/calibrate_cjk_weight.py`, sharing `serif/tools/measure_stroke_width.py`):
+(`scripts/calibrate_cjk_weight.py`, sharing `fontkit.measure`):
 
 | CJK candidate | v-stem | Δ vs Radon Regular (73.3) | Δ vs Radon Bold (107.2) |
 | --- | ---: | ---: | ---: |
@@ -134,7 +134,7 @@ Two subtleties the gate caught:
   the last import silently wins the advance.
 - 42 EAW-wide codepoints (`⚡ ⏩ 🕐 〈 〉 …`) exist only in Radon at one cell, while terminals
   give them two. Their advance moves to the full cell and the outline is centred — the same call
-  `serif/scripts/narrow-symbol-widths.py` makes for this case.
+  `fontkit.narrow_symbol_widths` makes for this case.
 
 ## Layout
 
@@ -159,8 +159,8 @@ handwriting/
   work/ out/ dist/         # gitignored
 ```
 
-Shared with `serif/` rather than duplicated: `serif/tools/measure_stroke_width.py`,
-`serif/tools/embolden_cjk.py`, `serif/scripts/verify-2to1.py`,
+Shared rather than duplicated, from [`../lib/fontkit/`](../lib/fontkit/):
+`fontkit.measure`, `fontkit.embolden`, `fontkit.verify2to1`,
 `serif/scripts/expand-default-ligatures.py`.
 
 ## Dependencies
@@ -176,7 +176,7 @@ No FontForge, no Docker, no Node — the whole build is Python over two OFL font
 ```bash
 ./scripts/06-verify.sh
 # or individually:
-python3 ../serif/scripts/verify-2to1.py --check-nerd --check-eaw out/RadonWenKaiNFM-*.ttf
+python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw out/RadonWenKaiNFM-*.ttf
 python3 scripts/verify-features.py --expect-half 500 out/RadonWenKaiNFM-*.ttf
 ```
 

@@ -130,12 +130,11 @@ elif command -v python3 >/dev/null 2>&1; then
 fi
 
 # Short Windows-safe family names + stable filenames
-RENAME="${SERIF_ROOT}/scripts/rename_nerd_family.py"
-if [[ -n "${PY}" && -f "${RENAME}" ]]; then
+if [[ -n "${PY}" ]]; then
   mapfile -t RAW_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
   if [[ ${#RAW_NERD[@]} -gt 0 ]]; then
     log "shorten Nerd family names → ${NERD_FONT_FAMILY:-SarasaNZSSlab NFM}"
-    "${PY}" "${RENAME}" \
+    "${PY}" -m fontkit.rename_nerd_family \
       --family "${NERD_FONT_FAMILY:-SarasaNZSSlab NFM}" \
       --family-ps "${NERD_FONT_FAMILY_PS:-SarasaNZSSlabNFM}" \
       --rename-file \
@@ -145,12 +144,13 @@ fi
 
 # Dual-width hygiene: xAvgCharWidth=half + head bbox from half/full only.
 # Mitigates terminal right-margin gaps when hosts use average/bbox as cell width.
-FIX_METRICS="${SERIF_ROOT}/scripts/fix-terminal-metrics.py"
-if [[ -n "${PY}" && -f "${FIX_METRICS}" ]]; then
+# --keep-bbox holds that bbox through the save; serif is the only family that
+# does, see lib/fontkit/fix_terminal_metrics.py.
+if [[ -n "${PY}" ]]; then
   mapfile -t NAMED_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
   if [[ ${#NAMED_NERD[@]} -gt 0 ]]; then
     log "fix terminal metrics (xAvgCharWidth / head bbox)"
-    "${PY}" "${FIX_METRICS}" "${NAMED_NERD[@]}"
+    "${PY}" -m fontkit.fix_terminal_metrics --keep-bbox "${NAMED_NERD[@]}"
   fi
 fi
 
@@ -158,12 +158,11 @@ log "nerd products:"
 ls -lh "${NERD_OUT}"/*.{ttf,otf} 2>/dev/null || ls -lh "${NERD_OUT}/"
 
 # Optional post-verify
-VERIFY="${SERIF_ROOT}/scripts/verify-2to1.py"
-if [[ -f "${VERIFY}" && -n "${PY}" ]]; then
+if [[ -n "${PY}" ]]; then
   log "post-Nerd 2:1 verification (with --check-nerd)"
   mapfile -t NERD_FONTS < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
   if [[ ${#NERD_FONTS[@]} -gt 0 ]]; then
-    "${PY}" "${VERIFY}" --check-nerd "${NERD_FONTS[@]}"
+    "${PY}" -m fontkit.verify2to1 --profile dense --check-nerd "${NERD_FONTS[@]}"
   fi
 fi
 

@@ -9,11 +9,11 @@ Coding dual-width face: **Lilex** (Latin / programming ligatures) + **IBM Plex S
 | Icons | [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) FontPatcher | **v3.4.0** (`--complete --single-width-glyphs`) |
 | Grid | EN cell / CJK cell | **550 / 1100** |
 | Weight match | pathops embolden on SC (measured vs Lilex) | **s=5** Regular / **s=4** Bold |
-| Symbol widths | EAW-correct (N/Na/H → half, W/F → full; A left alone) | `narrow-symbol-widths.py` after Nerd |
+| Symbol widths | EAW-correct (N/Na/H → half, W/F → full; A left alone) | `fontkit.narrow_symbol_widths` after Nerd |
 | Intermediate | Regular + Bold (pre-Nerd) | `out/LilexSansSCDual-{Regular,Bold}.ttf` |
 | Product | Regular + Bold (Nerd Mono) | `out/nerd/LilexSansSCNFM-{Regular,Bold}.ttf` |
 | Family name | Source-encoding (see below) | **LilexSansSC NFM** |
-| Metrics gate | `verify-2to1.py --expect-half 550 --check-nerd --check-eaw` | after Nerd + EAW fix |
+| Metrics gate | `fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
 Lilex is an extended face on IBM Plex Mono with programming ligatures and OpenType features. The merge keeps Lilex **GSUB / GPOS / GDEF** (so `calt` ligatures, stylistic sets, character variants, and mark attach survive), X-scales the mono cell from native **600 → 550**, emboldens SC full-cell outlines for optical weight, and imports SC for CJK. The Nerd step patches the complete icon set at half-cell width and restores mono host flags that FontForge clears on dual-width faces.
 
@@ -24,7 +24,7 @@ Unifying advance (**550 / 1100**) does **not** unify perceived weight. Plex Sans
 Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlines (same tools as `serif/`):
 
 1. **Latin target** — Lilex X-scaled **600 → EN_ADV** (same scale as `merge_plex.py`).
-2. **CJK trial** — IBM Plex Sans SC emboldened at candidate strengths (`serif/tools/embolden_cjk.py`).
+2. **CJK trial** — IBM Plex Sans SC emboldened at candidate strengths (`fontkit.embolden`).
 3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Use `stem_max_ratio=0.40` so Lilex Bold stems are not filtered out.
 
 ```bash
@@ -38,7 +38,7 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 | Regular | ≈77 | ≈65.8 (−11) | **s=5** | ≈78.3 (+1) |
 | Bold | ≈138 | ≈130 (−8) | **s=4** | ≈138 (matched) |
 
-Embolden runs in `02-merge.sh` **before** the merge (full-cell SC only; advances stay source widths and are recentred to `CJK_ADV` by `merge_plex.py`). Shared tools: `serif/tools/measure_stroke_width.py`, `serif/tools/embolden_cjk.py`.
+Embolden runs in `02-merge.sh` **before** the merge (full-cell SC only; advances stay source widths and are recentred to `CJK_ADV` by `merge_plex.py`). Shared tools: `fontkit.measure`, `fontkit.embolden`.
 
 ## Name recipe
 
@@ -84,11 +84,7 @@ sans/
     04-verify.sh           # 2:1 + mono flags + nerd + EAW + features + stem report
     calibrate-stroke.sh    # measure stems → recommend CJK_EMBOLDEN_*
     merge_plex.py
-    rename_nerd_family.py
-    fix-nerd-widths.py
-    narrow-symbol-widths.py  # EAW N/Na/H ↔ half, W/F ↔ full
-    fix-terminal-metrics.py
-    verify-2to1.py
+    # shared steps now live in lib/fontkit (run as python3 -m fontkit.<module>)
     verify-features.py
     render-sample.py
     package-release.sh
@@ -101,8 +97,8 @@ sans/
   dist/                    # gitignored release zips
 ```
 
-Shared with `serif/` (not duplicated): `serif/tools/measure_stroke_width.py`,
-`serif/tools/embolden_cjk.py`.
+Shared, not duplicated: [`../lib/fontkit/`](../lib/fontkit/) (`fontkit.measure`,
+`fontkit.embolden`).
 
 ## Dependencies
 
@@ -175,7 +171,7 @@ Not yet done (known limits):
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --expect-half 550 --check-nerd --check-eaw out/nerd/LilexSansSCNFM-*.ttf
+python3 -m fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw out/nerd/LilexSansSCNFM-*.ttf
 python3 scripts/verify-features.py out/nerd/LilexSansSCNFM-*.ttf
 ```
 
@@ -199,24 +195,24 @@ number of cells (overlap or empty half-cell).
 
 | EAW class | Terminal cells | Product advance | Build policy |
 | --- | ---: | ---: | --- |
-| `N` / `Na` / `H` (neutral / narrow / halfwidth) | **1** (not configurable) | half (**550**) | **Hard gate** — `narrow-symbol-widths.py` recentres / fits; `verify --check-eaw` fails otherwise |
+| `N` / `Na` / `H` (neutral / narrow / halfwidth) | **1** (not configurable) | half (**550**) | **Hard gate** — `fontkit.narrow_symbol_widths` recentres / fits; `verify --check-eaw` fails otherwise |
 | `W` / `F` (wide / fullwidth) | **2** | full (**1100**) | **Hard gate** — re-centre in the full cell (never scale up). If the outline is shared with a Nerd PUA icon, the W/F codepoint is **forked** to a private full-width glyph so icons stay half-cell |
-| `A` (ambiguous: `▶` `→` `①` `×` …) | 1 or 2 (user setting) | usually half (from Lilex) or full (from SC) | **Left alone by default** — CJK users who set “ambiguous = wide” keep 2-cell glyphs; rebuild with `narrow-symbol-widths.py --include-ambiguous` to force half |
+| `A` (ambiguous: `▶` `→` `①` `×` …) | 1 or 2 (user setting) | usually half (from Lilex) or full (from SC) | **Left alone by default** — CJK users who set “ambiguous = wide” keep 2-cell glyphs; rebuild with `fontkit.narrow_symbol_widths --include-ambiguous` to force half |
 
 Documented exceptions (multi-em dashes, a few vertical presentation forms) live in
-`EAW_EXCEPTIONS` inside `verify-2to1.py` (same set as serif).
+`EAW_EXCEPTIONS` inside `fontkit.verify2to1` (one set, shared with serif).
 
 Re-run the fix on an existing product TTF:
 
 ```bash
-python3 scripts/narrow-symbol-widths.py --no-donor out/nerd/LilexSansSCNFM-*.ttf
-python3 scripts/fix-terminal-metrics.py out/nerd/LilexSansSCNFM-*.ttf
-python3 scripts/verify-2to1.py --expect-half 550 --check-nerd --check-eaw out/nerd/LilexSansSCNFM-*.ttf
+python3 -m fontkit.narrow_symbol_widths --no-donor out/nerd/LilexSansSCNFM-*.ttf
+python3 -m fontkit.fix_terminal_metrics out/nerd/LilexSansSCNFM-*.ttf
+python3 -m fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw out/nerd/LilexSansSCNFM-*.ttf
 ```
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `⁝` / rare symbols overflow the next column | `EAW=N` at full advance | `narrow-symbol-widths.py` (build step) |
+| `⁝` / rare symbols overflow the next column | `EAW=N` at full advance | `fontkit.narrow_symbol_widths` (build step) |
 | `⚡` / some radicals sit in the left half of a 2-cell slot | `EAW=W` at half advance | same step (widen / fork) |
 | `▶` `→` still look “fullwidth” | `EAW=A` (ambiguous) — intentional | set terminal “ambiguous = wide”, or `--include-ambiguous` |
 
@@ -224,7 +220,7 @@ python3 scripts/verify-2to1.py --expect-half 550 --check-nerd --check-eaw out/ne
 > because dual-width is not single-cell classic mono. That is the flag macOS Core
 > Text (`kCTFontTraitMonoSpace`), Chromium/VS Code pickers, and most terminals'
 > "monospace only" filters read — so the font never appeared. The Nerd patcher
-> (FontForge) also clears the flag on dual-width bases; `fix-terminal-metrics.py`
+> (FontForge) also clears the flag on dual-width bases; `fontkit.fix_terminal_metrics`
 > restores it after patch. **fontconfig** (Linux) still classifies any dual-width
 > font as proportional by scanning advances; nothing in the font can change that.
 

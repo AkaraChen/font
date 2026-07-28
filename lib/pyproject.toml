@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fontkit"
+version = "0.1.0"
+description = "Shared build steps for the AKR font families"
+requires-python = ">=3.10"
+# Deliberately unpinned here: the pin lives in flake.nix, which is the single
+# place this repo declares a toolchain. Listing versions in both would let them
+# disagree.
+dependencies = ["fonttools", "skia-pathops"]
+
+[tool.setuptools]
+packages = ["fontkit"]

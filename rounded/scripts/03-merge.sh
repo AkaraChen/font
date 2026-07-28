@@ -56,9 +56,9 @@ mapfile -t DUAL_FONTS < <(
 )
 if [[ ${#DUAL_FONTS[@]} -gt 0 ]]; then
   log "narrow/widen Dual intermediate to match East_Asian_Width"
-  "${PY}" "${ROUNDED_ROOT}/scripts/narrow-symbol-widths.py" --no-donor "${DUAL_FONTS[@]}"
+  "${PY}" -m fontkit.narrow_symbol_widths --no-donor "${DUAL_FONTS[@]}"
   log "fix Dual terminal metrics"
-  "${PY}" "${ROUNDED_ROOT}/scripts/fix-terminal-metrics.py" "${DUAL_FONTS[@]}"
+  "${PY}" -m fontkit.fix_terminal_metrics "${DUAL_FONTS[@]}"
 fi
 
 log "intermediate products:"

@@ -3,6 +3,7 @@
 set -euo pipefail
 
 PIXEL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "${PIXEL_ROOT}/.." && pwd)"
 # shellcheck disable=SC1091
 source "${PIXEL_ROOT}/pins.env"
 
@@ -14,6 +15,13 @@ OUT_DIR="${PIXEL_ROOT}/out"
 
 log() { printf '==> %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+# fontkit: the build steps shared by every family (lib/fontkit), invoked as
+# `"${PY}" -m fontkit.<step>`. The working copy wins over any installed copy on
+# purpose — an edit is live without a Nix rebuild, and CI gates the code that is
+# actually committed. The Nix package exists for derivations that have no
+# checkout; see nix/fontkit.nix.
+export PYTHONPATH="${REPO_ROOT}/lib${PYTHONPATH:+:${PYTHONPATH}}"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing command: $1"

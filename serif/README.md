@@ -12,7 +12,7 @@ Coding mono: **Slab Latin (IosevkaNSlab)** + **霞鹜新致宋 Opt** + **Nerd ic
 | Symbol widths | EAW-correct: half-width donor outlines from Sarasa `TermSlab` |
 | Mono flags | `post.isFixedPitch=1` + PANOSE `bProportion=9` (FontForge clears these) |
 | Ligatures | default `calt` **+** Iosevka `dlig` (discretionary) folded in by `expand-default-ligatures.py` |
-| Metrics gate | `scripts/verify-2to1.py --check-nerd --check-eaw` (after Nerd patch) |
+| Metrics gate | `python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw` (after Nerd patch) |
 
 Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic) ref and apply **quilt** patches.
 
@@ -46,8 +46,6 @@ The previous Regular **s=14** made CJK verticals noticeably heavier than Latin �
 serif/
   pins.env
   patches/                 # quilt series
-  tools/embolden_cjk.py
-  tools/measure_stroke_width.py  # scanline stem widths (Latin vs CJK)
   scripts/
     build.sh               # one-shot → Nerd product
     01…04-*.sh             # intermediate Sarasa build
@@ -55,10 +53,6 @@ serif/
     06-narrow-symbols.sh   # EAW-correct symbol widths + expand calt + final gate
     calibrate-stroke.sh    # measure stems → recommend CJK_EMBOLDEN_*
     package-release.sh     # zip out/nerd for GitHub Release
-    verify-2to1.py
-    rename_nerd_family.py
-    fix-terminal-metrics.py
-    narrow-symbol-widths.py
     expand-default-ligatures.py  # fold dlig (etc.) into default calt
     render-coding-sample.py
   samples/
@@ -66,6 +60,15 @@ serif/
   out/                     # intermediate pre-Nerd TTFs (gitignored)
   out/nerd/                # **product** (gitignored)
   dist/                    # release zips (gitignored)
+
+../lib/fontkit/            # shared with every other family, run as
+                           # python3 -m fontkit.<module>:
+  verify2to1.py            #   --profile dense here
+  rename_nerd_family.py
+  fix_terminal_metrics.py  #   --keep-bbox here, serif only
+  narrow_symbol_widths.py  #   --protect-ambiguous --widen-shared skip here
+  embolden.py              #   was serif/tools/embolden_cjk.py
+  measure.py               #   was serif/tools/measure_stroke_width.py
 ```
 
 ## Dependencies
@@ -135,12 +138,12 @@ editor; no extra OpenType feature toggle is required for the expanded set.
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that forces *all* glyphs (incl. CJK) to 1 cell and breaks 2:1
 - Pin: `NERD_FONTS_TAG` in `pins.env` (currently **v3.4.0**, current upstream latest)
-- After rename: `fix-terminal-metrics.py` sets `OS/2.xAvgCharWidth` to the half-cell and recomputes `head` bbox from half/full glyphs only (see Troubleshooting)
+- After rename: `fontkit.fix_terminal_metrics --keep-bbox` sets `OS/2.xAvgCharWidth` to the half-cell and recomputes `head` bbox from half/full glyphs only (see Troubleshooting). `--keep-bbox` is serif-only — it holds that bbox through the save
 
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --check-nerd --check-eaw out/nerd/*.ttf
+python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw out/nerd/*.ttf
 ```
 
 | Set | Expected |
@@ -168,27 +171,28 @@ Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metr
 
 | Observation | Cause | What to do |
 | --- | --- | --- |
-| Nerd PUA icons (Powerline `U+E0B0`/`E0B2`, FA, Material, …) | Advances are **half** (500). `verify-2to1.py --check-nerd` gates this. | Nothing — patch path is correct (`--single-width-glyphs`, not `--mono`). |
-| `⏵` `▸` `✓` `⌘` `⌥` … render “fullwidth” / overlap the next column | **Real metric bug, fixed in v0.1.2.** These are `EAW=N` (neutral): a terminal gives them exactly **1** cell, with no setting to change that. Base **Mono** shipped them at advance **1000** → 1 cell of space, 2 cells of ink. Affected **1006** codepoints. | Use ≥ **v0.1.2**, or run `06-narrow-symbols.sh` / `narrow-symbol-widths.py` on an existing TTF. `verify-2to1.py --check-eaw` now gates this. |
-| `▶` `→` `①` `×` still look fullwidth | These are `EAW=A` (**ambiguous**) — genuinely user-configurable, so the build leaves them at 2 cells for CJK users who set “ambiguous = wide”. | Set your terminal to treat ambiguous as wide, or rebuild with `narrow-symbol-widths.py --include-ambiguous`. |
+| Nerd PUA icons (Powerline `U+E0B0`/`E0B2`, FA, Material, …) | Advances are **half** (500). `fontkit.verify2to1 --check-nerd` gates this. | Nothing — patch path is correct (`--single-width-glyphs`, not `--mono`). |
+| `⏵` `▸` `✓` `⌘` `⌥` … render “fullwidth” / overlap the next column | **Real metric bug, fixed in v0.1.2.** These are `EAW=N` (neutral): a terminal gives them exactly **1** cell, with no setting to change that. Base **Mono** shipped them at advance **1000** → 1 cell of space, 2 cells of ink. Affected **1006** codepoints. | Use ≥ **v0.1.2**, or run `06-narrow-symbols.sh` / `fontkit.narrow_symbol_widths` on an existing TTF. `fontkit.verify2to1 --check-eaw` now gates this. |
+| `▶` `→` `①` `×` still look fullwidth | These are `EAW=A` (**ambiguous**) — genuinely user-configurable, so the build leaves them at 2 cells for CJK users who set “ambiguous = wide”. | Set your terminal to treat ambiguous as wide, or rebuild with `fontkit.narrow_symbol_widths --include-ambiguous`. |
 | `☰` `⚡` `ㆴ` sit in the left half of a 2-cell slot | Symmetric case: `EAW=W` codepoints that shipped at **half** advance. | Fixed in v0.1.2 (23 glyphs re-centred in the full cell). |
 | “Nerd symbols look ugly / squashed” | `--single-width-glyphs` forces icons into **1** cell; many source icons were drawn for ~1.5–2 cells. Patcher is **v3.4.0** (not an ancient script). | Expected for NFM; try fewer glyph sets (drop `--complete`) or accept Nerd Font **Propo** only outside strict grids. |
-| Terminal / editor does not list the font as **monospaced** at all | **Fixed in v0.1.3.** `post.isFixedPitch` is the flag hosts read to answer "is this mono?" (macOS Core Text `kCTFontTraitMonoSpace`, Chromium / VS Code pickers, "monospace only" filters). FontForge — and so the Nerd patcher — recomputes it from the advance histogram, sees a dual-width font and clears it to **0**, even though upstream Sarasa ships **1** on the same 2:1 grid. | Use ≥ **v0.1.3**, or run `fix-terminal-metrics.py` (now restores `isFixedPitch=1` and pins PANOSE `bProportion=9`). `verify-2to1.py` gates both. Note: **fontconfig** (Linux) derives spacing by scanning advances and will still classify any dual-width font as proportional — nothing in the font can change that. |
-| Large empty band on the **right** of the terminal after selecting this font | Dual-width font: ~33k glyphs @1000 + ~18k @500 → raw `OS/2.xAvgCharWidth≈832`. Some hosts treat that average (or a huge `head.xMax` from multi-em dashes) as the monospaced cell width. v0.1.2 and earlier also shipped `post.isFixedPitch=0` (see the row above). | Rebuild with current `05-nerd-patch.sh` (runs `fix-terminal-metrics.py`: `xAvgCharWidth=half`, tighter head bbox). Confirm terminal uses font advances / wcwidth, not average width. |
+| Terminal / editor does not list the font as **monospaced** at all | **Fixed in v0.1.3.** `post.isFixedPitch` is the flag hosts read to answer "is this mono?" (macOS Core Text `kCTFontTraitMonoSpace`, Chromium / VS Code pickers, "monospace only" filters). FontForge — and so the Nerd patcher — recomputes it from the advance histogram, sees a dual-width font and clears it to **0**, even though upstream Sarasa ships **1** on the same 2:1 grid. | Use ≥ **v0.1.3**, or run `fontkit.fix_terminal_metrics --keep-bbox` (now restores `isFixedPitch=1` and pins PANOSE `bProportion=9`). `fontkit.verify2to1` gates both. Note: **fontconfig** (Linux) derives spacing by scanning advances and will still classify any dual-width font as proportional — nothing in the font can change that. |
+| Large empty band on the **right** of the terminal after selecting this font | Dual-width font: ~33k glyphs @1000 + ~18k @500 → raw `OS/2.xAvgCharWidth≈832`. Some hosts treat that average (or a huge `head.xMax` from multi-em dashes) as the monospaced cell width. v0.1.2 and earlier also shipped `post.isFixedPitch=0` (see the row above). | Rebuild with current `05-nerd-patch.sh` (runs `fontkit.fix_terminal_metrics --keep-bbox`: `xAvgCharWidth=half`, tighter head bbox). Confirm terminal uses font advances / wcwidth, not average width. |
 | Mixed CN/EN column drift | Half vs full advances are intentional 2:1 (`A=500`, `中=1000`). Drift usually comes from **full-width punctuation/symbols** in the line (see non-gated set above), not from broken CJK metrics. | Use the coding sample ruler in `samples/coding-mixed.txt`; avoid fullwidth ASCII (`ＵＴＦ`) in code. |
 
 ```bash
 # Repair an already-built/released TTF without a full rebuild:
-python3 scripts/narrow-symbol-widths.py SarasaNZSSlabNFM-Regular.ttf \
+python3 -m fontkit.narrow_symbol_widths SarasaNZSSlabNFM-Regular.ttf \
+  --protect-ambiguous --widen-shared skip \
   --donor SarasaTermSlabSC-Regular.ttf      # donor URL: see pins.env
-python3 scripts/fix-terminal-metrics.py SarasaNZSSlabNFM-Regular.ttf
-python3 scripts/verify-2to1.py --check-nerd --check-eaw SarasaNZSSlabNFM-Regular.ttf
+python3 -m fontkit.fix_terminal_metrics --keep-bbox SarasaNZSSlabNFM-Regular.ttf
+python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw SarasaNZSSlabNFM-Regular.ttf
 ```
 
-`narrow-symbol-widths.py` transplants Sarasa **Term**'s properly drawn 1-cell
+`fontkit.narrow_symbol_widths` transplants Sarasa **Term**'s properly drawn 1-cell
 symbols; codepoints Term lacks are x-compressed and centred instead. Order
 matters: it saves via fontTools, which recomputes `head`, so run
-`fix-terminal-metrics.py` **after** it.
+`fontkit.fix_terminal_metrics` **after** it.
 
 ## Release package
 

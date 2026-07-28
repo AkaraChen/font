@@ -64,7 +64,8 @@ jobs:
 
       - name: Verify 2:1 + nerd + EAW
         run: |
-          python3 serif/scripts/verify-2to1.py --check-nerd --check-eaw serif/out/nerd/*.ttf
+          PYTHONPATH=lib python3 -m fontkit.verify2to1 \
+            --profile dense --check-nerd --check-eaw serif/out/nerd/*.ttf
 
       - name: Package zip
         run: |
@@ -114,7 +115,8 @@ jobs:
 
           ### Verify
           \`\`\`
-          python3 serif/scripts/verify-2to1.py --check-nerd --check-eaw out/nerd/*.ttf
+          PYTHONPATH=lib python3 -m fontkit.verify2to1 --profile dense \
+            --check-nerd --check-eaw out/nerd/*.ttf
           # half=500 full=1000, eaw-violations=0; calt lookups 63→99
           \`\`\`
 

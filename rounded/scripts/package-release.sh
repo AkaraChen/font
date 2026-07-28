@@ -22,7 +22,7 @@ fi
 [[ ${#FONTS[@]} -gt 0 ]] || die "no Nerd fonts in ${NERD_OUT}; run ./scripts/build.sh first"
 
 PY="$(python_bin)"
-"${PY}" "${ROUNDED_ROOT}/scripts/verify-2to1.py" \
+"${PY}" -m fontkit.verify2to1 \
   --expect-half "${EN_ADV}" --check-nerd --check-eaw "${FONTS[@]}"
 
 mkdir -p "${DIST_DIR}"

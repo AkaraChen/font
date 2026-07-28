@@ -109,11 +109,10 @@ log "nerd products (pre-rename):"
 ls -lh "${NERD_OUT}"/*.{ttf,otf} 2>/dev/null || ls -lh "${NERD_OUT}/"
 
 # Short Windows-safe family names
-RENAME="${PIXEL_ROOT}/scripts/rename_nerd_family.py"
 mapfile -t RAW_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
 if [[ ${#RAW_NERD[@]} -gt 0 ]]; then
   log "shorten Nerd family names → ${FAMILY_NAME}"
-  "${PY}" "${RENAME}" \
+  "${PY}" -m fontkit.rename_nerd_family \
     --family "${FAMILY_NAME}" \
     --family-ps "${FAMILY_PS}" \
     --rename-file \
@@ -121,14 +120,12 @@ if [[ ${#RAW_NERD[@]} -gt 0 ]]; then
 fi
 
 # Dual-width hygiene + force Nerd PUA icons to half-cell
-FIX_NERD="${PIXEL_ROOT}/scripts/fix-nerd-widths.py"
-FIX_METRICS="${PIXEL_ROOT}/scripts/fix-terminal-metrics.py"
 mapfile -t NAMED_NERD < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name '*.ttf' -o -name '*.otf' \) | sort)
 if [[ ${#NAMED_NERD[@]} -gt 0 ]]; then
   log "fix Nerd/PUA icon advances → half-cell"
-  "${PY}" "${FIX_NERD}" "${NAMED_NERD[@]}"
+  "${PY}" -m fontkit.fix_nerd_widths "${NAMED_NERD[@]}"
   log "fix terminal metrics"
-  "${PY}" "${FIX_METRICS}" "${NAMED_NERD[@]}"
+  "${PY}" -m fontkit.fix_terminal_metrics "${NAMED_NERD[@]}"
 fi
 
 log "nerd products:"

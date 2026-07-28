@@ -2,7 +2,7 @@
 # Measure Lilex (Latin, product X-scale) vs Plex Sans SC (CJK) stem widths and
 # recommend CJK_EMBOLDEN_* values for pins.env. Does not write pins.env.
 #
-# Metric: scanline vertical-stem median (shared serif/tools/measure_stroke_width.py).
+# Metric: scanline vertical-stem median (shared lib/fontkit/measure.py).
 # Latin is X-scaled EN_ADV/LILEX_SRC_ADV so the target matches the merge product.
 # Lilex Bold stems are wide relative to glyph bbox — use stem_max_ratio=0.40.
 set -euo pipefail
@@ -27,7 +27,7 @@ mkdir -p "${CAL_DIR}"
 
 STRENGTHS_REG="${STRENGTHS_REG:-0,1,2,3,4,5,5.5,6,7,8,10}"
 STRENGTHS_BOLD="${STRENGTHS_BOLD:-0,1,2,3,4,5,6,8,10,12}"
-export CAL_DIR SERIF_TOOLS EN_ADV LILEX_SRC_ADV UPM
+export CAL_DIR EN_ADV LILEX_SRC_ADV UPM
 export STRENGTHS_REG STRENGTHS_BOLD
 export LATIN_REG="${EXTRACT_DIR}/Lilex-Regular.ttf"
 export LATIN_BOLD="${EXTRACT_DIR}/Lilex-Bold.ttf"
@@ -46,9 +46,8 @@ from fontTools.ttLib import TTFont
 from fontTools.subset import Subsetter, Options
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
 
-sys.path.insert(0, os.environ["SERIF_TOOLS"])
-from embolden_cjk import embolden_font
-from measure_stroke_width import (
+from fontkit.embolden import embolden_font
+from fontkit.measure import (
     DEFAULT_CJK,
     DEFAULT_LATIN,
     codepoint_name,

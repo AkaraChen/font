@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Shorten Nerd-patched family names (Windows name ID 1 ≤ 31 chars).
 
-Default family: SarasaNZSSlab NFM  (Nerd Font Mono)
-Override with --family / --family-ps
+Run as: python3 -m fontkit.rename_nerd_family --family 'X NFM' --family-ps XNFM \
+            [--rename-file] FONT.ttf [...]
+
+--family / --family-ps are required. The per-family copies of this script each
+carried their own product name as a *default*, which is exactly the kind of
+drift that made four copies of one file necessary; every build step already
+passes both explicitly.
 """
 from __future__ import annotations
 
 import argparse
 import re
-import sys
 from pathlib import Path
 
 from fontTools.ttLib import TTFont
@@ -20,47 +24,41 @@ def style_from_name_table(font: TTFont) -> str:
         rec = name.getName(nid, 3, 1, 0x409) or name.getName(nid, 1, 0, 0)
         if rec:
             return rec.toUnicode().strip()
-    # fall back from filename later
     return "Regular"
 
 
 def apply_names(font: TTFont, family: str, family_ps: str, style: str) -> None:
     full = f"{family} {style}".strip()
     ps = re.sub(r"[^A-Za-z0-9]", "", family_ps + style)
-    typo_family = family
-    typo_style = style
-
-    # name IDs: 1 family, 2 style, 4 full, 6 postscript, 16 typo family, 17 typo style
-    mapping = {
+    name = font["name"]
+    for nid, value in {
         1: family,
         2: style,
         4: full,
         6: ps,
-        16: typo_family,
-        17: typo_style,
-    }
-    name = font["name"]
-    for nid, value in mapping.items():
-        name.setName(value, nid, 3, 1, 0x409)  # Windows Unicode BMP
-        name.setName(value, nid, 1, 0, 0)  # Mac Roman best-effort
+        16: family,
+        17: style,
+    }.items():
+        name.setName(value, nid, 3, 1, 0x409)
+        name.setName(value, nid, 1, 0, 0)
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("fonts", nargs="+", type=Path)
-    ap.add_argument("--family", default="SarasaNZSSlab NFM")
-    ap.add_argument("--family-ps", default="SarasaNZSSlabNFM")
+    ap.add_argument("--family", required=True, help="e.g. 'LilexSansSC NFM'")
+    ap.add_argument("--family-ps", required=True, help="e.g. 'LilexSansSCNFM'")
     ap.add_argument(
         "--rename-file",
         action="store_true",
-        help="also rename file to {family_ps}-{style}.ttf",
+        help="also rename the file to {family_ps}-{style}{suffix}",
     )
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     for path in args.fonts:
         font = TTFont(path)
         style = style_from_name_table(font)
-        # fix style if name table says Regular but file has Bold
+        # The name table says "Regular" on some Bold products; trust the filename.
         stem = path.stem.lower()
         if "bold" in stem and "regular" in style.lower():
             style = "Bold"
@@ -70,7 +68,7 @@ def main() -> int:
             out = path.with_name(f"{args.family_ps}-{style}{path.suffix}")
         font.save(out)
         font.close()
-        if out != path and path.exists() and out != path:
+        if out != path and path.exists():
             path.unlink()
         print(f"{path.name} → family={args.family!r} style={style!r} file={out.name}")
     return 0
