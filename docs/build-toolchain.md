@@ -347,6 +347,46 @@ nix run nixpkgs#prefetch-npm-deps -- \
   "$(nix build --no-link --print-out-paths .#sarasa-src)/package-lock.json"
 ```
 
+### One merge engine, declared per family
+
+Phase 5 replaced the per-family `merge_*.py` with `fontkit.merge`, driven by a
+`[merge]` table in the family's `font.toml`. The four files were 484–614 lines
+each and already shared fifteen same-name same-signature functions; the
+sans↔rounded diff was almost entirely comments and one glyph-name prefix.
+
+What actually differed is now declared, not forked:
+
+| `[merge]` field | why a family differs |
+| --- | --- |
+| `latin` | `none` (a `latin-prepared` step already ran) / `scale` (the donor's cell is known) / `normalize` (UPM change first, then measure what the cell became) |
+| `cjk` | `as-is` / `normalize` (UPM change) / `require-same-upm` (both sides were prepared, a mismatch is a bug) |
+| `import_policy` | which codepoints the CJK donor contributes — CJK ranges only, plus what the base lacks, or by East\_Asian\_Width |
+| `placement` | `center` (advance moves, ink does not) / `fit` (ink is x-compressed when it cannot fit its cell) |
+| `glyph_prefix` | the namespace imported glyphs land in (`sc.` / `cjk.` / `wk.`) — part of the product's glyph order, so it is per-family and pinned |
+| `latin_subset`, `drop_hinting`, `set_weight_class`, `recalc_bounds`, `widen_wide_base_glyphs`, `drop_vertical_metrics`, `check_glyph_budget` | the finishing touches one or two families need |
+
+Three things the engine keeps deliberately separate, because they are separate
+questions:
+
+- **`apply_vertical_metrics`** — the line box. Every profile wants it.
+- **`declare_strict_2to1`** — `post.isFixedPitch`, PANOSE `bProportion`,
+  `xAvgCharWidth`. **coding only.** Strict 2:1 serves the terminal cell; a
+  reading face has no cell to be strict about. Optical stroke matching between
+  Latin and CJK — which *both* profiles want — is the other half of the old
+  `unify_metrics`, and it lives one step earlier as
+  `[calibration.<weight>].embolden`, which is what lets `cjk-prepared` be shared
+  across profiles.
+- **`apply_slope`** — `post.italicAngle`, OS/2 `fsSelection` ITALIC and
+  `head.macStyle` italic, all written from one `slope` argument. This repo ships
+  no italic; upright is a value passed in, not an assumption compiled in. The
+  7.5° CJK shear handwriting already applies is that same parameter, not a
+  handwriting-only special case.
+
+Calibration is resolved **per weight**. A weight with no `[calibration.<weight>]`
+of its own is an error rather than a silent fall back to Regular's numbers —
+that fallback is exactly what would ship a Light whose CJK is as heavy as the
+Regular's.
+
 ### The merge runs once per weight
 
 The merge engines write both faces from both input pairs in a single pass, so

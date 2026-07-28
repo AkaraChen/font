@@ -20,18 +20,12 @@ let
   inherit (support) step file profile region patcher;
   m = manifest.data;
   inherit (m) grid naming;
-  metrics = m.metrics.coding;
 
   family = "sans";
   weights = map support.weightName m.build.weights;
 
   ps = naming.ps;
   basePs = naming.base_ps;
-  mergeFamily =
-    if (naming.suffix or "") == "" then
-      naming.base_family
-    else
-      "${naming.base_family} ${naming.suffix}";
 
   emboldenFor = weight: toString m.calibration.${lib.toLower weight}.embolden;
 
@@ -68,30 +62,22 @@ let
     '';
   };
 
-  # Latin scaling happens inside merge_plex.py, so sans has no latin-prepared
-  # step of its own — Phase 5 is where the merge engines get split apart.
+  # Latin scaling happens inside the merge engine, so sans has no latin-prepared
+  # step of its own. Phase 5 replaced sans/scripts/merge_plex.py with
+  # `fontkit merge`: every number below used to be a command-line flag repeated
+  # in four families' Nix and four families' argparse, and is a [merge] /
+  # [grid] / [metrics.<profile>] field read straight from font.toml now.
   merged = weight: step "merged" { inherit family profile region weight; } {
     buildCommand = ''
       mkdir -p $out merged
-      python3 ${file "sans/scripts/merge_plex.py"} \
+      fontkit merge \
+        --manifest ${manifest.file} \
+        --profile ${profile} \
         --latin-regular ${srcLatin "Regular"}/Lilex-Regular.ttf \
         --latin-bold ${srcLatin "Bold"}/Lilex-Bold.ttf \
-        --sc-regular ${cjkPrepared "Regular"}/IBMPlexSansSC-Regular-weight.ttf \
-        --sc-bold ${cjkPrepared "Bold"}/IBMPlexSansSC-Bold-weight.ttf \
-        --out-dir merged \
-        --en-adv ${toString grid.en_adv} \
-        --cjk-adv ${toString grid.cjk_adv} \
-        --latin-src-adv ${toString grid.latin_src_adv} \
-        --family ${lib.escapeShellArg mergeFamily} \
-        --family-ps ${basePs} \
-        --hhea-ascent ${toString metrics.hhea_ascent} \
-        --hhea-descent ${toString metrics.hhea_descent} \
-        --hhea-line-gap ${toString metrics.hhea_line_gap} \
-        --os2-typo-ascender ${toString metrics.os2_typo_ascender} \
-        --os2-typo-descender ${toString metrics.os2_typo_descender} \
-        --os2-typo-line-gap ${toString metrics.os2_typo_line_gap} \
-        --os2-win-ascent ${toString metrics.os2_win_ascent} \
-        --os2-win-descent ${toString metrics.os2_win_descent}
+        --cjk-regular ${cjkPrepared "Regular"}/IBMPlexSansSC-Regular-weight.ttf \
+        --cjk-bold ${cjkPrepared "Bold"}/IBMPlexSansSC-Bold-weight.ttf \
+        --out-dir merged
 
       cp merged/${basePs}-${weight}.ttf $out/
       # Terminals size cells from Unicode EAW, not from font metrics. Geometric

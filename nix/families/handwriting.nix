@@ -96,7 +96,7 @@ let
   merged = weight: step "merged" { inherit family profile region weight; } {
     buildCommand = ''
       mkdir -p $out merged
-      fontkit merge \
+      fontkit merge-radon-wenkai \
         --latin-regular ${latinPrepared "Regular"}/RadonLatin-Regular.ttf \
         --latin-bold ${latinPrepared "Bold"}/RadonLatin-Bold.ttf \
         --cjk-regular ${cjkPrepared "Regular"}/WenKaiSlanted-Regular.ttf \

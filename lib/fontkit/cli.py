@@ -7,7 +7,7 @@ derivation now, so what is left is a dispatch table.
 
 Each subcommand is the module's own `main(argv)` — this file adds no arguments
 and parses none of its own, so `fontkit merge --help` is exactly
-`python3 -m fontkit.merge_radon_wenkai --help`. Both spellings keep working;
+`python3 -m fontkit.merge --help`. Both spellings keep working;
 the module form is what the unit tests call.
 """
 
@@ -24,7 +24,10 @@ STEPS = {
     "embolden": "embolden",
     "scale-upem": "scale_upem",
     "prepare-cjk": "prepare_cjk",
-    "merge": "merge_radon_wenkai",
+    "merge": "merge",
+    # handwriting and casual still build on the old engine; the alias goes away
+    # with handwriting's migration, which is what deletes the module.
+    "merge-radon-wenkai": "merge_radon_wenkai",
     "expand-ligatures": "expand_ligatures",
     "nerd-patch": "nerd_patch",
     "rename-nerd-family": "rename_nerd_family",

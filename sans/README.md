@@ -23,7 +23,7 @@ Unifying advance (**550 / 1100**) does **not** unify perceived weight. Plex Sans
 
 Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlines (same tools as `serif/`):
 
-1. **Latin target** — Lilex X-scaled **600 → EN_ADV** (same scale as `merge_plex.py`).
+1. **Latin target** — Lilex X-scaled **600 → EN_ADV** (same scale the merge engine applies).
 2. **CJK trial** — IBM Plex Sans SC emboldened at candidate strengths (`fontkit.embolden`).
 3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Use `stem_max_ratio=0.40` so Lilex Bold stems are not filtered out.
 
@@ -37,7 +37,7 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 | Regular | ≈77 | ≈65.8 (−11) | **s=5** | ≈78.3 (+1) |
 | Bold | ≈138 | ≈130 (−8) | **s=4** | ≈138 (matched) |
 
-Embolden runs in the `cjk-prepared` step **before** the merge (full-cell SC only; advances stay source widths and are recentred to `CJK_ADV` by `merge_plex.py`). Shared tools: `fontkit.measure`, `fontkit.embolden`.
+Embolden runs in the `cjk-prepared` step **before** the merge (full-cell SC only; advances stay source widths and are recentred to `CJK_ADV` by the merge engine). Shared tools: `fontkit.measure`, `fontkit.embolden`.
 
 ## Name recipe
 
@@ -76,7 +76,6 @@ sans/
     OFL-Lilex.txt
     OFL-IBM-Plex.txt
   scripts/
-    merge_plex.py          # the merge engine; everything else is lib/fontkit
     verify-features.py     # Lilex calt / ligature gate
     calibrate-stroke.sh    # diagnostic: measure stems → recommend CJK_EMBOLDEN_*
     render-sample.py       # diagnostic

@@ -133,6 +133,58 @@ class Calibration(StrictModel):
     slant_pivot_y: int = 375
 
 
+class Merge(StrictModel):
+    """Every knob `fontkit.merge` needs to build this family's face.
+
+    A family that merges a Latin donor with a CJK donor declares *what is
+    different about it* here, and nothing else. The engine has no per-family
+    branches: adding a family means adding this table, not a `merge_*.py`.
+    """
+
+    # name ID 5 — "<version>;KIT;<family> merge (<sources_note>; EN … / CJK …)".
+    # `{slant}` in sources_note is filled from [calibration.<weight>].slant_deg,
+    # per weight, so a family whose shear differs by weight says so honestly.
+    version: str
+    sources_note: str
+
+    # What the donors need before they are on the product grid.
+    latin: Literal["none", "scale", "normalize"]
+    cjk: Literal["as-is", "normalize", "require-same-upm"]
+    latin_subset: Literal["none", "coding"] = "none"
+    drop_hinting: bool = False
+
+    # Which codepoints come from the CJK donor, and how they land on a cell.
+    import_policy: Literal["cjk-side", "cjk-side-or-missing", "east-asian-width"]
+    placement: Literal["center", "fit"] = "center"
+    glyph_prefix: str
+    required_sample: str
+
+    # Finishing touches a family needs and the others do not.
+    set_weight_class: bool = False
+    recalc_bounds: bool = False
+    widen_wide_base_glyphs: bool = False
+    drop_vertical_metrics: bool = False
+    check_glyph_budget: bool = False
+
+    @field_validator("glyph_prefix")
+    @classmethod
+    def prefix_cannot_collide_with_a_real_glyph_name(cls, value: str) -> str:
+        if not value.endswith("."):
+            raise ValueError("glyph_prefix must end with '.' so it cannot shadow a donor name")
+        return value
+
+    @model_validator(mode="after")
+    def fit_placement_needs_a_per_cell_policy(self) -> Self:
+        if self.placement == "fit" and self.import_policy != "east-asian-width":
+            raise ValueError(
+                "placement = \"fit\" only means something when the cell is decided "
+                "per codepoint (import_policy = \"east-asian-width\")"
+            )
+        if self.latin_subset != "none" and self.latin != "normalize":
+            raise ValueError("latin_subset applies to latin = \"normalize\" only")
+        return self
+
+
 class Nerd(StrictModel):
     version: str
     commit: str = Field(min_length=40, max_length=40)
@@ -165,6 +217,7 @@ class Manifest(StrictModel):
     naming: Naming
     metrics: dict[Profile, VerticalMetrics] = Field(default_factory=dict)
     calibration: dict[Weight, Calibration] = Field(default_factory=dict)
+    merge: Merge | None = None
     nerd: Nerd | None = None
     options: dict[str, Scalar | list[str]] = Field(default_factory=dict)
 
