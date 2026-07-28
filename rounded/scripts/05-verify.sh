@@ -15,7 +15,7 @@ if [[ ${#NERD_FONTS[@]} -gt 0 ]]; then
   log "verify Nerd products (${#FONTS[@]}) with nerd + EAW gates"
 else
   shopt -s nullglob
-  stem_base="${BASE_FAMILY_PS:-YuanTiDual}"
+  stem_base="${BASE_FAMILY_PS:-IosevkaCurlyRHRDual}"
   FONTS=("${OUT_DIR}/${stem_base}"-*.ttf)
   EXTRA_GATES=(--check-eaw)
   [[ ${#FONTS[@]} -gt 0 ]] || die "no products in ${OUT_DIR}; run 03-merge.sh first"

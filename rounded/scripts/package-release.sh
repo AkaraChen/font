@@ -13,7 +13,7 @@ need_cmd zip
 NERD_OUT="${OUT_DIR}/nerd"
 DIST_DIR="${ROUNDED_ROOT}/dist"
 STAGE="${WORK_DIR}/release-stage"
-stem="${PRODUCT_STEM:-YuanTiNFM}"
+stem="${PRODUCT_STEM:-IosevkaCurlyRHRNFM}"
 
 mapfile -t FONTS < <(find "${NERD_OUT}" -maxdepth 1 -type f \( -name "${stem}-*.ttf" -o -name "${stem}-*.otf" \) | sort)
 if [[ ${#FONTS[@]} -eq 0 ]]; then
@@ -44,9 +44,12 @@ Derived from Iosevka Curly (ss20) + Resource Han Rounded SC (资源圆体) under
 Nerd Font icons via ${NERD_FONTS_TAG} FontPatcher (--complete --single-width-glyphs).
 Not an official Iosevka, Resource Han Rounded, or Nerd Fonts product.
 
-Name recipe:
-  YuanTi / 圆体 = rounded-path coding dual-width face
-  NFM            = Nerd Font Mono
+Name recipe (inheritance in the family name):
+  Iosevka = Latin base
+  Curly   = ss20 Curly Style package
+  RHR     = Resource Han Rounded SC
+  NFM     = Nerd Font Mono
+  (docs nickname: 圆体)
 
 Sources:
   Latin = Iosevka Curly (ss20 Curly Style, sans)
