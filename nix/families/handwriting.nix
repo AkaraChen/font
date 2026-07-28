@@ -136,8 +136,10 @@ let
       fontkit verify-2to1 --profile dense --check-nerd --check-eaw ${out}/${ps}-*.ttf
       python3 ${file "handwriting/scripts/verify-features.py"} \
         --expect-half ${get "EN_ADV"} ${out}/${ps}-*.ttf
+      # Informational, like sans'. See the note there about measure.py and
+      # all-off-curve contours.
       for font in ${out}/${ps}-*.ttf; do
-        fontkit measure --font "$font" | tail -20
+        fontkit measure --font "$font" | tail -20 || true
       done
       touch $out
     '';

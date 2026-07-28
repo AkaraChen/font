@@ -130,11 +130,23 @@ let
         --expect-half ${get "EN_ADV"} --check-nerd --check-eaw ${out}/nerd/${ps}-*.ttf
       python3 ${file "sans/scripts/verify-features.py"} ${out}/nerd/${ps}-*.ttf
 
-      # Informational: confirms Latin and CJK ended up at the same optical
-      # weight after the embolden. Same measure path calibrate-stroke.sh uses.
+      # Informational, and deliberately still allowed to fail: it confirms Latin
+      # and CJK ended up at the same optical weight after the embolden, but it
+      # is a report, not a gate — 04-verify.sh ran it under `|| true` with a
+      # per-glyph `except: continue` inside.
+      #
+      # It is not hypothetical. `fontkit measure` raises on
+      # LilexSansSCNFM-Bold.ttf: measure.py:111 assumes every `qCurveTo`
+      # argument is a point, and TrueType's all-off-curve contour passes a
+      # trailing `None` for the implied on-curve point. That is a pre-existing
+      # defect in the measuring code, not in the font and not in this phase —
+      # the old inline script swallowed it one glyph at a time. Worth its own
+      # issue; folding a fix into a phase whose completion criterion is
+      # "fingerprints do not move" is how two changes become impossible to tell
+      # apart later.
       for font in ${out}/nerd/${ps}-*.ttf; do
         echo "==> $(basename "$font")"
-        fontkit measure --font "$font" | tail -20
+        fontkit measure --font "$font" | tail -20 || true
       done
       touch $out
     '';
