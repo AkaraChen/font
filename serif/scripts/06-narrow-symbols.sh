@@ -83,7 +83,7 @@ log "re-fix terminal metrics (isFixedPitch / PANOSE / xAvgCharWidth)"
 # Editors turn on calt with "font ligatures", but almost never dlig — fold
 # dlig into default calt so ++ -- ## ~~ counter-arrows logic etc. apply.
 log "expand default calt with discretionary ligatures (dlig)"
-"${PY}" "${SERIF_ROOT}/scripts/expand-default-ligatures.py" "${FONTS[@]}"
+"${PY}" -m fontkit.expand_ligatures "${FONTS[@]}"
 
 log "final verification (2:1 + nerd + EAW)"
 "${PY}" -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw "${FONTS[@]}"

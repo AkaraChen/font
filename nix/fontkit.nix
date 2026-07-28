@@ -1,12 +1,11 @@
 # fontkit — lib/ packaged for the Nix python environment.
 #
-# The devShell gets this so `python3 -m fontkit.<step>` works from a bare shell,
-# and the per-step derivations Phase 1 introduces can depend on it without
-# needing the repo checkout on PYTHONPATH.
+# The devShell gets this so `fontkit <step>` works from a bare shell, and the
+# per-step derivations depend on it rather than on a repo checkout.
 #
-# Note the build steps still prefer the working copy: <family>/scripts/common.sh
-# prepends lib/ to PYTHONPATH, so an edit is live without a rebuild and CI
-# always gates the code that is actually committed.
+# It also installs the `fontkit` console script (lib/pyproject.toml), which is
+# how every build step is invoked. serif is the last caller of the
+# `python3 -m fontkit.<module>` form, via its own common.sh.
 { lib
 , buildPythonPackage
 , setuptools
@@ -35,6 +34,12 @@ buildPythonPackage {
 
   pythonImportsCheck = [
     "fontkit"
+    "fontkit.cli"
+    "fontkit.nerd_patch"
+    "fontkit.package"
+    "fontkit.prepare_cjk"
+    "fontkit.merge_radon_wenkai"
+    "fontkit.expand_ligatures"
     "fontkit.fix_nerd_widths"
     "fontkit.fix_terminal_metrics"
     "fontkit.narrow_symbol_widths"

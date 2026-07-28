@@ -28,8 +28,7 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Use `stem_max_ratio=0.40` so Lilex Bold stems are not filtered out.
 
 ```bash
-./scripts/01-fetch-sources.sh
-./scripts/calibrate-stroke.sh
+./scripts/calibrate-stroke.sh   # realises the source steps it needs
 # → recommends CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD for pins.env
 ```
 
@@ -38,7 +37,7 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 | Regular | ≈77 | ≈65.8 (−11) | **s=5** | ≈78.3 (+1) |
 | Bold | ≈138 | ≈130 (−8) | **s=4** | ≈138 (matched) |
 
-Embolden runs in `02-merge.sh` **before** the merge (full-cell SC only; advances stay source widths and are recentred to `CJK_ADV` by `merge_plex.py`). Shared tools: `fontkit.measure`, `fontkit.embolden`.
+Embolden runs in the `cjk-prepared` step **before** the merge (full-cell SC only; advances stay source widths and are recentred to `CJK_ADV` by `merge_plex.py`). Shared tools: `fontkit.measure`, `fontkit.embolden`.
 
 ## Name recipe
 
@@ -64,7 +63,7 @@ Everything reproducible lives in [`pins.env`](pins.env):
 - Paths / commit for SC TTFs
 - `EN_ADV` / `CJK_ADV` / vertical metrics / family names
 - `CJK_EMBOLDEN_REGULAR` / `CJK_EMBOLDEN_BOLD` (optical weight)
-- Nerd Fonts patcher tag + docker image digest
+- Nerd Fonts patcher tag
 
 Do **not** bump pins casually; change them in a dedicated commit with a short rationale.
 
@@ -77,17 +76,10 @@ sans/
     OFL-Lilex.txt
     OFL-IBM-Plex.txt
   scripts/
-    build.sh               # one-shot fetch → merge → nerd → verify
-    01-fetch-sources.sh
-    02-merge.sh            # embolden SC → Lilex + SC Dual intermediate
-    03-nerd-patch.sh       # Nerd complete + rename + EAW widths + metric hygiene
-    04-verify.sh           # 2:1 + mono flags + nerd + EAW + features + stem report
-    calibrate-stroke.sh    # measure stems → recommend CJK_EMBOLDEN_*
-    merge_plex.py
-    # shared steps now live in lib/fontkit (run as python3 -m fontkit.<module>)
-    verify-features.py
-    render-sample.py
-    package-release.sh
+    merge_plex.py          # the merge engine; everything else is lib/fontkit
+    verify-features.py     # Lilex calt / ligature gate
+    calibrate-stroke.sh    # diagnostic: measure stems → recommend CJK_EMBOLDEN_*
+    render-sample.py       # diagnostic
   samples/
     coding-mixed.txt
     rendered/              # gitignored PNGs
@@ -104,19 +96,14 @@ Shared, not duplicated: [`../lib/fontkit/`](../lib/fontkit/) (`fontkit.measure`,
 
 - `bash`, `curl`, `unzip`, `zip`
 - Python 3.10+ (`venv` or `uv`) → `fonttools`, `skia-pathops` (CJK embolden), optional `Pillow` for samples
-- **Docker** (preferred) or **FontForge** for the Nerd Font patcher
+- **FontForge** for the Nerd Font patcher (a build input; the container path was removed in KIT-277)
 
-```bash
-# Debian/Ubuntu example
-sudo apt install curl unzip zip python3-venv
-# plus Docker, or: sudo apt install fontforge
-```
 
 ## Build
 
 ```bash
 cd sans
-./scripts/build.sh
+just build sans
 # → out/LilexSansSCDual-{Regular,Bold}.ttf          (intermediate)
 # → out/nerd/LilexSansSCNFM-{Regular,Bold}.ttf      (product)
 ```
@@ -124,19 +111,16 @@ cd sans
 Step by step:
 
 ```bash
-./scripts/01-fetch-sources.sh   # download + extract pinned sources
-./scripts/02-merge.sh           # embolden SC (pins) + merge EN=550 / CJK=1100
-./scripts/03-nerd-patch.sh      # Nerd complete + half-cell icons + EAW widths + mono flags
-./scripts/04-verify.sh          # hard-fail if advances / flags / EAW / features drift
+just steps sans                 # src-latin / src-cjk / cjk-prepared / merged / nerd / packaged
+just step sans merged-Bold      # build one step in isolation
+just gate sans                  # hard-fail if advances / flags / EAW / features drift
 ```
-
-Force patcher backend: `NERD_PATCH_METHOD=docker|fontforge ./scripts/03-nerd-patch.sh`
 
 ### Sample render
 
 ```bash
-# after build; needs Pillow in work/venv
-work/venv/bin/python scripts/render-sample.py \
+# after build; run inside `nix develop` (Pillow, freetype-py)
+python3 scripts/render-sample.py \
   --font out/nerd/LilexSansSCNFM-Regular.ttf \
   --title "LilexSansSC NFM · EN 550 / CJK 1100 · weight s=5"
 # → samples/rendered/sample-{dark,light}.png
@@ -145,7 +129,7 @@ work/venv/bin/python scripts/render-sample.py \
 ### Release package
 
 ```bash
-./scripts/package-release.sh 0.1.0
+just release sans
 # → dist/LilexSansSCNFM-0.1.0.zip
 ```
 

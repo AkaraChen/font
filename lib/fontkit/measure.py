@@ -492,7 +492,7 @@ def parse_chars(s: str) -> list[str]:
     return parts
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--font", type=Path, help="single font to measure")
     ap.add_argument("--latin", type=Path, help="Latin reference font (IosevkaNSlab / MonoSlab)")
@@ -519,7 +519,7 @@ def main() -> None:
         default=Path("work/stroke-calibrate"),
         help="output dir for emboldened trial fonts",
     )
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     upm = args.upm if args.upm > 0 else None
     latin_chars = parse_chars(args.latin_chars)
     cjk_chars = parse_chars(args.cjk_chars)

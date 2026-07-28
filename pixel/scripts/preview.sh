@@ -9,19 +9,17 @@
 # Requires: harfbuzz (hb-view). Optional: imagemagick (stacks the sheet).
 set -euo pipefail
 # shellcheck disable=SC1091
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/tools/diagnostic.sh"
 
-need_cmd hb-view
+command -v hb-view >/dev/null 2>&1 || die "no hb-view — run this inside \`nix develop\`"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
+# No argument: preview the shipped Nerd product, realising it if it is cold.
 FONT="${1:-}"
-if [[ -z "${FONT}" ]]; then
-  FONT="${OUT_DIR}/nerd/${PRODUCT_STEM}-Regular.ttf"
-  [[ -f "${FONT}" ]] || FONT="${OUT_DIR}/${BASE_FAMILY_PS}-Regular.ttf"
-fi
-[[ -f "${FONT}" ]] || die "no font to preview (pass a path, or run 02-add-ligatures.sh)"
+[[ -n "${FONT}" ]] || FONT="$(step nerd)/${PRODUCT_STEM}-Regular.ttf"
+[[ -f "${FONT}" ]] || die "no such font: ${FONT}"
 
-PREVIEW_DIR="${OUT_DIR}/preview"
+PREVIEW_DIR="${FAMILY_ROOT}/work/preview"
 rm -rf "${PREVIEW_DIR}"
 mkdir -p "${PREVIEW_DIR}"
 
@@ -48,7 +46,7 @@ while IFS= read -r line; do
   [[ -n "${line}" ]] || continue
   n=$((n + 1))
   render "$(printf '10-code-%02d' "${n}")" +calt "${line}"
-done < "${PIXEL_ROOT}/samples/coding-mixed.txt"
+done < "${FAMILY_ROOT}/samples/coding-mixed.txt"
 
 if command -v magick >/dev/null 2>&1; then
   log "stacking contact sheet"

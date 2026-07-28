@@ -421,7 +421,7 @@ def merge_pair(
     check.close()
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--latin-regular", type=Path, required=True)
     ap.add_argument("--latin-bold", type=Path, required=True)
@@ -442,7 +442,7 @@ def main() -> int:
     ap.add_argument("--os2-typo-line-gap", type=int, default=0)
     ap.add_argument("--os2-win-ascent", type=int, default=1032)
     ap.add_argument("--os2-win-descent", type=int, default=290)
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     if args.cjk_adv != 2 * args.en_adv:
         print(

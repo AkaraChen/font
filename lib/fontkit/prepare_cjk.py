@@ -74,7 +74,7 @@ def shear_font(font: TTFont, degrees: float, pivot_y: float) -> int:
     return touched
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("src", type=Path)
     ap.add_argument("dst", type=Path)
@@ -82,7 +82,7 @@ def main() -> int:
     ap.add_argument("--slant-deg", type=float, default=7.5)
     ap.add_argument("--pivot-y", type=float, default=375.0)
     ap.add_argument("--min-embolden-width", type=int, default=900)
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     args.dst.parent.mkdir(parents=True, exist_ok=True)
     source = args.src

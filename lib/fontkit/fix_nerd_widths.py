@@ -124,11 +124,11 @@ def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
     return lines
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("fonts", nargs="+", type=Path)
     ap.add_argument("--dry-run", action="store_true")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     for path in args.fonts:
         for line in fix_font(path, dry_run=args.dry_run):
             print(line)

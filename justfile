@@ -1,11 +1,12 @@
 # AKR fonts — UX layer over Nix.
 #
-# just is deliberately NOT the build system: Nix is. Everything here is either
-# an alias for a nix invocation or a thin wrapper that runs the existing family
-# scripts inside `nix develop`. Phase 0 changes no build logic.
+# just is deliberately NOT the build system: Nix is. Everything here is an alias
+# for a nix invocation. Since Phase 3 that is literally true for the six
+# derivation families — `just build sans` is `nix build .#sans` plus the copy
+# into sans/out that the fingerprint net reads.
 #
 #   just dev                → enter the pinned toolchain shell
-#   just build sans         → run sans/scripts/build.sh in that shell, timed
+#   just build sans         → nix build .#sans, materialised into sans/out
 #   just fingerprint sans   → (re)write sans' regression baseline
 #   just verify sans        → compare a fresh build against the baseline
 #   just test               → fontkit unit tests (lib/tests), no font build
@@ -29,8 +30,8 @@ dev:
 matrix:
     @for f in {{families}}; do echo "$f"; done
 
-# Realise every pinned upstream input (nix/sources). Prints the store path to
-# export as FONTKIT_SRC_CACHE; `just build` does this for you.
+# Realise every pinned upstream input (nix/sources). The build steps depend on
+# these directly; this is for looking at them.
 sources:
     @{{nix}} build --no-link --print-out-paths .#source-cache
 
@@ -49,10 +50,54 @@ graph:
 cache-report layer +results:
     @tools/cache-report.sh {{layer}} {{results}}
 
-# Build one family: runs its existing scripts/build.sh step by step, timed.
-# Pinned sources are realised once up front and shared across families.
+# Build one family and materialise its products under <family>/out.
+#
+# serif still runs its own shell pipeline (its Sarasa toolchain is a separate
+# issue); the other six are derivations, so this is a `nix build` and a copy.
+# The copy exists because tools/fingerprint.py walks <family>/out and names each
+# product by its path relative to it — pointing it at a store path instead would
+# work, but then a baseline would depend on where the store happens to be.
 build family:
-    {{nix}} develop --command tools/build-family.sh {{family}}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "{{family}}" == "serif" ]]; then
+      # serif still curls its own inputs, so it needs the source layer realised
+      # and pointed at — tools/build-family.sh used to do this for all seven.
+      # FONTKIT_SRC_CACHE=off skips it and falls back to curl, which still works
+      # and is still hash-gated; it just re-downloads 300 MiB of Sarasa.
+      if [[ "${FONTKIT_SRC_CACHE:-}" != "off" ]]; then
+        export FONTKIT_SRC_CACHE="$({{nix}} build --no-link --print-out-paths .#source-cache)"
+      fi
+      {{nix}} develop --command serif/scripts/build.sh
+      exit 0
+    fi
+    out="$({{nix}} build --no-link --print-out-paths --print-build-logs .#{{family}})"
+    rm -rf {{family}}/out
+    cp -R "$out" {{family}}/out
+    chmod -R u+w {{family}}/out
+    ls -lhR {{family}}/out
+
+# Build one step in isolation — for bisecting a fingerprint diff, or feeding a
+# calibration run. `just steps <family>` lists what a family has.
+step family name:
+    {{nix}} build --out-link result-{{family}}-{{name}} .#{{family}}-{{name}}
+    @ls -lLR result-{{family}}-{{name}}/
+
+# The build steps one family has, with the axes that make each one rebuild.
+steps family:
+    @{{nix}} eval --json .#packages.$({{nix}} eval --raw --impure --expr builtins.currentSystem) \
+      --apply 'ps: builtins.filter (n: builtins.match "{{family}}-.*" n != null) (builtins.attrNames ps)' \
+      | jq -r '.[]'
+
+# Run one family's gate against its products. The release step depends on this,
+# so a red gate means no archive rather than an archive nobody checked.
+gate family:
+    {{nix}} build --no-link --print-build-logs .#{{family}}-verify
+
+# Build the release archive (gated: it depends on `gate`).
+release family:
+    {{nix}} build --out-link result-{{family}}-release .#{{family}}-release
+    @ls -lL result-{{family}}-release/
 
 # Build every family, sequentially. Keeps going so one failure does not hide the rest.
 build-all:
@@ -92,10 +137,6 @@ verify-all:
 # Print one font file's normalised fingerprint (for ad-hoc inspection).
 dump font:
     {{nix}} develop --command python3 tools/fingerprint.py dump {{font}}
-
-# Show the recorded per-step wall-clock timings from the last build.
-timings family:
-    @cat {{family}}/work/step-timings.tsv
 
 # Run the fontkit unit tests (seconds — no font build needed).
 test:

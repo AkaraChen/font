@@ -39,7 +39,7 @@ Everything reproducible lives in [`pins.env`](pins.env):
 - Zhuque release tag + zip SHA-256
 - Embolden strength for Bold CJK
 - `EN_ADV` / `CJK_ADV` / vertical metrics / family names
-- Nerd Fonts patcher tag + docker image digest
+- Nerd Fonts patcher tag
 
 Do **not** bump pins casually; change them in a dedicated commit with a short rationale.
 
@@ -52,16 +52,8 @@ typewriter/
     OFL-CourierPrime.txt
     OFL-Zhuque.txt
   scripts/
-    build.sh               # one-shot fetch → prepare → merge → nerd → verify
-    01-fetch-sources.sh
-    02-prepare-cjk.sh      # Bold embolden (stem-matched)
-    03-merge.sh            # Prime + Zhuque → Dual intermediate
-    04-nerd-patch.sh
-    05-verify.sh
-    merge_typewriter.py
-    # shared steps now live in lib/fontkit (run as python3 -m fontkit.<module>)
-    render-sample.py
-    package-release.sh
+    merge_typewriter.py    # the merge engine; everything else is lib/fontkit
+    render-sample.py       # diagnostic
   samples/
     coding-mixed.txt
     rendered/              # gitignored PNGs
@@ -77,19 +69,14 @@ Embolden / stroke tools are shared: [`../lib/fontkit/`](../lib/fontkit/).
 
 - `bash`, `curl`, `unzip`, `zip`
 - Python 3.10+ (`venv` or `uv`) → `fonttools`, `skia-pathops`, optional `Pillow`
-- **Docker** (preferred) or **FontForge** for the Nerd Font patcher
+- **FontForge** for the Nerd Font patcher (a build input; the container path was removed in KIT-277)
 
-```bash
-# Debian/Ubuntu example
-sudo apt install curl unzip zip python3-venv
-# plus Docker, or: sudo apt install fontforge
-```
 
 ## Build
 
 ```bash
 cd typewriter
-./scripts/build.sh
+just build typewriter
 # → out/CourierPrimeZhuqueDual-{Regular,Bold}.ttf          (intermediate)
 # → out/nerd/CourierPrimeZhuqueNFM-{Regular,Bold}.ttf      (product)
 ```
@@ -97,20 +84,16 @@ cd typewriter
 Step by step:
 
 ```bash
-./scripts/01-fetch-sources.sh   # download pinned sources
-./scripts/02-prepare-cjk.sh     # Regular+Bold CJK embolden (stem-matched)
-./scripts/03-merge.sh           # merge EN=600 / CJK=1200
-./scripts/04-nerd-patch.sh      # Nerd complete + half-cell icons + EAW
-./scripts/05-verify.sh          # hard-fail if advances / flags / EAW drift
+just steps typewriter                  # what the family is made of
+just step typewriter cjk-prepared-Bold # build one step in isolation
+just gate typewriter                   # hard-fail if advances / flags / EAW drift
 ```
-
-Force patcher backend: `NERD_PATCH_METHOD=docker|fontforge ./scripts/04-nerd-patch.sh`
 
 ### Sample render
 
 ```bash
-# after build; needs Pillow in work/venv
-work/venv/bin/python scripts/render-sample.py \
+# after build; run inside `nix develop` (Pillow, freetype-py)
+python3 scripts/render-sample.py \
   --font out/nerd/CourierPrimeZhuqueNFM-Regular.ttf \
   --title "CourierPrimeZhuque NFM · EN 600 / CJK 1200"
 # → samples/rendered/sample-{dark,light}.png
@@ -119,7 +102,7 @@ work/venv/bin/python scripts/render-sample.py \
 ### Release package
 
 ```bash
-./scripts/package-release.sh 0.1.0
+just release typewriter
 # → dist/CourierPrimeZhuqueNFM-0.1.0.zip
 ```
 

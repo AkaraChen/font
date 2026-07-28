@@ -16,6 +16,16 @@
       granularity = import ./nix/granularity.nix { inherit (nixpkgs) lib; };
       sourcesFor = pkgs: import ./nix/sources { inherit pkgs; root = ./.; };
       fontkitFor = pkgs: pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
+
+      # The six families that build from source here (serif still runs its own
+      # shell pipeline — see nix/families/default.nix).
+      familiesFor = pkgs: import ./nix/families {
+        inherit pkgs granularity;
+        inherit (pkgs) lib;
+        sources = sourcesFor pkgs;
+        fontkit = fontkitFor pkgs;
+        root = ./.;
+      };
     in
     {
       # The derivation-granularity contract (nix/granularity.nix). Exported as a
@@ -27,6 +37,7 @@
       packages = forAllSystems (pkgs:
         let
           sources = sourcesFor pkgs;
+          families = familiesFor pkgs;
         in
         {
           # The shared build steps, as a buildPythonPackage. The per-step
@@ -35,7 +46,7 @@
 
           # Every pinned upstream input, content-addressed. This is the GC root
           # CI keeps: one `nix build .#source-cache` materialises the whole
-          # source layer, and tools/src-cache.sh serves every family out of it.
+          # source layer that every family's src-* step then draws from.
           source-cache = import ./nix/source-cache.nix { inherit pkgs sources; };
 
           # The single shared patcher — five families, one download.
@@ -52,7 +63,15 @@
             nixpkgs.lib.nameValuePair "sources-${family}"
               (pkgs.linkFarm "sources-${family}"
                 (nixpkgs.lib.mapAttrsToList (name: path: { inherit name path; }) drvs)))
-          sources.perFamily);
+          sources.perFamily
+
+        # `nix build .#sans`         → the products, in the out/ layout
+        # `nix build .#sans-release` → the release zip
+        # `nix build .#sans-merged-Bold` → one step, for bisecting a diff
+        // families.outputs
+        // families.releases
+        // families.steps
+        // families.verifies);
 
       # `just check` (nix flake check) builds fontkit, which runs its pytest
       # suite — the only automated gate on the shared build steps that does not
@@ -65,18 +84,20 @@
         // import ./nix/checks.nix {
           inherit pkgs granularity;
           sources = sourcesFor pkgs;
+          families = familiesFor pkgs;
         });
 
       devShells = forAllSystems (pkgs:
         let
-          # The five build steps every family shares, formerly 17 near-identical
-          # files under <family>/scripts/. Packaged so a bare `nix develop` can
-          # run `python3 -m fontkit.<step>` and so Phase 1's per-step
-          # derivations can depend on it without a repo checkout.
+          # The build steps every family shares. Packaged so a bare `nix develop`
+          # can run `fontkit <step>` and so the per-step derivations can depend
+          # on it without a repo checkout.
           fontkit = fontkitFor pkgs;
 
-          # Every Python dependency that was previously `pip install`-ed from one of
-          # the eight scattered, unpinned call sites in */scripts/common.sh.
+          # Every Python dependency the build steps and the diagnostics need. The
+          # build gets a narrower set (nix/families/support.nix); this one is
+          # wider because tools/render-sample.py and the calibration scripts want
+          # Pillow, freetype-py, numpy and uharfbuzz.
           # `pathops` is skia-pathops; nixpkgs already builds it (gn + ninja + Skia,
           # with darwin aarch64/x86_64 patches), so no overlay is needed here.
           pythonEnv = pkgs.python3.withPackages (ps: with ps; [
@@ -132,9 +153,9 @@
             name = "akr-fonts";
             packages = systemTools ++ [ pythonEnv ];
 
-            # Pin the interpreter so the family scripts skip venv creation and
-            # `pip install` entirely. common.sh honours this and hard-fails if the
-            # interpreter cannot import what that family needs.
+            # serif still runs its shell pipeline and its common.sh reads this to
+            # skip venv creation. The six derivation families do not look at it:
+            # their interpreter is a build input.
             FONTKIT_PYTHON = "${pythonEnv}/bin/python3";
 
             # fontTools honours SOURCE_DATE_EPOCH for head.modified. fontforge's
@@ -142,9 +163,6 @@
             # which is exactly why the regression net fingerprints normalised
             # advance/name/feature dumps instead of TTF sha256s.
             SOURCE_DATE_EPOCH = "0";
-
-            # fontforge is on PATH here, so the docker fallback must never be taken.
-            NERD_PATCH_METHOD = "fontforge";
 
             # The banner goes to stderr: `nix develop --command <tool>` is used to
             # pipe tool output around, and a greeting on stdout would corrupt it.

@@ -15,7 +15,7 @@ strict **2:1** grid, **measured stroke match** (no Nerd patch in v0.1).
 | Product | Regular + Bold | `out/RecursiveYozaiDual-{Regular,Bold}.ttf` |
 
 ```bash
-cd casual && ./scripts/build.sh
+just build casual
 # → out/RecursiveYozaiDual-{Regular,Bold}.ttf
 ```
 
@@ -41,8 +41,8 @@ Recursive Mono Casual’s cell is **600/1000** em. Pair that naïvely with Yozai
 native 1000-unit Han advance and you get **1.67:1**, not 2:1.
 
 Recipe: **uniform scale × (500/600)** on the Latin face so every mono cell lands on
-exactly **500**, then import Yozai at native **1000**. Gate: `scripts/05-verify.sh`
-(`A=500`, `中=1000`).
+exactly **500**, then import Yozai at native **1000**. Gate: `just gate casual`
+(`fontkit verify-2to1 --profile dense --expect-half 500`).
 
 ### 2. Stroke weight (measured, not guessed)
 
@@ -88,12 +88,9 @@ casual/
     OFL-Recursive.txt
     OFL-Yozai.txt
   scripts/
-    build.sh
-    01-fetch-sources.sh … 05-verify.sh
-    prepare_latin.py          # scale mono TTF 600→500
-    calibrate-stroke.sh
-    package-release.sh
-    render-sample.sh
+    prepare_latin.py          # scale mono TTF 600→500  (the only build code left here)
+    calibrate-stroke.sh       # diagnostic: re-measure embolden strengths
+    render-sample.sh          # diagnostic: refresh samples/rendered/
   samples/
     coding-mixed.txt
     rendered/sample-{dark,light}.png
@@ -102,8 +99,9 @@ casual/
   dist/   # gitignored release zips
 ```
 
-CJK embolden reuses [`../handwriting/scripts/prepare_cjk.py`](../handwriting/scripts/prepare_cjk.py)
-and merge reuses [`../handwriting/scripts/merge_radon_wenkai.py`](../handwriting/scripts/merge_radon_wenkai.py)
+CJK embolden uses [`fontkit.prepare_cjk`](../lib/fontkit/prepare_cjk.py)
+and merge uses [`fontkit.merge_radon_wenkai`](../lib/fontkit/merge_radon_wenkai.py)
+(both were reached by hardcoded path into `../handwriting/scripts/` until KIT-277)
 (Latin base + CJK import policy). Stroke tools: [`../lib/fontkit/`](../lib/fontkit/).
 
 ## Dependencies
@@ -116,8 +114,8 @@ and merge reuses [`../handwriting/scripts/merge_radon_wenkai.py`](../handwriting
 
 ```bash
 cd casual
-./scripts/build.sh                 # full pipeline + 2:1 gate
-./scripts/package-release.sh 0.1.0 # → dist/RecursiveYozaiDual-0.1.0.zip
+just build casual                 # full pipeline + 2:1 gate
+just release casual # → dist/RecursiveYozaiDual-0.1.0.zip
 ./scripts/render-sample.sh         # refresh samples/rendered/
 ./scripts/calibrate-stroke.sh      # re-measure embolden strengths
 ```
