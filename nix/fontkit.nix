@@ -57,7 +57,6 @@ buildPythonPackage {
     "fontkit.prepare_cjk"
     "fontkit.scale_upem"
     "fontkit.merge"
-    "fontkit.merge_radon_wenkai"
     "fontkit.expand_ligatures"
     "fontkit.fix_nerd_widths"
     "fontkit.fix_terminal_metrics"

@@ -21,7 +21,6 @@ let
   inherit (support) step file profile region;
   m = manifest.data;
   inherit (m) grid naming;
-  metrics = m.metrics.coding;
   recursive = m.sources.recursive;
   yozai = m.sources.yozai;
 
@@ -29,11 +28,6 @@ let
   weights = map support.weightName m.build.weights;
 
   ps = naming.ps;
-  familyName =
-    if (naming.suffix or "") == "" then
-      naming.family
-    else
-      "${naming.family} ${naming.suffix}";
 
   # Which Yozai master backs each product face, and how hard to stroke it.
   # Measured, not guessed — see casual/font.toml and tools/calibrate-cjk-weight.py.
@@ -108,26 +102,14 @@ let
   merged = weight: step "merged" { inherit family profile region weight; } {
     buildCommand = ''
       mkdir -p $out merged
-      fontkit merge-radon-wenkai \
+      fontkit merge \
+        --manifest ${manifest.file} \
+        --profile ${profile} \
         --latin-regular ${latinPrepared "Regular"}/RecursiveLatin-Regular.ttf \
         --latin-bold ${latinPrepared "Bold"}/RecursiveLatin-Bold.ttf \
         --cjk-regular ${cjkPrepared "Regular"}/YozaiPrepared-Regular.ttf \
         --cjk-bold ${cjkPrepared "Bold"}/YozaiPrepared-Bold.ttf \
-        --out-dir merged \
-        --en-adv ${toString grid.en_adv} \
-        --cjk-adv ${toString grid.cjk_adv} \
-        --family ${lib.escapeShellArg familyName} \
-        --family-ps ${ps} \
-        --version ${naming.version} \
-        --slant-deg ${toString m.calibration.regular.slant_deg} \
-        --hhea-ascent ${toString metrics.hhea_ascent} \
-        --hhea-descent ${toString metrics.hhea_descent} \
-        --hhea-line-gap ${toString metrics.hhea_line_gap} \
-        --os2-typo-ascender ${toString metrics.os2_typo_ascender} \
-        --os2-typo-descender ${toString metrics.os2_typo_descender} \
-        --os2-typo-line-gap ${toString metrics.os2_typo_line_gap} \
-        --os2-win-ascent ${toString metrics.os2_win_ascent} \
-        --os2-win-descent ${toString metrics.os2_win_descent}
+        --out-dir merged
       cp merged/${ps}-${weight}.ttf $out/
     '';
   };

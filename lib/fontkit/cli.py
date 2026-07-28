@@ -25,9 +25,6 @@ STEPS = {
     "scale-upem": "scale_upem",
     "prepare-cjk": "prepare_cjk",
     "merge": "merge",
-    # handwriting and casual still build on the old engine; the alias goes away
-    # with handwriting's migration, which is what deletes the module.
-    "merge-radon-wenkai": "merge_radon_wenkai",
     "expand-ligatures": "expand_ligatures",
     "nerd-patch": "nerd_patch",
     "rename-nerd-family": "rename_nerd_family",

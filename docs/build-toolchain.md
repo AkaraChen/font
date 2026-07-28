@@ -197,7 +197,7 @@ the other three kept the bug. They now live once, in `lib/fontkit/`, and run as
 `nix/fontkit.nix` packages the tree as a `buildPythonPackage`, which is what the
 per-step derivations depend on — they have no checkout to point at. It also
 installs a `fontkit` console script, so a step is `fontkit merge …` rather than
-`"${PY}" -m fontkit.merge_radon_wenkai …` with 30 lines above it working out
+`"${PY}" -m fontkit.merge …` with 30 lines above it working out
 what `PY` should be. Both spellings work; the module form is what the unit tests
 call.
 
@@ -209,7 +209,7 @@ Phase 3 added four more modules and promoted three that were still family-local:
 | `fontkit.package` | `package-release.sh` ×6 | deterministic zip; the README body is rendered by Nix from the same pins the build read |
 | `fontkit.cli` | `common.sh` ×7 | the dispatch table those 104-line files were building up to |
 | `fontkit.prepare_cjk` | `handwriting/scripts/prepare_cjk.py` | casual reached across for it |
-| `fontkit.merge_radon_wenkai` | `handwriting/scripts/merge_radon_wenkai.py` | casual reached across for it |
+| `fontkit.merge_radon_wenkai` | `handwriting/scripts/merge_radon_wenkai.py` | casual reached across for it; folded into `fontkit.merge` in Phase 5 |
 | `fontkit.expand_ligatures` | `serif/scripts/expand-default-ligatures.py` | handwriting reached across for it |
 
 ### The differences that survived as flags
