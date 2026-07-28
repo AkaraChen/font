@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Merge Iosevka Curly + RHR → out/YuanTiDual-{Regular,Bold}.ttf
+# Merge Iosevka Curly + RHR → out/IosevkaCurlyRHRDual-{Regular,Bold}.ttf
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
@@ -52,7 +52,7 @@ for lic in OFL-Iosevka.txt OFL-Resource-Han-Rounded.txt; do
 done
 
 mapfile -t DUAL_FONTS < <(
-  find "${OUT_DIR}" -maxdepth 1 -type f -name 'YuanTiDual-*.ttf' | sort
+  find "${OUT_DIR}" -maxdepth 1 -type f -name 'IosevkaCurlyRHRDual-*.ttf' | sort
 )
 if [[ ${#DUAL_FONTS[@]} -gt 0 ]]; then
   log "narrow/widen Dual intermediate to match East_Asian_Width"

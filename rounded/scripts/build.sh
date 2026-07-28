@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-shot: fetch → prepare CJK → merge Dual → Nerd Font Mono → verify.
-# Product: out/nerd/YuanTiNFM-{Regular,Bold}.ttf  （圆体）
+# Product: out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf  （圆体）
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

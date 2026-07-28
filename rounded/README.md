@@ -1,4 +1,4 @@
-# rounded — 圆体 / YuanTi NFM
+# rounded — 圆体 / IosevkaCurlyRHR NFM
 
 Coding dual-width face: **Iosevka Curly** (Latin, ss20 Curly Style) + **Resource Han Rounded SC** (资源圆体 CJK) + **Nerd Font Mono**, strict **2:1** grid.
 
@@ -10,9 +10,9 @@ Coding dual-width face: **Iosevka Curly** (Latin, ss20 Curly Style) + **Resource
 | CJK | [Resource Han Rounded](https://github.com/CyanoHao/Resource-Han-Rounded) CN | **v0.990** Regular + Bold |
 | Icons | [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) FontPatcher | **v3.4.0** (`--complete --single-width-glyphs`) |
 | Grid | EN cell / CJK cell | **500 / 1000** |
-| Intermediate | Regular + Bold (pre-Nerd) | `out/YuanTiDual-{Regular,Bold}.ttf` |
-| Product | Regular + Bold (Nerd Mono) | `out/nerd/YuanTiNFM-{Regular,Bold}.ttf` |
-| Family name | Project product (see RFN) | **YuanTi NFM** / 圆体 |
+| Intermediate | Regular + Bold (pre-Nerd) | `out/IosevkaCurlyRHRDual-{Regular,Bold}.ttf` |
+| Product | Regular + Bold (Nerd Mono) | `out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf` |
+| Family name | Source-encoding (see RFN) | **IosevkaCurlyRHR NFM**（方向绰号：圆体） |
 | Metrics gate | `verify-2to1.py --expect-half 500 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
 ## Why Iosevka Curly (ss20), not other inherits
@@ -34,16 +34,21 @@ Iosevka stylistic inherits are pre-packaged “looks like font X” recipes. For
 
 ## Name recipe
 
+Same source-encoding style as `LilexSansSC NFM` / `SarasaNZSSlab NFM` — **inheritance is in the family name**:
+
 | Token | Meaning |
 | --- | --- |
-| **YuanTi / 圆体** | Product family (rounded-path coding dual-width) |
+| **Iosevka** | Latin base (Iosevka mono) |
+| **Curly** | ss20 Curly Style prebuilt (rounded terminals; not Slab) |
+| **RHR** | Resource Han Rounded SC (CJK) |
 | **Dual** | Intermediate pre-Nerd merge only |
 | **NFM** | Nerd Font Mono product (complete icons, single-width glyphs) |
 
-- Intermediate family (name ID 1): `YuanTi Dual`
-- Product family (name ID 1): `YuanTi NFM` (10 chars, Windows ≤31)
-- PostScript / file stem: `YuanTiNFM`
-- Not an official Iosevka, Resource Han Rounded, or Nerd Fonts face. Upstream OFLs reserve **Iosevka** (and related Source Han names may apply to RHR lineage). **YuanTi** is a project label — rename review before public OFL redistribution.
+- Intermediate family (name ID 1): `IosevkaCurlyRHR Dual`
+- Product family (name ID 1): `IosevkaCurlyRHR NFM` (19 chars, Windows ≤31)
+- PostScript / file stem: `IosevkaCurlyRHRNFM`
+- Docs shorthand **圆体** = product direction; install/picker name is **IosevkaCurlyRHR NFM**
+- Not an official Iosevka / Resource Han Rounded / Nerd Fonts face. Upstream OFLs reserve **Iosevka** (and Source Han RFNs may apply to the RHR lineage). Compound is a project source-label — review RFN before public OFL redistribution.
 
 ## Pins
 
@@ -102,8 +107,8 @@ Embolden / stroke tools are reused from [`../serif/tools/`](../serif/tools/).
 ```bash
 cd rounded
 ./scripts/build.sh
-# → out/YuanTiDual-{Regular,Bold}.ttf
-# → out/nerd/YuanTiNFM-{Regular,Bold}.ttf
+# → out/IosevkaCurlyRHRDual-{Regular,Bold}.ttf
+# → out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf
 ```
 
 Step by step:
@@ -120,8 +125,8 @@ Step by step:
 
 ```bash
 work/venv/bin/python scripts/render-sample.py \
-  --font out/nerd/YuanTiNFM-Regular.ttf \
-  --title "圆体 YuanTi NFM · EN 500 / CJK 1000 · Iosevka Curly × RHR"
+  --font out/nerd/IosevkaCurlyRHRNFM-Regular.ttf \
+  --title "圆体 IosevkaCurlyRHR NFM · EN 500 / CJK 1000 · Iosevka Curly × RHR"
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -129,7 +134,7 @@ work/venv/bin/python scripts/render-sample.py \
 
 ```bash
 ./scripts/package-release.sh 0.1.0
-# → dist/YuanTiNFM-0.1.0.zip
+# → dist/IosevkaCurlyRHRNFM-0.1.0.zip
 ```
 
 ## Character policy
@@ -143,7 +148,7 @@ work/venv/bin/python scripts/render-sample.py \
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --expect-half 500 --check-nerd --check-eaw out/nerd/YuanTiNFM-*.ttf
+python3 scripts/verify-2to1.py --expect-half 500 --check-nerd --check-eaw out/nerd/IosevkaCurlyRHRNFM-*.ttf
 ```
 
 | Set | Expected |
@@ -155,7 +160,7 @@ python3 scripts/verify-2to1.py --expect-half 500 --check-nerd --check-eaw out/ne
 
 ## Family / license
 
-- **Product family:** `YuanTi NFM` / 圆体 (Regular / Bold)
+- **Product family:** `IosevkaCurlyRHR NFM` (Regular / Bold；方向绰号 圆体)
 - Upstream **SIL OFL 1.1** (Iosevka RFN **Iosevka**; keep RHR OFL with redistributions)
 - Nerd glyph sets follow Nerd Fonts / icon-font licenses
 - Keep `licenses/OFL-Iosevka.txt` and `licenses/OFL-Resource-Han-Rounded.txt` with redistributions

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render 荷塘月色 mixed CJK/EN coding sample for YuanTi."""
+"""Render 荷塘月色 mixed CJK/EN coding sample for IosevkaCurlyRHR."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ DEFAULT_BODY = """这几天心里颇不宁静。今晚在 courtyard 里坐着乘
 层层的叶子中间，零星地点缀着些 white flowers，有袅娜地开着的，有羞涩地打着朵儿的；
 正如一粒粒的明珠，又如碧天里的 stars，又如刚出浴的美人。
 
-// coding sample · 中英混排对齐检查 · 圆体 YuanTi
+// coding sample · 中英混排对齐检查 · 圆体 IosevkaCurlyRHR
 const moon = "荷塘月色"; // full moon over the lotus pond
 function walk(path: string): void {
   // day by day 走过的 path，观察 leaf 与 flower 的 rhythm
@@ -120,10 +120,10 @@ def main() -> int:
     ap.add_argument(
         "--font",
         type=Path,
-        default=root / "out" / "nerd" / "YuanTiNFM-Regular.ttf",
+        default=root / "out" / "nerd" / "IosevkaCurlyRHRNFM-Regular.ttf",
     )
     ap.add_argument("--out-dir", type=Path, default=root / "samples" / "rendered")
-    ap.add_argument("--title", default="圆体 YuanTi NFM · EN 500 / CJK 1000 · Iosevka Curly × RHR")
+    ap.add_argument("--title", default="IosevkaCurlyRHR NFM · EN 500 / CJK 1000 · Iosevka Curly × RHR")
     ap.add_argument("--body-file", type=Path, default=None)
     ap.add_argument("--size", type=int, default=15)
     args = ap.parse_args()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Merge Iosevka Curly (ss20) + Resource Han Rounded SC into a dual-width face.
 
-Default product metrics: EN 500 / CJK 1000 (strict 2:1). Product: 圆体 / YuanTi.
+Default product metrics: EN 500 / CJK 1000 (strict 2:1). Product: 圆体 / IosevkaCurlyRHR.
 
 Character policy
 ----------------
@@ -10,7 +10,7 @@ Character policy
 - Resource Han Rounded SC (advance expanded & centred to CJK_ADV): CJK
   ideographs, CJK punctuation, fullwidth forms. CJK-side ranges only.
 
-Family naming: "YuanTi Dual" intermediate / "YuanTi NFM" product (圆体).
+Family naming: "IosevkaCurlyRHR Dual" intermediate / "IosevkaCurlyRHR NFM" product (圆体).
 """
 
 from __future__ import annotations
@@ -544,8 +544,8 @@ def main() -> int:
     p.add_argument("--latin-src-adv", type=int, default=500)
     p.add_argument("--latin-src-upm", type=int, default=1000)
     p.add_argument("--latin-target-upm", type=int, default=1000)
-    p.add_argument("--family", default="YuanTi Dual")
-    p.add_argument("--family-ps", default="YuanTiDual")
+    p.add_argument("--family", default="IosevkaCurlyRHR Dual")
+    p.add_argument("--family-ps", default="IosevkaCurlyRHRDual")
     p.add_argument("--hhea-ascent", type=int, default=1050)
     p.add_argument("--hhea-descent", type=int, default=-300)
     p.add_argument("--hhea-line-gap", type=int, default=0)
