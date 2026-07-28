@@ -1,0 +1,14 @@
+// Hyperlegible confusables · 易混字形
+0O o l1I | 8B S5 2Z rn m vv
+中英: 路径 path/to/文件 用户ID=0O1lI
+
+// coding sample · 中英混排对齐检查
+const moon = "荷塘月色"; // full moon over the lotus pond
+function walk(path: string): void {
+  // day by day 走过的 path，观察 leaf 与 flower 的 rhythm
+  console.log(`path=${path}, width=600/1200`);
+}
+// 两英文字母应严格对齐一汉字：aa中bb文cc混dd排
+// |a|b|中|c|d|文|  →  中文 cell=1200, 英文 cell=600
+aa中bb文cc混dd排ee齐ff检
+|a|b|中|c|d|文|e|f|混|
