@@ -52,7 +52,6 @@ typewriter/
     OFL-CourierPrime.txt
     OFL-Zhuque.txt
   scripts/
-    merge_typewriter.py    # the merge engine; everything else is lib/fontkit
     render-sample.py       # diagnostic
   samples/
     coding-mixed.txt

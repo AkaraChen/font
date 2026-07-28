@@ -19,18 +19,12 @@ let
   inherit (support) step file profile region patcher;
   m = manifest.data;
   inherit (m) grid naming;
-  metrics = m.metrics.coding;
 
   family = "typewriter";
   weights = map support.weightName m.build.weights;
 
   ps = naming.ps;
   basePs = naming.base_ps;
-  mergeFamily =
-    if (naming.suffix or "") == "" then
-      naming.base_family
-    else
-      "${naming.base_family} ${naming.suffix}";
 
   srcLatin = weight: step "src-latin" { inherit family weight; } {
     buildCommand = ''
@@ -65,27 +59,14 @@ let
   merged = weight: step "merged" { inherit family profile region weight; } {
     buildCommand = ''
       mkdir -p $out merged
-      python3 ${file "typewriter/scripts/merge_typewriter.py"} \
+      fontkit merge \
+        --manifest ${manifest.file} \
+        --profile ${profile} \
         --latin-regular ${srcLatin "Regular"}/CourierPrime-Regular.ttf \
         --latin-bold ${srcLatin "Bold"}/CourierPrime-Bold.ttf \
         --cjk-regular ${cjkPrepared "Regular"}/ZhuqueFangsong-Regular-prepared.ttf \
         --cjk-bold ${cjkPrepared "Bold"}/ZhuqueFangsong-Bold-prepared.ttf \
-        --out-dir merged \
-        --en-adv ${toString grid.en_adv} \
-        --cjk-adv ${toString grid.cjk_adv} \
-        --latin-src-adv ${toString grid.latin_src_adv} \
-        --latin-src-upm ${toString m.options.courier_prime_src_upm} \
-        --latin-target-upm ${toString grid.latin_target_upm} \
-        --family ${lib.escapeShellArg mergeFamily} \
-        --family-ps ${basePs} \
-        --hhea-ascent ${toString metrics.hhea_ascent} \
-        --hhea-descent ${toString metrics.hhea_descent} \
-        --hhea-line-gap ${toString metrics.hhea_line_gap} \
-        --os2-typo-ascender ${toString metrics.os2_typo_ascender} \
-        --os2-typo-descender ${toString metrics.os2_typo_descender} \
-        --os2-typo-line-gap ${toString metrics.os2_typo_line_gap} \
-        --os2-win-ascent ${toString metrics.os2_win_ascent} \
-        --os2-win-descent ${toString metrics.os2_win_descent}
+        --out-dir merged
 
       cp merged/${basePs}-${weight}.ttf $out/
       fontkit narrow-symbol-widths --no-donor $out/${basePs}-${weight}.ttf
