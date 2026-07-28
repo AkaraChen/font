@@ -4,37 +4,63 @@ One directory per family, holding the normalised regression baseline for that
 family's build products. Written by `just fingerprint <family>`, checked by
 `just verify <family>`. See [`../docs/build-toolchain.md`](../docs/build-toolchain.md).
 
+> ⚠️ **Do not merge this branch as it stands.** These baselines were produced by
+> the **docker** Nerd Fonts patcher, not by the pinned `FontPatcher.zip` — see
+> [Which patcher built these](#which-patcher-built-these). Adopting them would
+> make the gate demand output the repo cannot reproduce from its own pins.
+
 **Adopted from run
 [30343032975](https://github.com/AkaraChen/font/actions/runs/30343032975)**, the
-`x86_64-linux` build of `3ed3ee4` — seven families green, 22 products. Every
-family is gated for real from here: any later drift fails the build instead of
-printing a warning.
+`x86_64-linux` build of `3ed3ee4` — seven families green, 22 products.
 
-## Baselines belong to CI, not to a laptop
+## Which patcher built these
 
-The build is **not** architecture-independent. The first CI run of this workflow
-proved it: all seven families built cleanly on `x86_64-linux`, and all seven
-products differed from baselines generated on `aarch64-darwin`.
+Phase 0 read the darwin/linux product difference as a **platform** difference,
+and wrote that down here:
 
-The one family that was diagnosed in detail, `pixel`, localises it:
+> Same pinned fontforge, same pinned `FontPatcher.zip`, same arguments, same
+> input font — and Linux emits 109 more glyphs […] So the toolchain pin makes
+> the build reproducible *on a platform*, not *across* platforms.
 
-| product | how it is built | darwin vs linux |
+**That diagnosis is wrong.** It was not the platform. It was two different
+patchers, chosen at runtime by what happened to be installed:
+
+| | patcher actually used | `pixel` nerd glyphs |
 | --- | --- | --- |
-| `FusionPixel12Mono-Regular.ttf` | fontTools only | **identical** |
-| `nerd/FusionPixel12NFM-Regular.ttf` | + `fontforge -script font-patcher` | **46552 vs 46661 glyphs** |
+| CI, `x86_64-linux` | **docker** `nerdfonts/patcher@sha256:4e820b…` | 46661 |
+| laptop, `aarch64-darwin` | pinned `FontPatcher.zip` v3.4.0 + nixpkgs fontforge | 46552 |
 
-Same pinned fontforge, same pinned `FontPatcher.zip`, same arguments, same input
-font — and Linux emits 109 more glyphs, with different `head.flags`,
-`lowestRecPPEM` and `maxp.maxPoints`. So the toolchain pin makes the build
-reproducible *on a platform*, not *across* platforms.
+`NERD_PATCH_METHOD=auto` in `pins.env` picked docker whenever docker was
+installed. GitHub's runners have docker, so **every CI-built product in this
+repo's history came out of that container** — and the container's tag was
+explicitly documented as floating. The maintainer's Mac has docker too, but the
+image is broken on `arm64` (`/bin/sh: fontforge: not found`), so it silently
+fell back to the pinned local patcher. Two platforms, two patchers, one
+conclusion drawn about platforms.
 
-`casual` and `handwriting` have no fontforge patch step at all and still
-differed, so fontforge is not the only source — `skia-pathops` (a compiled Skia)
-is the obvious suspect for the CJK embolden step, but that has **not** been
-confirmed, only inferred from which families failed.
+Evidence, from the run these baselines come from
+([pixel job log](https://github.com/AkaraChen/font/actions/runs/30343032975)):
 
-Committing a laptop's baselines would therefore make CI permanently red, and a
-permanently red gate is worse than no gate.
+```
+==> pulling/using docker image nerdfonts/patcher@sha256:4e820b…
+==> docker patch → /home/runner/work/font/font/pixel/out/nerd
+```
+
+with no fallback line after it. Building the same commit's products with docker
+removed changes every Nerd family and nothing else — `casual` and `handwriting`
+have no patch step and are byte-identical, as are all the pre-patch `Dual`
+intermediates.
+
+## Baselines still belong to CI, not to a laptop
+
+The conclusion survives its broken premise, for a smaller reason: the build is
+pinned per platform, not across them, and `PROVENANCE` records which one a
+baseline came from. Whether anything *besides* the patcher choice differs across
+platforms is now an open question rather than a settled fact — the evidence that
+looked like proof was measuring the patcher fork.
+
+Committing a laptop's baselines would still be wrong: `x86_64-linux` is what
+ships releases.
 
 This also sets what a local build can and cannot prove. Building a family both
 ways on one machine and diffing the two fingerprints is valid evidence that a
@@ -77,9 +103,20 @@ makes CI permanently red, for the reasons above.
 
 ## Open question
 
-Which platform is *correct* is not settled. Linux produces the more complete
-Nerd glyph set for `pixel`, which suggests darwin's patch is the deficient one —
-but that is an inference, not a diagnosis, and it means the fonts a maintainer
-builds locally on a Mac are not the fonts that get released. Worth its own
-issue; it is a pre-existing property of the repo that Phase 0 surfaced rather
-than introduced.
+**Which patcher is correct**, now that the choice is no longer accidental. The
+container emitted more icons than the pinned `FontPatcher.zip` v3.4.0 — 109 more
+for `pixel` and `serif`, 365 more for `rounded`, `sans` and `typewriter`. So
+dropping docker (KIT-277) makes the build match its own pin, and costs icons the
+released fonts used to carry.
+
+Two ways to close it, and it is a product decision, not a build one:
+
+1. **Accept the pin.** Fewer icons, and the products become reproducible from
+   what the repo declares.
+2. **Bump `NERD_FONTS_TAG`** to the version the container was shipping, which
+   recovers the icons *and* keeps reproducibility. Deliberate pin change, moves
+   fingerprints again, and needs someone to establish which version that was —
+   the image digest is pinned but its patcher version was never recorded.
+
+Until it is decided, the baselines to adopt are whichever run reflects the
+decision. These do not: they are the container's output.
