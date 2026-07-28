@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Merge pinned Lilex + SC into out/LilexSansSCDual-{Regular,Bold}.ttf (pre-Nerd).
+# Embolden SC (optical weight) then merge Lilex + SC → Dual intermediate (pre-Nerd).
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
@@ -16,6 +16,32 @@ do
   [[ -f "${f}" ]] || die "missing source ${f}; run 01-fetch-sources.sh first"
 done
 
+# Optical weight: pathops embolden full-cell CJK before merge (KIT-259).
+# Strengths measured by ./scripts/calibrate-stroke.sh against Lilex at product
+# X-scale. 0 = leave the SC master alone. Tools live under serif/tools/.
+[[ -f "${SERIF_TOOLS}/embolden_cjk.py" ]] \
+  || die "missing ${SERIF_TOOLS}/embolden_cjk.py (serif tools required for weight match)"
+CJK_EMBOLDEN_REGULAR="${CJK_EMBOLDEN_REGULAR:-0}"
+CJK_EMBOLDEN_BOLD="${CJK_EMBOLDEN_BOLD:-0}"
+SC_REG_IN="${EXTRACT_DIR}/IBMPlexSansSC-Regular.ttf"
+SC_BOLD_IN="${EXTRACT_DIR}/IBMPlexSansSC-Bold.ttf"
+SC_REG_PREP="${STAGE_DIR}/IBMPlexSansSC-Regular-weight.ttf"
+SC_BOLD_PREP="${STAGE_DIR}/IBMPlexSansSC-Bold-weight.ttf"
+
+embolden_sc() {
+  local src="$1" dst="$2" strength="$3" label="$4"
+  if awk "BEGIN { exit !(${strength} > 0) }"; then
+    log "embolden CJK ${label} s=${strength}"
+    "${PY}" "${SERIF_TOOLS}/embolden_cjk.py" "${src}" "${dst}" --strength "${strength}"
+  else
+    log "CJK ${label}: no embolden (s=0), use source master"
+    cp -f "${src}" "${dst}"
+  fi
+}
+
+embolden_sc "${SC_REG_IN}" "${SC_REG_PREP}" "${CJK_EMBOLDEN_REGULAR}" "Regular"
+embolden_sc "${SC_BOLD_IN}" "${SC_BOLD_PREP}" "${CJK_EMBOLDEN_BOLD}" "Bold"
+
 # Intermediate (pre-Nerd) family keeps Dual so merge output is distinct from NFM.
 FAMILY="${BASE_FAMILY_NAME:-${FAMILY_NAME}}"
 FAMILY_PS_MERGE="${BASE_FAMILY_PS:-${FAMILY_PS}}"
@@ -27,8 +53,8 @@ log "merging EN=${EN_ADV} CJK=${CJK_ADV} family='${FAMILY}'"
 "${PY}" "${SANS_ROOT}/scripts/merge_plex.py" \
   --latin-regular "${EXTRACT_DIR}/Lilex-Regular.ttf" \
   --latin-bold "${EXTRACT_DIR}/Lilex-Bold.ttf" \
-  --sc-regular "${EXTRACT_DIR}/IBMPlexSansSC-Regular.ttf" \
-  --sc-bold "${EXTRACT_DIR}/IBMPlexSansSC-Bold.ttf" \
+  --sc-regular "${SC_REG_PREP}" \
+  --sc-bold "${SC_BOLD_PREP}" \
   --out-dir "${OUT_DIR}" \
   --en-adv "${EN_ADV}" \
   --cjk-adv "${CJK_ADV}" \
