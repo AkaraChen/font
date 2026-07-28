@@ -71,7 +71,6 @@ rounded/
     OFL-Iosevka.txt
     OFL-Resource-Han-Rounded.txt
   scripts/
-    merge_rounded.py       # the merge engine; everything else is lib/fontkit
     render-sample.py       # diagnostic
   samples/
     coding-mixed.txt
