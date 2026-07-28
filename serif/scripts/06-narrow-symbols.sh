@@ -77,13 +77,15 @@ for f in "${FONTS[@]}"; do
   esac
   [[ -f "${donor}" ]] || die "donor not found: ${donor}"
   log "narrow EAW symbols: $(basename "$f")  (donor $(basename "${donor}"))"
-  "${PY}" "${SERIF_ROOT}/scripts/narrow-symbol-widths.py" "$f" --donor "${donor}"
+  "${PY}" -m fontkit.narrow_symbol_widths "$f" --donor "${donor}" \
+    --protect-ambiguous --widen-shared skip
 done
 
-# narrow-symbol-widths.py saves via fontTools, which recomputes head from all
-# glyphs; redo the dual-width metric hygiene afterwards.
+# narrow_symbol_widths saves via fontTools, which recomputes head from all
+# glyphs; redo the dual-width metric hygiene afterwards. --keep-bbox pins the
+# half/full-only bbox through the save — serif is the only family that does.
 log "re-fix terminal metrics (xAvgCharWidth / head bbox)"
-"${PY}" "${SERIF_ROOT}/scripts/fix-terminal-metrics.py" "${FONTS[@]}"
+"${PY}" -m fontkit.fix_terminal_metrics --keep-bbox "${FONTS[@]}"
 
 # Iosevka parks richer programming ligations under dlig / language packs.
 # Editors turn on calt with "font ligatures", but almost never dlig — fold
@@ -92,6 +94,6 @@ log "expand default calt with discretionary ligatures (dlig)"
 "${PY}" "${SERIF_ROOT}/scripts/expand-default-ligatures.py" "${FONTS[@]}"
 
 log "final verification (2:1 + nerd + EAW)"
-"${PY}" "${SERIF_ROOT}/scripts/verify-2to1.py" --check-nerd --check-eaw "${FONTS[@]}"
+"${PY}" -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw "${FONTS[@]}"
 
 log "done. products in ${NERD_OUT}"

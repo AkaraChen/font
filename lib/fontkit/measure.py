@@ -6,16 +6,15 @@ pathops). Reports median vertical and horizontal stem thicknesses in font units
 so embolden strengths can be calibrated against IosevkaNSlab Latin.
 
 Examples:
-  measure_stroke_width.py --latin font.ttf --cjk emboldened.ttf
-  measure_stroke_width.py --font product.ttf --chars A,H,n,中,一,十
-  measure_stroke_width.py --calibrate-embolden base.ttf --latin-ref latin.ttf
+  python3 -m fontkit.measure --latin font.ttf --cjk emboldened.ttf
+  python3 -m fontkit.measure --font product.ttf --chars A,H,n,中,一,十
+  python3 -m fontkit.measure --calibrate-embolden base.ttf --latin-ref latin.ttf
 """
 
 from __future__ import annotations
 
 import argparse
 import statistics
-import sys
 from pathlib import Path
 
 from fontTools.pens.recordingPen import DecomposingRecordingPen
@@ -528,9 +527,7 @@ def main() -> None:
     if args.calibrate_embolden:
         if not args.latin:
             ap.error("--calibrate-embolden requires --latin")
-        # import embolden from sibling module
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from embolden_cjk import embolden_font
+        from fontkit.embolden import embolden_font
 
         def do_emb(src: Path, dst: Path, strength: float) -> None:
             embolden_font(src, dst, strength, only_wide=True)

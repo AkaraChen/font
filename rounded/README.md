@@ -13,7 +13,7 @@ Coding dual-width face: **Iosevka Curly** (Latin, ss20 Curly Style) + **Resource
 | Intermediate | Regular + Bold (pre-Nerd) | `out/IosevkaCurlyRHRDual-{Regular,Bold}.ttf` |
 | Product | Regular + Bold (Nerd Mono) | `out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf` |
 | Family name | Source-encoding (see RFN) | **IosevkaCurlyRHR NFM**（方向绰号：圆体） |
-| Metrics gate | `verify-2to1.py --expect-half 500 --check-nerd --check-eaw` | after Nerd + EAW fix |
+| Metrics gate | `fontkit.verify2to1 --expect-half 500 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
 ## Why Iosevka Curly (ss20), not other inherits
 
@@ -78,11 +78,7 @@ rounded/
     04-nerd-patch.sh
     05-verify.sh
     merge_rounded.py
-    rename_nerd_family.py
-    fix-nerd-widths.py
-    narrow-symbol-widths.py
-    fix-terminal-metrics.py
-    verify-2to1.py
+    # shared steps now live in lib/fontkit (run as python3 -m fontkit.<module>)
     render-sample.py
     package-release.sh
   samples/
@@ -94,7 +90,7 @@ rounded/
   dist/                    # gitignored release zips
 ```
 
-Embolden / stroke tools are reused from [`../serif/tools/`](../serif/tools/).
+Embolden / stroke tools are shared: [`../lib/fontkit/`](../lib/fontkit/).
 
 ## Dependencies
 
@@ -148,7 +144,7 @@ work/venv/bin/python scripts/render-sample.py \
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --expect-half 500 --check-nerd --check-eaw out/nerd/IosevkaCurlyRHRNFM-*.ttf
+python3 -m fontkit.verify2to1 --expect-half 500 --check-nerd --check-eaw out/nerd/IosevkaCurlyRHRNFM-*.ttf
 ```
 
 | Set | Expected |

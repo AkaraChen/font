@@ -33,9 +33,9 @@ if [[ -x "${VENV_DIR}/bin/python" ]]; then
 elif command -v python3 >/dev/null 2>&1; then
   PY="python3"
 fi
-if [[ -n "${PY}" && -f "${SERIF_ROOT}/scripts/verify-2to1.py" ]]; then
+if [[ -n "${PY}" ]]; then
   log "2:1 + Nerd + EAW verify before package"
-  "${PY}" "${SERIF_ROOT}/scripts/verify-2to1.py" --check-nerd --check-eaw "${FONTS[@]}"
+  "${PY}" -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw "${FONTS[@]}"
 fi
 
 rm -rf "${STAGE}"

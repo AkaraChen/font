@@ -8,13 +8,13 @@ Coding dual-width face: **Courier Prime** (Latin slab mono) + **朱雀仿宋 Zhu
 | CJK | [朱雀仿宋 Zhuque Fangsong](https://github.com/TrionesType/zhuque) | **v0.212** (technical preview) |
 | Icons | [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) FontPatcher | **v3.4.0** (`--complete --single-width-glyphs`) |
 | Grid | EN cell / CJK cell | **600 / 1200** |
-| Symbol widths | EAW-correct (N/Na/H → half, W/F → full; A left alone) | `narrow-symbol-widths.py` after Nerd |
+| Symbol widths | EAW-correct (N/Na/H → half, W/F → full; A left alone) | `fontkit.narrow_symbol_widths` after Nerd |
 | Intermediate | Regular + Bold (pre-Nerd) | `out/CourierPrimeZhuqueDual-{Regular,Bold}.ttf` |
 | Product | Regular + Bold (Nerd Mono) | `out/nerd/CourierPrimeZhuqueNFM-{Regular,Bold}.ttf` |
 | Family name | Source tokens + product tag | **CourierPrimeZhuque NFM** |
-| Metrics gate | `verify-2to1.py --expect-half 600 --check-nerd --check-eaw` | after Nerd + EAW fix |
+| Metrics gate | `fontkit.verify2to1 --expect-half 600 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
-Courier Prime ships UPM **2048** mono cell **1228**; the merge normalizes to UPM **1000** (EN **600**). Zhuque’s embedded Alegreya Latin is **dropped** — only CJK-side ranges are imported. Zhuque is single-weight; both product weights stem-match Latin verticals via embolden (`CJK_EMBOLDEN_REGULAR=8`, `CJK_EMBOLDEN_BOLD=32`, via `serif/tools/embolden_cjk.py`) so mixed CJK/EN coding text reads at the same optical weight.
+Courier Prime ships UPM **2048** mono cell **1228**; the merge normalizes to UPM **1000** (EN **600**). Zhuque’s embedded Alegreya Latin is **dropped** — only CJK-side ranges are imported. Zhuque is single-weight; both product weights stem-match Latin verticals via embolden (`CJK_EMBOLDEN_REGULAR=8`, `CJK_EMBOLDEN_BOLD=32`, via `fontkit.embolden`) so mixed CJK/EN coding text reads at the same optical weight.
 
 v1 does **not** add programming `calt` ligatures (Courier Prime has none). Optional later: slashed `0`, `1`/`l`/`I`/`|` tuning.
 
@@ -59,11 +59,7 @@ typewriter/
     04-nerd-patch.sh
     05-verify.sh
     merge_typewriter.py
-    rename_nerd_family.py
-    fix-nerd-widths.py
-    narrow-symbol-widths.py
-    fix-terminal-metrics.py
-    verify-2to1.py
+    # shared steps now live in lib/fontkit (run as python3 -m fontkit.<module>)
     render-sample.py
     package-release.sh
   samples/
@@ -75,7 +71,7 @@ typewriter/
   dist/                    # gitignored release zips
 ```
 
-Embolden / stroke tools are reused from [`../serif/tools/`](../serif/tools/).
+Embolden / stroke tools are shared: [`../lib/fontkit/`](../lib/fontkit/).
 
 ## Dependencies
 
@@ -145,7 +141,7 @@ Not yet done (known limits):
 ## Verify
 
 ```bash
-python3 scripts/verify-2to1.py --expect-half 600 --check-nerd --check-eaw out/nerd/CourierPrimeZhuqueNFM-*.ttf
+python3 -m fontkit.verify2to1 --expect-half 600 --check-nerd --check-eaw out/nerd/CourierPrimeZhuqueNFM-*.ttf
 ```
 
 | Set | Expected |

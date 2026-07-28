@@ -8,6 +8,8 @@ or misaligns prompts.
 
 For every cmap'd codepoint in common Nerd PUA ranges whose advance is not the
 half-cell, x-scale the outline into the half-cell and centre it.
+
+Run as: python3 -m fontkit.fix_nerd_widths FONT.ttf [...]
 """
 from __future__ import annotations
 

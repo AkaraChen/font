@@ -47,7 +47,7 @@ exactly **500**, then import Yozai at native **1000**. Gate: `scripts/05-verify.
 ### 2. Stroke weight (measured, not guessed)
 
 After Latin scale, scanline vertical-stem medians @ UPM 1000
-(`./scripts/calibrate-stroke.sh`, sharing `handwriting` / `serif/tools`):
+(`./scripts/calibrate-stroke.sh`, sharing `handwriting` / `lib/fontkit`):
 
 | Face | v-stem (approx) | Match |
 | --- | ---: | --- |
@@ -104,7 +104,7 @@ casual/
 
 CJK embolden reuses [`../handwriting/scripts/prepare_cjk.py`](../handwriting/scripts/prepare_cjk.py)
 and merge reuses [`../handwriting/scripts/merge_radon_wenkai.py`](../handwriting/scripts/merge_radon_wenkai.py)
-(Latin base + CJK import policy). Stroke tools: [`../serif/tools/`](../serif/tools/).
+(Latin base + CJK import policy). Stroke tools: [`../lib/fontkit/`](../lib/fontkit/).
 
 ## Dependencies
 

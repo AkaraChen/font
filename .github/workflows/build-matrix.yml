@@ -29,6 +29,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Cheap gate, runs in seconds: the shared build steps under lib/fontkit are
+  # the only thing in this repo that can break all seven families at once, and
+  # waiting three hours for a font build to say so is not a feedback loop.
+  fontkit:
+    name: fontkit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Unit tests
+        run: nix develop --command env PYTHONPATH=lib python3 -m pytest lib/tests -q
+
+      # Builds the buildPythonPackage the per-step derivations will depend on,
+      # and runs the same suite against the *installed* copy.
+      - name: Build the fontkit package
+        run: nix build .#fontkit --print-build-logs
+
   build:
     name: ${{ matrix.family }}
     runs-on: ubuntu-latest

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Terminal-oriented OS/2 / head metric hygiene for dual-width (2:1) monos.
 
+Run as: python3 -m fontkit.fix_terminal_metrics FONT.ttf [...]
+
 Why:
   Sarasa-style dual-width fonts legitimately mix advance 500 (half) and 1000
   (full). FontTools / the Nerd patcher often leave OS/2.xAvgCharWidth as a
@@ -48,7 +50,19 @@ def half_unit(font: TTFont) -> int:
     return half
 
 
-def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
+def fix_font(
+    path: Path, *, dry_run: bool = False, keep_bbox: bool = False
+) -> list[str]:
+    """Apply the metric fixes to `path` in place.
+
+    keep_bbox pins the half/full-only head bbox computed below by disabling
+    TTFont.recalcBBoxes before the save. Only serif passes it. Without it
+    fontTools recomputes head from *every* glyph on save and the bbox written
+    here is discarded — which is what pixel / rounded / sans / typewriter have
+    always shipped, so the flag defaults to off to keep their products
+    byte-identical. See docs/build-toolchain.md; flipping it for the other four
+    is a deliberate product change, not a refactor.
+    """
     lines: list[str] = []
     font = TTFont(path)
     try:
@@ -88,8 +102,8 @@ def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
             for gname, (adv, _lsb) in hmtx.metrics.items():
                 if adv not in (half, full):
                     continue
-                g = glyf[gname]
-                if g.numberOfContours == 0:
+                g = glyf.get(gname)
+                if g is None or g.numberOfContours == 0:
                     continue
                 try:
                     gx0, gy0, gx1, gy1 = g.xMin, g.yMin, g.xMax, g.yMax
@@ -117,9 +131,10 @@ def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
                 lines.append(f"{path.name}: head bbox unchanged (no glyf bounds)")
 
         if not dry_run:
-            # TTFont.recalcBBoxes (constructor default True) recomputes head from
-            # *all* glyphs on save and undoes the half/full-only bbox.
-            font.recalcBBoxes = False
+            if keep_bbox:
+                # TTFont.recalcBBoxes (constructor default True) recomputes head
+                # from *all* glyphs on save and undoes the half/full-only bbox.
+                font.recalcBBoxes = False
             font.save(path)
             lines.append(f"{path.name}: saved")
         else:
@@ -133,6 +148,12 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("fonts", nargs="+", type=Path)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--keep-bbox",
+        action="store_true",
+        help="pin the half/full-only head bbox instead of letting fontTools "
+        "recompute it from every glyph on save (serif only — see fix_font)",
+    )
     args = ap.parse_args(argv)
 
     any_err = False
@@ -141,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: not a file: {path}", file=sys.stderr)
             any_err = True
             continue
-        for line in fix_font(path, dry_run=args.dry_run):
+        for line in fix_font(path, dry_run=args.dry_run, keep_bbox=args.keep_bbox):
             print(line)
     return 1 if any_err else 0
 

@@ -23,7 +23,7 @@ else
 fi
 
 log "verify 2:1 (expect half=${EN_ADV})"
-"${PY}" "${ROUNDED_ROOT}/scripts/verify-2to1.py" \
+"${PY}" -m fontkit.verify2to1 \
   --expect-half "${EN_ADV}" \
   "${EXTRA_GATES[@]}" \
   "${FONTS[@]}"

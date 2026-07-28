@@ -7,22 +7,40 @@ Why:
   W/F always get 2. Any advance that disagrees draws into the wrong number of
   cells (overlap or empty half-cell).
 
-  LilexSansSC NFM mostly inherits correct half-cell symbols from Lilex, but a
-  handful of codepoints still ship wrong (e.g. U+205D at full, ⚡ and some
-  CJK radicals/IDCs at half). This script:
+  Merged dual-width products mostly inherit correct half-cell symbols from
+  their Latin source, but a handful of codepoints still ship wrong (e.g. U+205D
+  at full, ⚡ and some CJK radicals/IDCs at half). Sarasa's *Mono* families are
+  worse: they draw whole blocks of neutral-width symbols at full advance, which
+  is the '⏵ looks fullwidth' bug. This script:
 
     1. narrows EAW N/Na/H glyphs currently at full advance into the half cell
-       (optional donor transplant; default geometric fit / recentre)
+       (optional donor transplant — Sarasa *Term* carries properly redrawn
+       half-width outlines; default is a geometric fit / recentre)
     2. widens EAW W/F glyphs currently at half advance into the full cell
        (recentre only — never scale up)
 
 Ambiguous-width (EAW=A) codepoints are left alone by default — CJK users who
 set "ambiguous = wide" legitimately want those at 2 cells. --include-ambiguous
-narrows them too.
+narrows them too (matching upstream Sarasa Term behaviour).
 
-Usage:
-  narrow-symbol-widths.py FONT.ttf --no-donor
-  narrow-symbol-widths.py FONT.ttf --donor OtherHalfWidth.ttf
+Two behaviours differ per family and are therefore flags, not forks:
+
+  --protect-ambiguous   never narrow an outline that is *also* reachable from
+                        an EAW=A codepoint. serif wants this: its Sarasa source
+                        shares one outline across N and A codepoints far more
+                        often, and squashing those regresses the A set for CJK
+                        users. Elsewhere half wins on a shared N/A outline,
+                        because a terminal gives N exactly one cell.
+  --widen-shared        what to do when an EAW=W/F glyph at half advance shares
+                        its outline with a half-required codepoint (Nerd PUA,
+                        N/Na/H):
+                          fork — copy the outline, widen the copy and repoint
+                                 only the W/F cmap entries (default)
+                          skip — leave it alone (serif)
+
+Run as:
+  python3 -m fontkit.narrow_symbol_widths FONT.ttf --no-donor
+  python3 -m fontkit.narrow_symbol_widths FONT.ttf --donor SarasaTermSlabSC-Regular.ttf
 """
 from __future__ import annotations
 
@@ -81,19 +99,24 @@ def _bounds(glyph_set, gname: str):
     return bp.bounds
 
 
-def _protected_names(cmap: dict, include_ambiguous: bool) -> set[str]:
+def _protected_names(
+    cmap: dict, include_ambiguous: bool, protect_ambiguous: bool
+) -> set[str]:
     """Glyph names also reachable from a codepoint that must stay full width.
 
     A single outline can be shared by several codepoints; narrowing it would
     silently break the ones that legitimately need 2 cells.
 
-    Only W/F are hard full-width. Ambiguous (A) is *not* protected: when a
-    glyph is shared by EAW=N and EAW=A (common for dual-mapped PUA stubs),
-    terminals always allocate 1 cell to N, so half wins. Pure-A glyphs are
-    simply not selected as narrow targets unless --include-ambiguous.
+    W/F are always protected. Ambiguous (A) is protected only under
+    --protect-ambiguous: when a glyph is shared by EAW=N and EAW=A (common for
+    dual-mapped PUA stubs) terminals still allocate exactly 1 cell to N, so
+    half wins by default. Pure-A glyphs are not selected as narrow targets
+    either way unless --include-ambiguous, which also lifts this protection.
     """
-    del include_ambiguous  # kept for call-site compatibility with serif
-    return {gname for cp, gname in cmap.items() if _eaw(cp) in WIDE_EAW}
+    keep_wide = set(WIDE_EAW)
+    if protect_ambiguous and not include_ambiguous:
+        keep_wide |= {"A"}
+    return {gname for cp, gname in cmap.items() if _eaw(cp) in keep_wide}
 
 
 def _reverse_cmap(cmap: dict) -> dict[str, list[int]]:
@@ -156,14 +179,21 @@ def _glyph_x_bounds(glyph) -> tuple[float, float] | None:
         return None
 
 
+WIDEN_MODES = ("fork", "skip")
+
+
 def narrow_font(
     path: Path,
     donor_path: Path | None,
     *,
     include_ambiguous: bool = False,
     widen: bool = True,
+    widen_shared: str = "fork",
+    protect_ambiguous: bool = False,
     dry_run: bool = False,
 ) -> list[str]:
+    if widen_shared not in WIDEN_MODES:
+        raise SystemExit(f"--widen-shared must be one of {WIDEN_MODES}")
     lines: list[str] = []
     font = TTFont(path)
     donor = TTFont(donor_path) if donor_path else None
@@ -206,7 +236,7 @@ def narrow_font(
             )
 
         classes = set(NARROW_EAW) | ({"A"} if include_ambiguous else set())
-        protected = _protected_names(cmap, include_ambiguous)
+        protected = _protected_names(cmap, include_ambiguous, protect_ambiguous)
 
         targets: list[tuple[int, str]] = []
         for cp, gname in sorted(cmap.items()):
@@ -257,7 +287,30 @@ def narrow_font(
         # N/Na/H, …), duplicate it so those mappings keep half advance.
         widened = 0
         duplicated = 0
-        if widen:
+        if widen and widen_shared == "skip":
+            # serif: an outline shared with a half-required codepoint is left
+            # alone entirely. Sarasa reuses outlines across width classes far
+            # more than the merged families do, and forking every one of them
+            # inflates the glyph count for a gap nobody reported.
+            narrow_names = {
+                gname for cp, gname in cmap.items() if _eaw(cp) in NARROW_EAW
+            }
+            seen_skip: set[str] = set()
+            for cp, gname in sorted(cmap.items()):
+                if _eaw(cp) not in WIDE_EAW or hmtx[gname][0] != half:
+                    continue
+                if gname in seen_skip or gname in narrow_names:
+                    continue
+                seen_skip.add(gname)
+                bounds = _bounds(glyph_set, gname)
+                dx = (full - (bounds[2] - bounds[0])) / 2.0 - bounds[0] if bounds else 0
+                glyf[gname] = _draw_glyph(glyph_set, gname, (1, 0, 0, 1, dx, 0))
+                glyf[gname].recalcBounds(glyf)
+                lsb = glyf[gname].xMin if glyf[gname].numberOfContours else 0
+                hmtx[gname] = (full, lsb)
+                widened += 1
+            lines.append(f"{path.name}: widened {widened} glyph(s) to full cell")
+        elif widen:
             seen: set[str] = set()
             for cp, gname in sorted(cmap.items()):
                 if _eaw(cp) not in WIDE_EAW or hmtx[gname][0] != half:
@@ -338,7 +391,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--no-donor",
         action="store_true",
-        help="fit existing outlines geometrically (default path for LilexSansSC)",
+        help="fit existing outlines geometrically (the merged families' path — "
+        "they have no Sarasa Term donor on their grid)",
     )
     ap.add_argument(
         "--include-ambiguous",
@@ -349,6 +403,20 @@ def main(argv: list[str] | None = None) -> int:
         "--no-widen",
         action="store_true",
         help="do not re-centre EAW=W glyphs that ship at half advance",
+    )
+    ap.add_argument(
+        "--widen-shared",
+        choices=WIDEN_MODES,
+        default="fork",
+        help="EAW=W/F glyph at half advance whose outline is shared with a "
+        "half-required codepoint: fork a full-width copy (default) or skip it "
+        "(serif)",
+    )
+    ap.add_argument(
+        "--protect-ambiguous",
+        action="store_true",
+        help="never narrow an outline also reachable from an EAW=A codepoint "
+        "(serif); ignored under --include-ambiguous",
     )
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
@@ -373,6 +441,8 @@ def main(argv: list[str] | None = None) -> int:
             None if args.no_donor else args.donor,
             include_ambiguous=args.include_ambiguous,
             widen=not args.no_widen,
+            widen_shared=args.widen_shared,
+            protect_ambiguous=args.protect_ambiguous,
             dry_run=args.dry_run,
         ):
             print(line)

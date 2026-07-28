@@ -21,17 +21,13 @@ from __future__ import annotations
 
 import argparse
 import math
-import sys
 import tempfile
 from pathlib import Path
 
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
 
-TOOLS = Path(__file__).resolve().parents[2] / "serif" / "tools"
-sys.path.insert(0, str(TOOLS))
-
-from embolden_cjk import embolden_font  # noqa: E402
+from fontkit.embolden import embolden_font
 
 DROP_TABLES = ("prep", "fpgm", "cvt ", "gasp", "hdmx", "LTSH", "VDMX")
 

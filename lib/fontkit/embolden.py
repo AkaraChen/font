@@ -3,6 +3,8 @@
 
 Stroke-expands full-width glyph outlines via skia-pathops, keeps advance widths,
 recenters horizontally. Converts conics→quads so pathops can stroke TT outlines.
+
+Run as: python3 -m fontkit.embolden SRC.ttf DST.ttf --strength N
 """
 
 from __future__ import annotations

@@ -23,7 +23,7 @@ else
 fi
 
 log "verify 2:1 (expect half=${EN_ADV})"
-"${PY}" "${SANS_ROOT}/scripts/verify-2to1.py" \
+"${PY}" -m fontkit.verify2to1 \
   --expect-half "${EN_ADV}" \
   "${EXTRA_GATES[@]}" \
   "${FONTS[@]}"
@@ -33,20 +33,16 @@ log "verify Lilex coding features (calt / ligatures)"
 
 # Stem report (informational — not a hard gate). Confirms Latin/CJK optical weight
 # after embolden; same measure path as calibrate-stroke.sh (stem_max_ratio=0.40).
-if [[ -f "${SERIF_TOOLS}/measure_stroke_width.py" ]]; then
-  log "stroke match report (Latin vs CJK sample stems; informational)"
-  export SERIF_TOOLS
-  for font in "${FONTS[@]}"; do
-    log "  $(basename "${font}")"
-    SERIF_TOOLS="${SERIF_TOOLS}" "${PY}" - "${font}" <<'PY' || true
-import os
+log "stroke match report (Latin vs CJK sample stems; informational)"
+for font in "${FONTS[@]}"; do
+  log "  $(basename "${font}")"
+  "${PY}" - "${font}" <<'PY' || true
 import statistics
 import sys
 
 from fontTools.ttLib import TTFont
 
-sys.path.insert(0, os.environ["SERIF_TOOLS"])
-from measure_stroke_width import (  # noqa: E402
+from fontkit.measure import (
     DEFAULT_CJK,
     DEFAULT_LATIN,
     codepoint_name,
@@ -79,9 +75,6 @@ cv = v_med(font, DEFAULT_CJK)
 print(f"    Latin v_median={lv:.2f}  CJK v_median={cv:.2f}  Δ={cv - lv:+.2f}")
 font.close()
 PY
-  done
-else
-  log "skip stroke report (serif tools not present)"
-fi
+done
 
 log "verify ok"

@@ -197,7 +197,7 @@ def widen_radon_wide_glyphs(
     matter what the font says. Half-cell ink in a full-cell slot is merely a bit
     airy; a full-cell glyph in a one-cell slot would overlap its neighbour, so
     the advance is what has to move. The outline is centred, not stretched (same
-    call as `serif/scripts/narrow-symbol-widths.py` makes for this case).
+    call as `fontkit.narrow_symbol_widths` makes for this case).
     """
     glyf = font["glyf"]
     hmtx = font["hmtx"].metrics

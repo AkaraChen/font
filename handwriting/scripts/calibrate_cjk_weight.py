@@ -9,7 +9,7 @@ Answers the two weight questions this build has to get right:
 2. **How much embolden closes the gap?** Only the sample glyphs are stroked (7
    Han glyphs, in memory) instead of all 45 k, so a sweep costs seconds.
 
-Metric: scanline vertical-stem median (shared with `serif/tools/`). Verticals
+Metric: scanline vertical-stem median (shared, `lib/fontkit/measure.py`). Verticals
 dominate the optical weight of mixed CN/EN mono text; Kai horizontals and
 brush-tapered strokes are thinner by design and are reported but not targeted.
 
@@ -22,17 +22,13 @@ from __future__ import annotations
 
 import argparse
 import statistics
-import sys
 from pathlib import Path
 
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.scaleUpem import scale_upem
 
-TOOLS = Path(__file__).resolve().parents[2] / "serif" / "tools"
-sys.path.insert(0, str(TOOLS))
-
-from embolden_cjk import embolden_path  # noqa: E402
-from measure_stroke_width import (  # noqa: E402
+from fontkit.embolden import embolden_path
+from fontkit.measure import (
     DEFAULT_CJK,
     DEFAULT_LATIN,
     glyph_to_path,

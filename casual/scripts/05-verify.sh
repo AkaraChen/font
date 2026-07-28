@@ -11,13 +11,9 @@ fonts=("${OUT_DIR}/${stem}"-*.ttf)
 [[ ${#fonts[@]} -gt 0 ]] || die "no products in ${OUT_DIR}; run 04-merge.sh first"
 
 log "verify 2:1 metrics"
-if [[ -f "${REPO_ROOT}/serif/scripts/verify-2to1.py" ]]; then
-  "${PY}" "${REPO_ROOT}/serif/scripts/verify-2to1.py" "${fonts[@]}"
-elif [[ -f "${REPO_ROOT}/rounded/scripts/verify-2to1.py" ]]; then
-  "${PY}" "${REPO_ROOT}/rounded/scripts/verify-2to1.py" --expect-half "${EN_ADV}" "${fonts[@]}"
-else
-  die "no verify-2to1.py found under serif/ or rounded/"
-fi
+# Dense profile: casual has always run serif's copy of this gate, which
+# samples CJK far more densely and does not check OS/2.xAvgCharWidth.
+"${PY}" -m fontkit.verify2to1 --profile dense "${fonts[@]}"
 
 log "spot-check advances + stroke notes"
 for font in "${fonts[@]}"; do

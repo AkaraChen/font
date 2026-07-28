@@ -8,6 +8,7 @@
 #   just build sans         → run sans/scripts/build.sh in that shell, timed
 #   just fingerprint sans   → (re)write sans' regression baseline
 #   just verify sans        → compare a fresh build against the baseline
+#   just test               → fontkit unit tests (lib/tests), no font build
 
 set shell := ["bash", "-uc"]
 
@@ -75,7 +76,11 @@ dump font:
 timings family:
     @cat {{family}}/work/step-timings.tsv
 
-# Evaluate the flake on every declared system.
+# Run the fontkit unit tests (seconds — no font build needed).
+test:
+    {{nix}} develop --command env PYTHONPATH=lib python3 -m pytest lib/tests -q
+
+# Evaluate the flake on every declared system, and build + test fontkit.
 check:
     {{nix}} flake check --all-systems
 
