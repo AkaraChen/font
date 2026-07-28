@@ -1,7 +1,7 @@
 # Every pinned upstream input in the repo, as Nix derivations.
 #
 # The point is not tidiness. It is that a store path is keyed by (url, hash), so
-# the five families that pin the same FontPatcher.zip collapse onto one
+# the five families that pin the same font-patcher commit collapse onto one
 # derivation and one download — instead of the current five, one per
 # <family>/work/downloads/. Adding the region axis in Phase 7 multiplies the
 # build matrix; it must not multiply the fetching.
@@ -89,8 +89,18 @@ let
     };
 
   # --- shared: the Nerd Fonts patcher --------------------------------------
-
-  patcherUsers = lib.filter (f: familyPins.${f}.pins ? NERD_FONTS_PATCHER_URL) families;
+  #
+  # A commit, not a release asset. `FontPatcher.zip` only exists for tagged
+  # releases, and the newest is still v3.4.0 (2025-04) shipping font-patcher
+  # 4.20.3 — while every product this repo has ever released from CI was patched
+  # by the `nerdfonts/patcher` container, which is built from master and was
+  # shipping 4.26.0. Pinning the release meant shipping one patcher and claiming
+  # another; pinning the commit the container was built from is what makes the
+  # claim true. See docs/build-toolchain.md.
+  #
+  # Sparse, because the repo is 27 GB: `patched-fonts/` holds every font Nerd
+  # Fonts publishes. The four paths below are the whole patcher.
+  patcherUsers = lib.filter (f: familyPins.${f}.pins ? NERD_FONTS_PATCHER_COMMIT) families;
 
   referenceFamily = lib.head patcherUsers;
 
@@ -99,8 +109,8 @@ let
       p = familyPins.${referenceFamily};
     in
     {
-      url = p.get "NERD_FONTS_PATCHER_URL";
-      sha256 = p.get "NERD_FONTS_PATCHER_SHA256";
+      rev = p.get "NERD_FONTS_PATCHER_COMMIT";
+      hash = p.get "NERD_FONTS_PATCHER_HASH";
     };
 
   # A family that drifts its patcher pin would silently get a second store path
@@ -108,21 +118,28 @@ let
   disagreeing = lib.filter
     (
       f:
-      familyPins.${f}.get "NERD_FONTS_PATCHER_URL" != patcherPin.url
-      || familyPins.${f}.get "NERD_FONTS_PATCHER_SHA256" != patcherPin.sha256
+      familyPins.${f}.get "NERD_FONTS_PATCHER_COMMIT" != patcherPin.rev
+      || familyPins.${f}.get "NERD_FONTS_PATCHER_HASH" != patcherPin.hash
     )
     patcherUsers;
 
   fontPatcher =
     assert lib.assertMsg (disagreeing == [ ])
       (
-        "nix/sources: FontPatcher pins disagree, so the zip would no longer collapse "
-        + "to one store path. ${lib.concatStringsSep ", " disagreeing} differ from "
-        + "${referenceFamily}/pins.env (NERD_FONTS_PATCHER_URL / _SHA256)."
+        "nix/sources: font-patcher pins disagree, so the checkout would no longer "
+        + "collapse to one store path. ${lib.concatStringsSep ", " disagreeing} differ "
+        + "from ${referenceFamily}/pins.env (NERD_FONTS_PATCHER_COMMIT / _HASH)."
       );
-    pkgs.fetchurl {
-      name = "FontPatcher.zip";
-      inherit (patcherPin) url sha256;
+    pkgs.fetchgit {
+      name = "nerd-fonts-patcher";
+      url = "https://github.com/ryanoasis/nerd-fonts";
+      inherit (patcherPin) rev hash;
+      sparseCheckout = [
+        "font-patcher"
+        "glyphnames.json"
+        "bin/scripts/name_parser"
+        "src/glyphs"
+      ];
     };
 
   # --- assembly -------------------------------------------------------------
@@ -136,7 +153,7 @@ let
       plain = lib.mapAttrs (mkPlain family) (spec.plain or { });
       members = lib.mapAttrs (mkZipMember family) (spec.zipMembers or { });
       patcher = lib.optionalAttrs (lib.elem family patcherUsers) {
-        "FontPatcher.zip" = fontPatcher;
+        "font-patcher" = fontPatcher;
       };
     in
     plain // members // patcher
@@ -145,6 +162,11 @@ let
   # Flat list of every artifact, used to build the content-addressed cache.
   # `sha256` is the pinned hex — for `plain` and `zipMembers` alike it is the
   # sha256 of the file's bytes, which is what the build scripts look up.
+  #
+  # font-patcher is deliberately absent: it is a checkout, not a file, so it has
+  # no file hash to be addressed by. Nothing looks it up either — the derivation
+  # steps take `sources.fontPatcher` directly, and serif (the last shell
+  # consumer) is handed the realised path by `just build serif`.
   entries = lib.concatMap
     (
       family:
@@ -161,13 +183,6 @@ let
       in
       lib.mapAttrsToList (of "plain") (spec.plain or { })
       ++ lib.mapAttrsToList (of "zip-member") (spec.zipMembers or { })
-      ++ lib.optional (lib.elem family patcherUsers) {
-        inherit family;
-        file = "FontPatcher.zip";
-        sha256 = patcherPin.sha256;
-        drv = fontPatcher;
-        kind = "shared";
-      }
     )
     families;
 

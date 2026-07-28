@@ -26,16 +26,16 @@ let
   # which is exactly what the contract raises.
   throws = e: !(builtins.tryEval (builtins.deepSeq e e)).success;
 
-  patcherUsers = lib.filter (f: sources.perFamily.${f} ? "FontPatcher.zip") sources.families;
-  patcherPaths = lib.unique (map (f: sources.perFamily.${f}."FontPatcher.zip".drvPath) patcherUsers);
+  patcherUsers = lib.filter (f: sources.perFamily.${f} ? "font-patcher") sources.families;
+  patcherPaths = lib.unique (map (f: sources.perFamily.${f}."font-patcher".drvPath) patcherUsers);
 
 in
 {
-  # Completion criterion 1: FontPatcher.zip is one store path repo-wide.
+  # Completion criterion 1: the Nerd Fonts patcher is one store path repo-wide.
   font-patcher-single-store-path = ok "font-patcher-single-store-path"
     (
       lib.length patcherUsers >= 5 && lib.length patcherPaths == 1
-    ) "expected one FontPatcher derivation across ${toString (lib.length patcherUsers)} families, got ${toString (lib.length patcherPaths)}";
+    ) "expected one font-patcher derivation across ${toString (lib.length patcherUsers)} families, got ${toString (lib.length patcherPaths)}";
 
   # Completion criterion 2, at the level Phase 1 can assert it: the Latin
   # preparation step is not a function of region, so five regions ask for one
@@ -89,19 +89,19 @@ in
 
   # Completion criterion 3, source layer: one family's pin change must not move
   # another family's source derivations. They share no derivation except the
-  # deliberately shared FontPatcher, so this reduces to: no accidental sharing.
+  # deliberately shared font-patcher, so this reduces to: no accidental sharing.
   families-share-only-the-patcher = ok "families-share-only-the-patcher"
     (
       let
         pathsOf =
           f:
           map (d: d.drvPath) (
-            lib.attrValues (lib.filterAttrs (n: _: n != "FontPatcher.zip") sources.perFamily.${f})
+            lib.attrValues (lib.filterAttrs (n: _: n != "font-patcher") sources.perFamily.${f})
           );
         all = lib.concatMap pathsOf sources.families;
       in
       lib.length all == lib.length (lib.unique all)
-    ) "two families share a non-FontPatcher source derivation";
+    ) "two families share a non-patcher source derivation";
 
   # pins.env must parse in full for every family — a key Nix silently cannot
   # read is a pin that stops being enforced.

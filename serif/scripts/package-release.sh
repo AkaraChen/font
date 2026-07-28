@@ -52,7 +52,7 @@ SarasaNZSSlab NFM (Nerd Font Mono) ${VERSION}
 Family: SarasaNZSSlab NFM
 Styles: Regular, Bold
 Grid:   2:1 dual-width mono (Latin half / CJK full)
-Icons:  Nerd Fonts complete set (single-cell), patcher ${NERD_FONTS_TAG:-v3.4.0}
+Icons:  Nerd Fonts complete set (single-cell), font-patcher ${NERD_FONTS_PATCHER_VERSION}
 Widths: advances match Unicode East_Asian_Width, so terminals that size
         cells with wcwidth() line up (neutral symbols like U+23F5 are
         half-width). Ambiguous-width symbols stay full-width by design.

@@ -2,7 +2,7 @@
 # Patch serif/out TTFs with Nerd Font icons (single-width icons, keep CJK 2-cell).
 #
 # Strategy:
-#   - Use official FontPatcher from ryanoasis/nerd-fonts (pinned in pins.env)
+#   - Use the pinned ryanoasis/nerd-fonts checkout (see pins.env / nix/sources)
 #   - Else: local fontforge -script font-patcher
 #   - ALWAYS pass --single-width-glyphs (icons = 1 cell)
 #   - NEVER pass --mono / -s: that forces ALL existing glyphs (incl. CJK) to 1 cell
@@ -17,8 +17,9 @@ ensure_dirs
 
 NERD_OUT="${OUT_DIR}/nerd"
 PATCHER_DIR="${WORK_DIR}/nerd-font-patcher"
-PATCHER_ZIP="${DOWNLOADS_DIR}/FontPatcher-${NERD_FONTS_TAG}.zip"
-PATCHER_URL="${NERD_FONTS_PATCHER_URL:-https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_TAG}/FontPatcher.zip}"
+# The patcher is a pinned checkout now, not a release zip — `just build serif`
+# realises it and exports this. See nix/sources/default.nix for why a commit.
+PATCHER_SRC="${FONTKIT_FONT_PATCHER:-}"
 
 mkdir -p "${NERD_OUT}" "${DOWNLOADS_DIR}"
 
@@ -47,15 +48,17 @@ ensure_local_patcher() {
   if [[ -f "${PATCHER_DIR}/font-patcher" ]]; then
     return 0
   fi
-  # One pinned zip, five families, one store path. download_file resolves it out
-  # of the Nix source cache when that is realised (tools/src-cache.sh) and falls
-  # back to curl otherwise — and unlike the old bare curl, it is now hash-gated.
-  download_file "${PATCHER_URL}" "${PATCHER_ZIP}" "${NERD_FONTS_PATCHER_SHA256}"
+  [[ -n "${PATCHER_SRC}" ]] \
+    || die "FONTKIT_FONT_PATCHER is unset — run this via \`just build serif\`, which realises .#font-patcher"
+  # Copied rather than used in place: font-patcher resolves its helper modules
+  # and glyph sources relative to its own path, and writes nothing — but the
+  # store path is read-only and this keeps serif's behaviour identical to the
+  # six derivation families, which stage the same way.
   rm -rf "${PATCHER_DIR}"
   mkdir -p "${PATCHER_DIR}"
-  need_cmd unzip
-  unzip -qo "${PATCHER_ZIP}" -d "${PATCHER_DIR}"
-  [[ -f "${PATCHER_DIR}/font-patcher" ]] || die "FontPatcher.zip missing font-patcher"
+  cp -R "${PATCHER_SRC}"/. "${PATCHER_DIR}/"
+  chmod -R u+w "${PATCHER_DIR}"
+  [[ -f "${PATCHER_DIR}/font-patcher" ]] || die "${PATCHER_SRC} has no font-patcher"
 }
 
 patch_with_fontforge() {
