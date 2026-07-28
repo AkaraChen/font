@@ -81,3 +81,15 @@ cd rounded && ./scripts/build.sh
 ```
 
 Upstream pins: [`rounded/pins.env`](rounded/pins.env). Details: [`rounded/README.md`](rounded/README.md).
+
+## casual/
+
+**Coding product: RecursiveYozai Dual** — Recursive **Mono Casual** Latin + **Yozai 悠哉** CJK,
+strict **2:1** dual width (EN 500 / CJK 1000), measured stroke match (no Nerd in v0.1).
+
+```bash
+cd casual && ./scripts/build.sh
+# → out/RecursiveYozaiDual-{Regular,Bold}.ttf
+```
+
+Upstream pins: [`casual/pins.env`](casual/pins.env). Details: [`casual/README.md`](casual/README.md).
