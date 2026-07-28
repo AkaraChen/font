@@ -1,0 +1,89 @@
+schema_version = 1
+family = "rounded"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[sources.iosevka]
+role = "latin"
+repository = "https://github.com/be5invis/Iosevka"
+version = "v34.8.0"
+
+[sources.iosevka.artifacts.archive]
+url = "https://github.com/be5invis/Iosevka/releases/download/v34.8.0/PkgTTF-IosevkaCurly-34.8.0.zip"
+sha256 = "9a126d1cda838c1646943044d3b27693fa0d2f827787c5821e95de13d9ed0ac0"
+
+[sources.rhr]
+role = "cjk"
+repository = "https://github.com/CyanoHao/Resource-Han-Rounded"
+version = "v0.990"
+regions = ["sc"]
+
+[sources.rhr.artifacts.archive]
+url = "https://github.com/CyanoHao/Resource-Han-Rounded/releases/download/v0.990/RHR-CN-0.990.7z"
+sha256 = "e7005f7b4a7a0b8352d32c4a1358ff47564eb73be7fdb2db00d9f792755e9dc7"
+
+[grid]
+en_adv = 500
+cjk_adv = 1000
+upm = 1000
+latin_src_adv = 500
+latin_src_upm = 1000
+latin_target_upm = 1000
+
+[naming]
+family = "IosevkaCurlyRHR NFM"
+ps = "IosevkaCurlyRHRNFM"
+stem = "IosevkaCurlyRHRNFM"
+house = "IosevkaCurlyRHR"
+style = "NFM"
+region = "SC"
+variant = "coding"
+id16 = "IosevkaCurlyRHR NFM"
+id17 = "{weight}"
+rfn_note = "Iosevka and Source Han may reserve upstream names; review before public OFL redistribution."
+base_family = "IosevkaCurlyRHR Dual"
+base_ps = "IosevkaCurlyRHRDual"
+product_name_zh = "圆体"
+
+[metrics.coding]
+hhea_ascent = 1000
+hhea_descent = -200
+hhea_line_gap = 0
+os2_typo_ascender = 875
+os2_typo_descender = -125
+os2_typo_line_gap = 0
+os2_win_ascent = 1050
+os2_win_descent = 250
+
+[calibration.regular]
+source_weight = "regular"
+embolden = 0
+
+[calibration.bold]
+source_weight = "bold"
+embolden = 0
+
+[nerd]
+version = "4.26.0"
+commit = "64b7726c2fc3fb9bfe74a3621d317a6d3319d908"
+hash = "sha256-ilk38WIHygLsxo6BruwVaqTk/T+VobB4jzLc5jxcpL0="
+
+[options]
+iosevka_variant = "Curly"
+iosevka_style_note = "ss20 Curly Style (PkgTTF-IosevkaCurly)"
+iosevka_ttf_regular = "IosevkaCurly-Regular.ttf"
+iosevka_ttf_bold = "IosevkaCurly-Bold.ttf"
+rhr_ttf_regular = "ResourceHanRoundedCN-Regular.ttf"
+rhr_ttf_bold = "ResourceHanRoundedCN-Bold.ttf"

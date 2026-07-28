@@ -103,20 +103,21 @@ in
       lib.length all == lib.length (lib.unique all)
     ) "two families share a non-patcher source derivation";
 
-  # pins.env must parse in full for every family — a key Nix silently cannot
-  # read is a pin that stops being enforced.
-  pins-parse = ok "pins-parse"
+  # Every font.toml must parse in full. `data` is the direct result of
+  # builtins.fromTOML; forcing it proves Nix consumes the same semantic file as
+  # Python rather than a generated compatibility manifest.
+  manifests-parse = ok "manifests-parse"
     (
-      lib.all (f: (lib.attrNames sources.familyPins.${f}.pins) != [ ]) sources.families
-    ) "a family's pins.env parsed to nothing";
+      lib.all
+        (f:
+          let manifest = sources.familyPins.${f}.data;
+          in manifest.schema_version == 1 && manifest.family == f)
+        sources.families
+    ) "a family's font.toml did not parse as schema version 1";
 
-  # sh's ${VAR} interpolation, which sans/ and typewriter/ both use to build a
-  # raw.githubusercontent URL out of a pinned commit. It is checked by name
-  # because the parser's regex is the one piece of this that is not portable by
-  # construction: the first version used `\$\{…\}`, which the maintainer's nix
-  # accepted and CI's rejected outright as an invalid POSIX ERE. A green
-  # `nix flake check` on one machine is not evidence for the other unless the
-  # interpolation path is actually exercised.
+  # TOML has no shell interpolation. Keep the intent of the old interpolation
+  # check: the checked-in URL must resolve to the pinned commit and contain no
+  # unresolved placeholder.
   # --- Phase 3 -------------------------------------------------------------
 
   # Nerd patching only exists in the coding profile, so a text-profile nerd
@@ -158,7 +159,7 @@ in
       bad == [ ]
     ) "a family declares a step that is not in nix/granularity.nix";
 
-  pins-interpolation = ok "pins-interpolation"
+  manifest-source-url = ok "manifest-source-url"
     (
       let
         p = sources.familyPins.sans;
@@ -166,5 +167,5 @@ in
       in
       lib.hasInfix commit (p.get "PLEX_SANS_SC_TTF_REGULAR_URL")
       && !(lib.hasInfix "$" (p.get "PLEX_SANS_SC_TTF_REGULAR_URL"))
-    ) "pins.env \${VAR} interpolation did not expand";
+    ) "font.toml source URL does not contain its pinned commit";
 }

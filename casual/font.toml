@@ -1,0 +1,94 @@
+schema_version = 1
+family = "casual"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[sources.recursive]
+role = "latin"
+repository = "https://github.com/arrowtype/recursive"
+version = "v1.085"
+
+[sources.recursive.artifacts.archive]
+url = "https://github.com/arrowtype/recursive/releases/download/v1.085/ArrowType-Recursive-1.085.zip"
+sha256 = "cbcbdf7a0e181d284a9235e09ed5f3873e527bc5dd1d977df71cdc1ff937da02"
+
+[sources.recursive.artifacts.regular]
+url = "https://github.com/arrowtype/recursive/releases/download/v1.085/ArrowType-Recursive-1.085.zip"
+sha256 = "4a405818af28b9cdf945a34254c226f5b18d350827bf517b6fb050699d632445"
+member = "ArrowType-Recursive-1.085/Recursive_Desktop/separate_statics/TTF/RecursiveMonoCslSt-Regular.ttf"
+
+[sources.recursive.artifacts.bold]
+url = "https://github.com/arrowtype/recursive/releases/download/v1.085/ArrowType-Recursive-1.085.zip"
+sha256 = "bc03d101684c98eb2961061cf6d2106f9ba43afc52bcd033d6710c80e9587f0a"
+member = "ArrowType-Recursive-1.085/Recursive_Desktop/separate_statics/TTF/RecursiveMonoCslSt-Bold.ttf"
+
+[sources.yozai]
+role = "cjk"
+repository = "https://github.com/lxgw/yozai-font"
+version = "v0.868"
+regions = ["sc"]
+
+[sources.yozai.artifacts.regular]
+url = "https://github.com/lxgw/yozai-font/releases/download/v0.868/Yozai-Regular.ttf"
+sha256 = "25071998a0fe6a72f54c235e714986d259633e5ff670b1a2b5e264387f3316ac"
+
+[sources.yozai.artifacts.medium]
+url = "https://github.com/lxgw/yozai-font/releases/download/v0.868/Yozai-Medium.ttf"
+sha256 = "05f50f252b45197d0d6148a4abc3e37c7cd4cfdf03c955b57c25d53d924f835f"
+
+[grid]
+en_adv = 500
+cjk_adv = 1000
+upm = 1000
+latin_src_adv = 600
+latin_src_upm = 1000
+latin_uniform_scale = 0.833333333
+
+[naming]
+family = "RecursiveYozai Dual"
+ps = "RecursiveYozaiDual"
+stem = "RecursiveYozaiDual"
+house = "RecursiveYozai"
+style = "Dual"
+region = "SC"
+variant = "coding"
+id16 = "RecursiveYozai Dual"
+id17 = "{weight}"
+rfn_note = "Recursive and Yozai reserve upstream names; review before public OFL redistribution."
+version = "0.1.0"
+
+[metrics.coding]
+hhea_ascent = 950
+hhea_descent = -250
+hhea_line_gap = 0
+os2_typo_ascender = 880
+os2_typo_descender = -220
+os2_typo_line_gap = 0
+os2_win_ascent = 1032
+os2_win_descent = 290
+
+[calibration.regular]
+source_weight = "regular"
+embolden = 10
+slant_deg = 0
+slant_pivot_y = 375
+
+[calibration.bold]
+source_weight = "medium"
+embolden = 20
+slant_deg = 0
+slant_pivot_y = 375
+
+[options]

@@ -1,0 +1,92 @@
+schema_version = 1
+family = "handwriting"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[sources.monaspace]
+role = "latin"
+repository = "https://github.com/githubnext/monaspace"
+version = "v1.400"
+
+[sources.monaspace.artifacts.regular]
+url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-nerdfonts-v1.400.zip"
+sha256 = "7e8bed594c1708f8f45f312339dc182deec7461c47b8fff79f410646baa9a3d2"
+member = "NerdFonts/Monaspace Radon/MonaspaceRadonNF-Regular.otf"
+
+[sources.monaspace.artifacts.bold]
+url = "https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-nerdfonts-v1.400.zip"
+sha256 = "81e3e1e8815073a0c979ce1ba327f91b74606d81478fe271d160fcad22fd60eb"
+member = "NerdFonts/Monaspace Radon/MonaspaceRadonNF-Bold.otf"
+
+[sources.wenkai]
+role = "cjk"
+repository = "https://github.com/lxgw/LxgwWenKai"
+version = "v1.522"
+regions = ["sc"]
+
+[sources.wenkai.artifacts.regular]
+url = "https://github.com/lxgw/LxgwWenKai/releases/download/v1.522/LXGWWenKai-Regular.ttf"
+sha256 = "39ad71264b588165b469e35e6afb162a378dacd1f95348160240ba9038ac3009"
+
+[sources.wenkai.artifacts.medium]
+url = "https://github.com/lxgw/LxgwWenKai/releases/download/v1.522/LXGWWenKai-Medium.ttf"
+sha256 = "d4bdeb38a39151d74d084cba5090f8cb7d20bf83eedb78c35939ae70b9f4e3f6"
+
+[grid]
+en_adv = 500
+cjk_adv = 1000
+upm = 1000
+latin_src_adv = 1240
+latin_src_upm = 2000
+latin_narrow_adv = 1111
+latin_uniform_scale = 0.9
+
+[naming]
+family = "RadonWenKai NFM"
+ps = "RadonWenKaiNFM"
+stem = "RadonWenKaiNFM"
+house = "RadonWenKai"
+style = "NFM"
+region = "SC"
+variant = "coding"
+id16 = "RadonWenKai NFM"
+id17 = "{weight}"
+rfn_note = "Monaspace reserves Radon and LXGW reserves upstream names; rename before public OFL redistribution."
+
+[metrics.coding]
+hhea_ascent = 950
+hhea_descent = -250
+hhea_line_gap = 0
+os2_typo_ascender = 880
+os2_typo_descender = -220
+os2_typo_line_gap = 0
+os2_win_ascent = 1032
+os2_win_descent = 290
+
+[calibration.regular]
+source_weight = "medium"
+embolden = 0
+slant_deg = 7.5
+slant_pivot_y = 375
+
+[calibration.bold]
+source_weight = "medium"
+embolden = 15
+slant_deg = 7.5
+slant_pivot_y = 375
+
+[options]
+src_upm = 2000
+ligature_sets = ["ss01", "ss02", "ss03", "ss04", "ss05", "ss06", "ss07", "ss08", "ss09", "ss10"]

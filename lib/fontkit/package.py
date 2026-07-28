@@ -2,7 +2,7 @@
 
 Replaces `<family>/scripts/package-release.sh` ×6 (56-80 lines each). Those
 scripts were three things glued together: a re-run of the family's verify gate,
-a `cat > README.txt <<EOF` heredoc interpolating pins.env, and `zip -9 -r`.
+a `cat > README.txt <<EOF` heredoc interpolating the old pins.env, and `zip -9 -r`.
 
 Only the third is packaging.
 

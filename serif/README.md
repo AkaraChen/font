@@ -18,7 +18,7 @@ Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sar
 
 ## Pins
 
-See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_PATCHER_COMMIT`.
+See `font.toml`: Sarasa / LXGW / embolden strengths / `nerd.commit`.
 
 ## Optical weight (CJK vs Latin stems)
 
@@ -30,7 +30,7 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 
 ```bash
 ./scripts/calibrate-stroke.sh
-# → recommends CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD for pins.env
+# → recommends calibration.regular.embolden / calibration.bold.embolden for font.toml
 ```
 
 | Face | Latin v-stem (U) | Old embolden | Measured CJK v @ old | New embolden | CJK v @ new |
@@ -44,7 +44,7 @@ The previous Regular **s=14** made CJK verticals noticeably heavier than Latin �
 
 ```
 serif/
-  pins.env
+  font.toml
   patches/                 # quilt series
   scripts/
     build.sh               # one-shot → Nerd product
@@ -139,7 +139,7 @@ editor; no extra OpenType feature toggle is required for the expanded set.
 
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that forces *all* glyphs (incl. CJK) to 1 cell and breaks 2:1
-- Pin: `NERD_FONTS_PATCHER_COMMIT` in `pins.env` (font-patcher **4.26.0**, master — the newest *release*, v3.4.0, carries 4.20.3)
+- Pin: `nerd.commit` in `font.toml` (font-patcher **4.26.0**, master — the newest *release*, v3.4.0, carries 4.20.3)
 - After rename: `fontkit.fix_terminal_metrics` restores `post.isFixedPitch=1`, pins PANOSE `bProportion=9` and sets `OS/2.xAvgCharWidth` to the half-cell — the three things hosts read to decide the font is monospaced (see Troubleshooting)
 
 ## Verify
@@ -186,7 +186,7 @@ Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metr
 # Repair an already-built/released TTF without a full rebuild:
 python3 -m fontkit.narrow_symbol_widths SarasaNZSSlabNFM-Regular.ttf \
   --protect-ambiguous --widen-shared skip \
-  --donor SarasaTermSlabSC-Regular.ttf      # donor URL: see pins.env
+  --donor SarasaTermSlabSC-Regular.ttf      # donor URL: see font.toml
 python3 -m fontkit.fix_terminal_metrics SarasaNZSSlabNFM-Regular.ttf
 python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw SarasaNZSSlabNFM-Regular.ttf
 ```

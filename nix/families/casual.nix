@@ -32,7 +32,7 @@ let
     if suffix == "" then get "FAMILY_NAME" else "${get "FAMILY_NAME"} ${suffix}";
 
   # Which Yozai master backs each product face, and how hard to stroke it.
-  # Measured, not guessed — see casual/pins.env and tools/calibrate-cjk-weight.py.
+  # Measured, not guessed — see casual/font.toml and tools/calibrate-cjk-weight.py.
   cjkFor = {
     Regular = {
       master = get "YOZAI_FOR_REGULAR";
@@ -165,7 +165,7 @@ let
     Cell metrics: EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"} (strict 2:1)
     CJK embolden: Regular s=${get "CJK_EMBOLDEN_REGULAR"} (Yozai ${get "YOZAI_FOR_REGULAR"})
                   Bold    s=${get "CJK_EMBOLDEN_BOLD"} (Yozai ${get "YOZAI_FOR_BOLD"})
-    Upstream pins: see casual/pins.env in the build repository.
+    Upstream pins: see casual/font.toml in the build repository.
   '';
 
 in

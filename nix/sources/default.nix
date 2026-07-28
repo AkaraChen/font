@@ -8,7 +8,7 @@
 #
 # Three kinds of source live here:
 #
-#   plain       fetchurl, hash straight out of pins.env
+#   plain       fetchurl, hash straight out of font.toml
 #   zipMembers  fixed-output derivation doing HTTP-range extraction — for the
 #               Monaspace 315 MiB zip, where a plain fetchurl would trade a
 #               4.6 MiB download for a 315 MiB one on every cold CI run
@@ -42,7 +42,7 @@ let
   # --- ranged zip member (fixed-output, has network in the sandbox) ---------
 
   # The pinned sha256 of the *extracted member* doubles as the FOD's output
-  # hash, so this adds no hash to keep in sync: the number already in pins.env
+  # hash, so this adds no hash to keep in sync: the number already in font.toml
   # is exactly the number Nix checks.
   mkZipMember =
     family: file: spec:
@@ -128,7 +128,7 @@ let
       (
         "nix/sources: font-patcher pins disagree, so the checkout would no longer "
         + "collapse to one store path. ${lib.concatStringsSep ", " disagreeing} differ "
-        + "from ${referenceFamily}/pins.env (NERD_FONTS_PATCHER_COMMIT / _HASH)."
+        + "from ${referenceFamily}/font.toml ([nerd] commit / hash)."
       );
     pkgs.fetchgit {
       name = "nerd-fonts-patcher";

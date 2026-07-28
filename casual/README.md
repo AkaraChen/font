@@ -58,7 +58,7 @@ After Latin scale, scanline vertical-stem medians @ UPM 1000
 | Yozai Medium raw | 68 | too light |
 | **Yozai Medium + embolden s=20** | **~108** | **Δv ≈ −4** |
 
-Pins: `CJK_EMBOLDEN_REGULAR=10`, `CJK_EMBOLDEN_BOLD=20` in [`pins.env`](pins.env).
+Pins: `calibration.regular.embolden = 10`, `calibration.bold.embolden = 20` in [`font.toml`](font.toml).
 
 ### 3. No shear
 
@@ -83,7 +83,7 @@ Unlike Radon (measured ~7.5° lean), Recursive Casual statics are upright —
 
 ```
 casual/
-  pins.env
+  font.toml
   licenses/
     OFL-Recursive.txt
     OFL-Yozai.txt

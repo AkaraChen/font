@@ -10,6 +10,7 @@
 , buildPythonPackage
 , setuptools
 , fonttools
+, pydantic
 , skia-pathops
 , pytestCheckHook
 }:
@@ -25,6 +26,7 @@ buildPythonPackage {
 
   dependencies = [
     fonttools
+    pydantic
     skia-pathops
   ];
 
@@ -47,6 +49,7 @@ buildPythonPackage {
     "fontkit.verify2to1"
     "fontkit.embolden"
     "fontkit.measure"
+    "fontkit.manifest"
   ];
 
   meta = {

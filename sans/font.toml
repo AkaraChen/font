@@ -1,0 +1,91 @@
+schema_version = 1
+family = "sans"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[sources.lilex]
+role = "latin"
+repository = "https://github.com/mishamyrt/Lilex"
+version = "2.700"
+
+[sources.lilex.artifacts.archive]
+url = "https://github.com/mishamyrt/Lilex/releases/download/2.700/Lilex.zip"
+sha256 = "34310edb4ba749f772d42b88e3eec4a6318527e75ceeaa96cfc556ee35366fbc"
+
+[sources.plex]
+role = "cjk"
+repository = "https://github.com/IBM/plex"
+version = "@ibm/plex-sans-sc@1.1.0"
+commit = "222657a016f31e6d913ede88520de7dec84dc81b"
+regions = ["sc"]
+
+[sources.plex.artifacts.regular]
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Regular.ttf"
+sha256 = "012e587c5a78d25f456057614b880fc7450b748c352573d8052245df2a71158a"
+
+[sources.plex.artifacts.bold]
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Bold.ttf"
+sha256 = "3e94ef1df394eae336cc1bc98f2160b58e2cab186f47d820e4c808aef1f4e28f"
+
+[sources.plex.artifacts.legacy_archive]
+url = "https://github.com/IBM/plex/releases/download/%40ibm/plex-sans-sc%401.1.0/ibm-plex-sans-sc.zip"
+sha256 = "0aabd737c8ef0206892b912c759101c10b86c6244be99f2e6b57c6905c716837"
+
+[grid]
+en_adv = 550
+cjk_adv = 1100
+upm = 1000
+latin_src_adv = 600
+
+[naming]
+family = "LilexSansSC NFM"
+ps = "LilexSansSCNFM"
+stem = "LilexSansSCNFM"
+house = "LilexSansSC"
+style = "NFM"
+region = "SC"
+variant = "coding"
+id16 = "LilexSansSC NFM"
+id17 = "{weight}"
+rfn_note = "Lilex and Plex are reserved upstream names; review before public OFL redistribution."
+base_family = "LilexSansSC Dual"
+base_ps = "LilexSansSCDual"
+
+[metrics.coding]
+hhea_ascent = 1025
+hhea_descent = -275
+hhea_line_gap = 0
+os2_typo_ascender = 880
+os2_typo_descender = -220
+os2_typo_line_gap = 0
+os2_win_ascent = 1060
+os2_win_descent = 300
+
+[calibration.regular]
+source_weight = "regular"
+embolden = 5
+
+[calibration.bold]
+source_weight = "bold"
+embolden = 4
+
+[nerd]
+version = "4.26.0"
+commit = "64b7726c2fc3fb9bfe74a3621d317a6d3319d908"
+hash = "sha256-ilk38WIHygLsxo6BruwVaqTk/T+VobB4jzLc5jxcpL0="
+
+[options]
+lilex_ttf_regular = "ttf/Lilex-Regular.ttf"
+lilex_ttf_bold = "ttf/Lilex-Bold.ttf"

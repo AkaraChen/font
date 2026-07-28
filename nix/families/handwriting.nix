@@ -158,7 +158,7 @@ let
     Cell metrics: EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"} (strict 2:1)
     Nerd icons:   from the upstream Monaspace Radon NF build, one cell each
     Ligatures:    Radon liga + calt (on by default), plus ss01–ss10 / cv** opt-in
-    Upstream pins: see handwriting/pins.env in the build repository.
+    Upstream pins: see handwriting/font.toml in the build repository.
   '';
 
 in

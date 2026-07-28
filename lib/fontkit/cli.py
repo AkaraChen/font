@@ -32,6 +32,7 @@ STEPS = {
     "fix-terminal-metrics": "fix_terminal_metrics",
     "verify-2to1": "verify2to1",
     "measure": "measure",
+    "manifest": "manifest",
     "package": "package",
 }
 

@@ -27,9 +27,6 @@ FAMILY_ROOT="$(cd "$(dirname "${BASH_SOURCE[1]}")/.." && pwd)"
 FAMILY="$(basename "${FAMILY_ROOT}")"
 REPO_ROOT="$(cd "${FAMILY_ROOT}/.." && pwd)"
 
-# shellcheck disable=SC1091
-source "${FAMILY_ROOT}/pins.env"
-
 log() { printf '==> %s\n' "$*" >&2; }
 die() {
   printf 'error: %s\n' "$*" >&2
@@ -37,9 +34,10 @@ die() {
 }
 
 command -v python3 >/dev/null 2>&1 || die "no python3 — run this inside \`nix develop\`"
-# The devShell already has fontkit installed; a bare shell gets the working copy.
-python3 -c 'import fontkit' 2>/dev/null \
-  || export PYTHONPATH="${REPO_ROOT}/lib${PYTHONPATH:+:${PYTHONPATH}}"
+# The working copy is intentional: diagnostics validate the manifest being
+# edited, even if the devShell still has an older fontkit package installed.
+export PYTHONPATH="${REPO_ROOT}/lib${PYTHONPATH:+:${PYTHONPATH}}"
+eval "$(python3 -m fontkit.manifest shell "${FAMILY_ROOT}/font.toml")"
 
 # Realise one of this family's build steps and print its store path.
 #

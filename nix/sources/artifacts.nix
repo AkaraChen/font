@@ -1,8 +1,8 @@
-# Which pinned artifact each family needs, expressed as pins.env key pairs.
+# Which pinned artifact each family needs, expressed as compatibility field pairs.
 #
 # This table holds no URLs and no hashes — only the *names of the keys* that
-# carry them. pins.env stays the single source of truth; changing a pin never
-# touches Nix.
+# carry them. font.toml stays the single source of truth; changing a pin never
+# touches this table.
 #
 # `file` is the canonical filename the artifact is published under in the
 # by-name view. It is documentation and human navigation only: the build scripts

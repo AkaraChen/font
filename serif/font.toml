@@ -1,0 +1,78 @@
+schema_version = 1
+family = "serif"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[sources.sarasa]
+role = "latin"
+repository = "https://github.com/be5invis/Sarasa-Gothic.git"
+ref = "v1.0.40"
+commit = "4b908c71116a3192f7a9889bd67b1939a891e527"
+hash = "sha256-HmpKloXTSuluB/LyuAphIlDqNX6OCdROlpVCXmzFOBQ="
+
+[sources.lxgw]
+role = "cjk"
+repository = "https://github.com/lxgw/LxgwNeoZhiSong"
+version = "v1.066"
+regions = ["sc"]
+
+[sources.lxgw.artifacts.regular]
+url = "https://github.com/lxgw/LxgwNeoZhiSong/releases/download/v1.066/LXGWNeoZhiSongPlus.ttf"
+sha256 = "279c973effc2811a827713ffa12706d556cab10b5067c0728400bf9e464f7008"
+
+[sources.sarasa_term]
+role = "donor"
+repository = "https://github.com/be5invis/Sarasa-Gothic"
+version = "v1.0.40"
+
+[sources.sarasa_term.artifacts.archive]
+url = "https://github.com/be5invis/Sarasa-Gothic/releases/download/v1.0.40/SarasaTermSlabSC-TTF-Unhinted-1.0.40.7z"
+sha256 = "d809a92d89c912942f19cdbc56fd3a7df982c9a653ac846e8e5bfc72edafb903"
+
+[grid]
+en_adv = 500
+cjk_adv = 1000
+upm = 1000
+
+[naming]
+family = "SarasaNZSSlab NFM"
+ps = "SarasaNZSSlabNFM"
+stem = "SarasaNZSSlabNFM"
+house = "SarasaNZSSlab"
+style = "NFM"
+region = "SC"
+variant = "coding"
+id16 = "SarasaNZSSlab NFM"
+id17 = "{weight}"
+rfn_note = "Review Sarasa and LXGW reserved names before public OFL redistribution."
+
+[calibration.regular]
+source_weight = "regular"
+embolden = 7.5
+
+[calibration.bold]
+source_weight = "regular"
+embolden = 24
+
+[nerd]
+version = "4.26.0"
+commit = "64b7726c2fc3fb9bfe74a3621d317a6d3319d908"
+hash = "sha256-ilk38WIHygLsxo6BruwVaqTk/T+VobB4jzLc5jxcpL0="
+
+[options]
+lxgw_asset = "LXGWNeoZhiSongPlus.ttf"
+build_target = "ttf-unhinted"
+sarasa_term_regular = "SarasaTermSlabSC-Regular.ttf"
+sarasa_term_bold = "SarasaTermSlabSC-Bold.ttf"

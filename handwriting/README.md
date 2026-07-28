@@ -143,7 +143,7 @@ Two subtleties the gate caught:
 
 ```
 handwriting/
-  pins.env                 # upstream refs, grid, slant, weight-match, naming
+  font.toml                # sources, grid, slant, weight-match, naming, matrix
   licenses/                # OFL-Monaspace.txt · OFL-LXGWWenKai.txt (committed, not re-fetched)
   scripts/
     prepare_latin.py       # CFF→glyf, narrow+scale to the half cell
@@ -194,7 +194,7 @@ Unicode's EAW table via `wcwidth()`, never from the font.
 # → slant table (CJK_SLANT_DEG), weight survey (WENKAI_FOR_*), embolden sweep (CJK_EMBOLDEN_*)
 ```
 
-Nothing in `pins.env` is a guess; every number above came out of that script. Change pins in a
+Nothing in `font.toml` is a guess; every number above came out of that script. Change pins in a
 dedicated commit with the new measurement in the message.
 
 ## Sample render

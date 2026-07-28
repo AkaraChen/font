@@ -1,0 +1,61 @@
+schema_version = 1
+family = "pixel"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["regular"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["regular"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[sources.fusion]
+role = "cjk"
+repository = "https://github.com/TakWolf/fusion-pixel-font"
+version = "2026.07.20"
+regions = ["sc"]
+
+[sources.fusion.artifacts.archive]
+url = "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.20/fusion-pixel-font-12px-monospaced-ttf-v2026.07.20.zip"
+sha256 = "d751204e62248ed3acd9508b6a68f1e731b1aa86114d25ad92880b145a7e6685"
+
+[grid]
+en_adv = 600
+cjk_adv = 1200
+upm = 1200
+
+[naming]
+family = "FusionPixel12 NFM"
+ps = "FusionPixel12NFM"
+stem = "FusionPixel12NFM"
+house = "FusionPixel12"
+style = "NFM"
+region = "SC"
+variant = "coding"
+id16 = "FusionPixel12 NFM"
+id17 = "{weight}"
+rfn_note = "Review Fusion Pixel and Nerd Fonts naming requirements before public redistribution."
+base_family = "FusionPixel12 Mono"
+base_ps = "FusionPixel12Mono"
+
+[metrics.coding]
+hhea_ascent = 1000
+hhea_descent = -200
+
+[nerd]
+version = "4.26.0"
+commit = "64b7726c2fc3fb9bfe74a3621d317a6d3319d908"
+hash = "sha256-ilk38WIHygLsxo6BruwVaqTk/T+VobB4jzLc5jxcpL0="
+
+[options]
+fusion_ttf = "fusion-pixel-12px-monospaced-zh_hans.ttf"
+fusion_ttf_halfwidth_donor = "fusion-pixel-12px-monospaced-latin.ttf"
+fusion_font_size = 12
+px_unit = 100
+pixel_h = 12

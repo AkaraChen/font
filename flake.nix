@@ -102,6 +102,7 @@
           # with darwin aarch64/x86_64 patches), so no overlay is needed here.
           pythonEnv = pkgs.python3.withPackages (ps: with ps; [
             fonttools
+            pydantic
             brotli
             skia-pathops
             pillow

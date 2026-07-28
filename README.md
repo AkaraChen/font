@@ -57,7 +57,7 @@ just release sans
 # → result-*-release/LilexSansSCNFM-0.1.0.zip
 ```
 
-Upstream pins live in [`sans/pins.env`](sans/pins.env).
+Upstream pins live in [`sans/font.toml`](sans/font.toml).
 
 Details: [`sans/README.md`](sans/README.md).
 
@@ -116,7 +116,7 @@ just build rounded
 # → out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf
 ```
 
-Upstream pins: [`rounded/pins.env`](rounded/pins.env). Details: [`rounded/README.md`](rounded/README.md).
+Upstream pins: [`rounded/font.toml`](rounded/font.toml). Details: [`rounded/README.md`](rounded/README.md).
 
 ## casual/
 
@@ -128,4 +128,4 @@ just build casual
 # → out/RecursiveYozaiDual-{Regular,Bold}.ttf
 ```
 
-Upstream pins: [`casual/pins.env`](casual/pins.env). Details: [`casual/README.md`](casual/README.md).
+Upstream pins: [`casual/font.toml`](casual/font.toml). Details: [`casual/README.md`](casual/README.md).

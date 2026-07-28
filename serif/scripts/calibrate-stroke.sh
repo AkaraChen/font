@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Measure IosevkaNSlab (Latin) vs Neo ZhiSong (CJK) stem widths and recommend
-# CJK_EMBOLDEN_* values for pins.env. Does not write pins.env automatically.
+# calibration.*.embolden values for font.toml. Does not write it automatically.
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
@@ -156,7 +156,7 @@ def parse_s(s: str) -> list[float]:
 rec_r = sweep(parse_s(os.environ["STRENGTHS_REG"]), sr["v_median"], "regular")
 rec_b = sweep(parse_s(os.environ["STRENGTHS_BOLD"]), sb["v_median"], "bold")
 
-print("\n=== pins.env suggestion ===")
+print("\n=== font.toml suggestion ===")
 print(f"CJK_EMBOLDEN_REGULAR={rec_r:g}")
 print(f"CJK_EMBOLDEN_BOLD={rec_b:g}")
 print(
@@ -166,4 +166,4 @@ print(
 )
 PY
 
-log "done. Compare recommendations with pins.env (CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD)."
+log "done. Compare recommendations with font.toml ([calibration.regular] / [calibration.bold])."

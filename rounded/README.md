@@ -52,7 +52,7 @@ Same source-encoding style as `LilexSansSC NFM` / `SarasaNZSSlab NFM` — **inhe
 
 ## Pins
 
-Everything reproducible lives in [`pins.env`](pins.env):
+Everything reproducible lives in [`font.toml`](font.toml):
 
 - Iosevka Curly release tag + zip SHA-256
 - RHR-CN 7z SHA-256 + Regular/Bold TTF names
@@ -66,7 +66,7 @@ Do **not** bump pins casually; change them in a dedicated commit with a short ra
 
 ```
 rounded/
-  pins.env
+  font.toml
   licenses/
     OFL-Iosevka.txt
     OFL-Resource-Han-Rounded.txt

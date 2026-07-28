@@ -1,0 +1,89 @@
+schema_version = 1
+family = "typewriter"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["regular", "bold"]
+formats = ["ttf"]
+slopes = ["upright"]
+
+[sources.courier_prime]
+role = "latin"
+repository = "https://github.com/quoteunquoteapps/CourierPrime"
+commit = "7fd585a2dd4c1612c79b3308e300923d1c13df93"
+
+[sources.courier_prime.artifacts.regular]
+url = "https://raw.githubusercontent.com/quoteunquoteapps/CourierPrime/7fd585a2dd4c1612c79b3308e300923d1c13df93/fonts/ttf/CourierPrime-Regular.ttf"
+sha256 = "72f793376f8e2841656bf21d77a5de010f2929bd6956a22ee848ad0c7eb978af"
+
+[sources.courier_prime.artifacts.bold]
+url = "https://raw.githubusercontent.com/quoteunquoteapps/CourierPrime/7fd585a2dd4c1612c79b3308e300923d1c13df93/fonts/ttf/CourierPrime-Bold.ttf"
+sha256 = "ff1f38786c849d1c41fa8e447960abdb2bd75fdfb0cfcdeb524fad65a5af3638"
+
+[sources.zhuque]
+role = "cjk"
+repository = "https://github.com/TrionesType/zhuque"
+version = "v0.212"
+regions = ["sc"]
+
+[sources.zhuque.artifacts.archive]
+url = "https://github.com/TrionesType/zhuque/releases/download/v0.212/ZhuqueFangsong-v0.212.zip"
+sha256 = "bb8b661a7643d2296a72d9d10530a00949419c4e527fb61783f73c2ba1a8c062"
+
+[grid]
+en_adv = 600
+cjk_adv = 1200
+upm = 1000
+latin_src_adv = 600
+latin_src_upm = 2048
+latin_target_upm = 1000
+
+[naming]
+family = "CourierPrimeZhuque NFM"
+ps = "CourierPrimeZhuqueNFM"
+stem = "CourierPrimeZhuqueNFM"
+house = "CourierPrimeZhuque"
+style = "NFM"
+region = "SC"
+variant = "coding"
+id16 = "CourierPrimeZhuque NFM"
+id17 = "{weight}"
+rfn_note = "Review Courier Prime and Zhuque reserved names before public OFL redistribution."
+base_family = "CourierPrimeZhuque Dual"
+base_ps = "CourierPrimeZhuqueDual"
+
+[metrics.coding]
+hhea_ascent = 1050
+hhea_descent = -300
+hhea_line_gap = 0
+os2_typo_ascender = 880
+os2_typo_descender = -220
+os2_typo_line_gap = 0
+os2_win_ascent = 1100
+os2_win_descent = 320
+
+[calibration.regular]
+source_weight = "regular"
+embolden = 8
+
+[calibration.bold]
+source_weight = "regular"
+embolden = 32
+
+[nerd]
+version = "4.26.0"
+commit = "64b7726c2fc3fb9bfe74a3621d317a6d3319d908"
+hash = "sha256-ilk38WIHygLsxo6BruwVaqTk/T+VobB4jzLc5jxcpL0="
+
+[options]
+courier_prime_src_adv = 1228
+courier_prime_src_upm = 2048
+zhuque_ttf_in_zip = "ZhuqueFangsong-Regular.ttf"

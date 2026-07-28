@@ -170,7 +170,7 @@ let
     Install: copy the .ttf into your OS fonts directory.
     In terminals/IDEs pick family "${get "FAMILY_NAME"}" and enable font ligatures.
 
-    Upstream pins: see pins.env in the build repository.
+    Upstream pins: see font.toml in the build repository.
   '';
 
 in
