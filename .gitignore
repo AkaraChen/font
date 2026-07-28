@@ -33,6 +33,11 @@ casual/samples/rendered/
 *.ttc
 !**/patches/**
 
+# Nix
+result
+result-*
+.direnv/
+
 # Python
 __pycache__/
 *.pyc

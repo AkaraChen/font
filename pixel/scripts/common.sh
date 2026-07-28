@@ -56,6 +56,15 @@ download_file() {
 }
 
 ensure_python() {
+  # A pre-provisioned interpreter (the Nix devShell sets this) replaces the venv
+  # entirely: no pip, no network, no version drift. It must already import
+  # everything this family needs — missing modules are a hard failure, never a
+  # silently degraded build.
+  if [[ -n "${FONTKIT_PYTHON:-}" ]]; then
+    "${FONTKIT_PYTHON}" -c "import fontTools" \
+      || die "FONTKIT_PYTHON=${FONTKIT_PYTHON} cannot import: fontTools"
+    return 0
+  fi
   if [[ -x "${VENV_DIR}/bin/python" ]] && "${VENV_DIR}/bin/python" -c "import fontTools" 2>/dev/null; then
     return 0
   fi
@@ -78,5 +87,9 @@ ensure_python() {
 
 python_bin() {
   ensure_python
-  echo "${VENV_DIR}/bin/python"
+  if [[ -n "${FONTKIT_PYTHON:-}" ]]; then
+    echo "${FONTKIT_PYTHON}"
+  else
+    echo "${VENV_DIR}/bin/python"
+  fi
 }
