@@ -165,9 +165,12 @@ Not yet done (known limits):
 
 1. SC `locl` / full GSUB/GPOS merge (SC layout tables are not copied)
 2. x-height / CJK face optical size match (stem weight is matched; overall face size may still differ)
-3. Per-glyph vertical centering for brackets / equals / arrows
-4. Italic (Latin-only italic planned; no CJK pseudo-oblique)
-5. Pure visual QA of every math / symbol beyond the EAW metric gate
+3. Italic (Latin-only italic planned; no CJK pseudo-oblique)
+4. Pure visual QA of every math / symbol beyond the EAW metric gate
+
+**Won’t do (not needed):**
+
+- Per-glyph vertical centering for coding brackets / operators (`()[]{}` `=` `+` arrows, …). Trial y-shifts (KIT-260) were only **sub-pixel** at normal coding sizes (~0.2–0.7 px at 16 px), so there is no perceptible gain for mutating dozens of outlines. Upstream placement is left as-is.
 
 ## Verify
 
