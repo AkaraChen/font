@@ -1,9 +1,9 @@
 # AKR fonts — UX layer over Nix.
 #
 # just is deliberately NOT the build system: Nix is. Everything here is an alias
-# for a nix invocation. Since Phase 3 that is literally true for the six
-# derivation families — `just build sans` is `nix build .#sans` plus the copy
-# into sans/out that the fingerprint net reads.
+# for a nix invocation, for all seven families since Phase 5 — `just build sans`
+# is `nix build .#sans` plus the copy into sans/out that the fingerprint net
+# reads.
 #
 #   just dev                → enter the pinned toolchain shell
 #   just build sans         → nix build .#sans, materialised into sans/out
@@ -52,28 +52,14 @@ cache-report layer +results:
 
 # Build one family and materialise its products under <family>/out.
 #
-# serif still runs its own shell pipeline (its Sarasa toolchain is a separate
-# issue); the other six are derivations, so this is a `nix build` and a copy.
+# All seven are derivations since Phase 5 (KIT-280) moved serif's Sarasa
+# toolchain in, so this is a `nix build` and a copy — no family branch left.
 # The copy exists because tools/fingerprint.py walks <family>/out and names each
 # product by its path relative to it — pointing it at a store path instead would
 # work, but then a baseline would depend on where the store happens to be.
 build family:
     #!/usr/bin/env bash
     set -euo pipefail
-    if [[ "{{family}}" == "serif" ]]; then
-      # serif still curls its own inputs, so it needs the source layer realised
-      # and pointed at — tools/build-family.sh used to do this for all seven.
-      # FONTKIT_SRC_CACHE=off skips it and falls back to curl, which still works
-      # and is still hash-gated; it just re-downloads 300 MiB of Sarasa.
-      if [[ "${FONTKIT_SRC_CACHE:-}" != "off" ]]; then
-        export FONTKIT_SRC_CACHE="$({{nix}} build --no-link --print-out-paths .#source-cache)"
-      fi
-      # The Nerd patcher is a pinned checkout, not a release zip, so serif can no
-      # longer fetch it by URL+sha256 the way it fetches its font inputs.
-      export FONTKIT_FONT_PATCHER="$({{nix}} build --no-link --print-out-paths .#font-patcher)"
-      {{nix}} develop --command serif/scripts/build.sh
-      exit 0
-    fi
     out="$({{nix}} build --no-link --print-out-paths --print-build-logs .#{{family}})"
     rm -rf {{family}}/out
     cp -R "$out" {{family}}/out

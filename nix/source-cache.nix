@@ -1,18 +1,19 @@
-# A content-addressed view of every pinned artifact, for the shell build steps.
+# A content-addressed view of every pinned artifact.
 #
-# The family scripts already know the sha256 of everything they download — they
-# verify against it. So the cheapest possible bridge between "Nix fetched it"
-# and "the script wants it" is a directory of files named by their own hash:
+# It began as the bridge to the shell build steps: they already knew the sha256
+# of everything they downloaded, so the cheapest lookup was a directory of files
+# named by their own hash. No build reads it any more (KIT-280 removed the last
+# shell pipeline), but the view is what makes the CI source layer one GC root,
+# and `manifest.tsv` / `sizes.tsv` are how the 10 GB budget stays legible:
 #
 #   by-sha256/<hex>            the bytes
 #   by-name/<family>/<file>    the same bytes, human-navigable
 #   manifest.tsv               sha256, bytes, kind, family, filename
 #
-# tools/src-cache.sh looks up by-sha256/<expected> before reaching for curl. No
-# script needs to learn a new URL scheme, an artifact shared by five families is
-# fetched once, and `nix build .#source-cache` is a single GC root covering
-# every input in the repo — which is what makes the CI source layer cacheable as
-# one unit (docs/caching.md).
+# An artifact shared by five families is fetched once, and
+# `nix build .#source-cache` is a single GC root covering every input in the
+# repo — which is what makes the CI source layer cacheable as one unit
+# (docs/caching.md).
 { pkgs
 , lib ? pkgs.lib
 , sources

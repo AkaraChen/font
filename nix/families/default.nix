@@ -1,9 +1,9 @@
-# The six families that build from source in Nix.
+# The seven families, all of them building from source in Nix.
 #
-# serif is not here on purpose: it runs the upstream Sarasa toolchain (clone +
-# quilt stack + npm build) and moving that into a derivation is its own issue.
-# Until then it keeps its shell pipeline, which is why `<family>/scripts/` still
-# exists for exactly one family.
+# serif joined last (KIT-280): it runs the upstream Sarasa toolchain — quilt
+# stack, npm build, its own CJK master swapped into sources/shs — and that took
+# a phase of its own. With it here, no family has a shell pipeline any more and
+# `<family>/scripts/` holds only hand-run diagnostics.
 #
 # Each family module returns the same four things:
 #
@@ -12,6 +12,10 @@
 #             what `just build` materialises and what the fingerprint net reads
 #   verify    the family's gate, as a check rather than a build step
 #   release   what `packaged` needs to build the release archive
+#
+# …and optionally `extras`: derivations that are real build inputs but not steps
+# of the granularity contract. serif's upstream Sarasa build is the only one —
+# see the comment on it for why a per-weight derivation would be wrong.
 { pkgs
 , lib
 , granularity
@@ -39,6 +43,7 @@ let
     pixel = ./pixel.nix;
     rounded = ./rounded.nix;
     sans = ./sans.nix;
+    serif = ./serif.nix;
     typewriter = ./typewriter.nix;
   };
 
@@ -62,9 +67,16 @@ let
     family: rel:
     let
       version = sources.manifests.${family}.data.naming.version or "0.1.0";
-      licenses = lib.mapAttrsToList (name: _: "--license ${rel.licenseDir}/${name}") (
-        builtins.readDir rel.licenseDir
-      );
+      # A family may redistribute no licence files of its own (serif ships an
+      # upstream-pointer note instead), so `licenseDir = null` is a real answer
+      # rather than an empty directory nobody would notice was empty.
+      licenses =
+        if rel.licenseDir == null then
+          [ ]
+        else
+          lib.mapAttrsToList (name: _: "--license ${rel.licenseDir}/${name}") (
+            builtins.readDir rel.licenseDir
+          );
     in
     support.step "packaged"
       {
@@ -118,6 +130,20 @@ in
         (
           family: fam:
             lib.mapAttrsToList (name: drv: lib.nameValuePair "${family}-${name}" drv) fam.steps
+        )
+        built
+    )
+  );
+
+  # `nix build .#serif-sarasa` → a family's non-contract build inputs, for
+  # bisecting them without building the family around them.
+  extras = lib.listToAttrs (
+    lib.concatLists (
+      lib.mapAttrsToList
+        (
+          family: fam:
+            lib.mapAttrsToList (name: drv: lib.nameValuePair "${family}-${name}" drv)
+              (fam.extras or { })
         )
         built
     )

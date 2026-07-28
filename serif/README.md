@@ -11,10 +11,14 @@ Coding mono: **Slab Latin (IosevkaNSlab)** + **霞鹜新致宋 Opt** + **Nerd ic
 | **Product** | **Nerd Font Mono** → `out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf` |
 | Symbol widths | EAW-correct: half-width donor outlines from Sarasa `TermSlab` |
 | Mono flags | `post.isFixedPitch=1` + PANOSE `bProportion=9` (FontForge clears these) |
-| Ligatures | default `calt` **+** Iosevka `dlig` (discretionary) folded in by `expand-default-ligatures.py` |
+| Ligatures | default `calt` **+** Iosevka `dlig` (discretionary) folded in by `fontkit expand-ligatures` |
 | Metrics gate | `python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw` (after Nerd patch) |
 
-Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic) ref and apply **quilt** patches.
+Upstream is **not forked permanently**. The build takes a **pinned**
+[be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic) tree
+(`fetchFromGitHub` at `sources.sarasa.commit`) and applies the patch stack in
+`patches/series`. Since KIT-280 that is a derivation, not a shell pipeline —
+see [`nix/families/serif.nix`](../nix/families/serif.nix).
 
 ## Pins
 
@@ -24,7 +28,7 @@ See `font.toml`: Sarasa / LXGW / embolden strengths / `nerd.commit`.
 
 Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlines:
 
-1. **Latin target** — IosevkaNSlab in upstream `SarasaMonoSlabSC-{Regular,Bold}.ttf` (same Latin this build uses).
+1. **Latin target** — IosevkaNSlab as it comes out of this build's own `merged` step (`SarasaMonoSlabNeoZhiSongSC-Opt-{Regular,Bold}.ttf`); no second copy to drift.
 2. **CJK trial** — LXGW Neo ZhiSong Plus scaled to UPM 1000, emboldened at candidate strengths.
 3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Vertical stems dominate mixed CN/EN optical weight in a mono face; Song horizontals stay thinner by design.
 
@@ -45,63 +49,57 @@ The previous Regular **s=14** made CJK verticals noticeably heavier than Latin �
 ```
 serif/
   font.toml
-  patches/                 # quilt series
-  scripts/
-    build.sh               # one-shot → Nerd product
-    01…04-*.sh             # intermediate Sarasa build
-    05-nerd-patch.sh       # Nerd patch + 2:1 --check-nerd
-    06-narrow-symbols.sh   # EAW-correct symbol widths + expand calt + final gate
-    calibrate-stroke.sh    # measure stems → recommend CJK_EMBOLDEN_*
-    package-release.sh     # zip out/nerd for GitHub Release
-    expand-default-ligatures.py  # fold dlig (etc.) into default calt
+  patches/                 # applied by stdenv, in series order
+  scripts/                 # diagnostics only — the build is nix/families/serif.nix
+    calibrate-stroke.sh    # measure stems → recommend calibration.*.embolden
     render-coding-sample.py
   samples/
-  work/                    # gitignored
-  out/                     # intermediate pre-Nerd TTFs (gitignored)
+  out/                     # `just build serif` materialises here (gitignored)
   out/nerd/                # **product** (gitignored)
-  dist/                    # release zips (gitignored)
 
-../lib/fontkit/            # shared with every other family, run as
-                           # python3 -m fontkit.<module>:
-  verify2to1.py            #   --profile dense here
-  rename_nerd_family.py
-  fix_terminal_metrics.py
-  narrow_symbol_widths.py  #   --protect-ambiguous --widen-shared skip here
+../nix/families/serif.nix  # the build: src-cjk → cjk-prepared → (Sarasa) →
+                           # merged → nerd → packaged
+../lib/fontkit/            # shared with every other family, run as `fontkit <step>`:
+  scale_upem.py            #   2048 Neo ZhiSong → the 1000 product grid
   embolden.py              #   was serif/tools/embolden_cjk.py
+  nerd_patch.py            #   --no-nerd-widths --donor … --expand-ligatures here
+  narrow_symbol_widths.py  #   --protect-ambiguous --widen-shared skip here
+  verify2to1.py            #   --profile dense here
   measure.py               #   was serif/tools/measure_stroke_width.py
 ```
 
 ## Dependencies
 
-- `git`, `curl`, `quilt`, `node` (≥ 20), `npm`, `ttfautohint`, `unzip`, `zip`
-- Python 3.10+ (`venv` or `uv`) → `fonttools` + `skia-pathops`
-- **Nerd patch** — `fontforge` + FontPatcher.zip (pinned; `nix build .#font-patcher`)
+Nothing to install: `flake.nix` pins the toolchain and every step declares its
+own inputs. Notably `afdko` (Sarasa's `verdafile.mjs` calls `otc2otf` / `otf2ttf`
+during source prep) and `ttfautohint` are build inputs of the Sarasa derivation
+rather than things the host is assumed to have — both upstream checks for them
+only log and carry on.
 
 The container path was removed in KIT-277 along with the other five families':
 it was selected at runtime depending on what happened to be installed, so two
-machines could produce two different fonts silently. `just dev` provides all of
-the above. The shell pipeline now also validates `font.toml` with Pydantic before
-doing any work, so the pinned Nix dev shell is the supported entry point.
+machines could produce two different fonts silently.
 
 ## Build (Nerd only product)
 
 ```bash
 # From the repository root:
-nix develop --command serif/scripts/build.sh
+just build serif
 # → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
 # Family name: "SarasaNZSSlab NFM"  (Windows-safe ≤31)
 ```
 
-Step by step (same end product):
+Step by step — each of these is a derivation, and building one builds only what
+it needs:
 
 ```bash
-nix develop
-serif/scripts/01-clone-sarasa.sh
-serif/scripts/02-apply-quilt.sh
-serif/scripts/03-prepare-cjk.sh
-serif/scripts/04-build.sh          # intermediate out/*.ttf
-serif/scripts/05-nerd-patch.sh     # product + verify --check-nerd
-serif/scripts/06-narrow-symbols.sh # EAW symbol widths + expand calt + verify --check-eaw
+nix build .#serif-src-cjk-Regular       # LXGW Neo ZhiSong Plus, pinned
+nix build .#serif-cjk-prepared-Bold     # UPM 2048 → 1000, then embolden
+nix build .#serif-sarasa                # upstream verda build (patched tree)
+nix build .#serif-merged-Bold           # one intermediate pre-Nerd face
+nix build .#serif-nerd-Bold             # Nerd patch → rename → EAW → metrics → calt
+nix build .#serif-verify                # the 2:1 / Nerd / EAW gate
+nix build .#serif-release               # the zip (depends on the gate)
 ```
 
 ### Ligatures (calt + dlig)
@@ -112,20 +110,16 @@ like `+++`/`---`, HTML comments, …). Richer programming ligations live under
 `[|` `|]`, markdown checkboxes, …) and optional language packs (`JSPT`, `HSKL`, …).
 
 Most editors only flip **`calt`** when “font ligatures” is enabled, so stock
-Sarasa/Iosevka feels like ligatures are “half on”. After Nerd + metric hygiene,
-`06-narrow-symbols.sh` runs:
-
-```bash
-python3 scripts/expand-default-ligatures.py out/nerd/*.ttf
-# default: union dlig lookups into every calt feature
-```
+Sarasa/Iosevka feels like ligatures are “half on”. The `nerd` step's last pass
+(`fontkit nerd-patch --expand-ligatures`) unions the dlig lookups into every
+calt feature.
 
 Repair an already-built TTF without a full rebuild:
 
 ```bash
-python3 scripts/expand-default-ligatures.py SarasaNZSSlabNFM-Regular.ttf
+fontkit expand-ligatures SarasaNZSSlabNFM-Regular.ttf
 # optional: also fold language packs (can overlap; prefer dlig-only for product)
-# python3 scripts/expand-default-ligatures.py --include all font.ttf
+# fontkit expand-ligatures --include all font.ttf
 ```
 
 Still **not** present in Iosevka at all (nothing to enable): e.g. `&&`, `**` as
@@ -171,7 +165,7 @@ Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metr
 | Observation | Cause | What to do |
 | --- | --- | --- |
 | Nerd PUA icons (Powerline `U+E0B0`/`E0B2`, FA, Material, …) | Advances are **half** (500). `fontkit.verify2to1 --check-nerd` gates this. | Nothing — patch path is correct (`--single-width-glyphs`, not `--mono`). |
-| `⏵` `▸` `✓` `⌘` `⌥` … render “fullwidth” / overlap the next column | **Real metric bug, fixed in v0.1.2.** These are `EAW=N` (neutral): a terminal gives them exactly **1** cell, with no setting to change that. Base **Mono** shipped them at advance **1000** → 1 cell of space, 2 cells of ink. Affected **1006** codepoints. | Use ≥ **v0.1.2**, or run `06-narrow-symbols.sh` / `fontkit.narrow_symbol_widths` on an existing TTF. `fontkit.verify2to1 --check-eaw` now gates this. |
+| `⏵` `▸` `✓` `⌘` `⌥` … render “fullwidth” / overlap the next column | **Real metric bug, fixed in v0.1.2.** These are `EAW=N` (neutral): a terminal gives them exactly **1** cell, with no setting to change that. Base **Mono** shipped them at advance **1000** → 1 cell of space, 2 cells of ink. Affected **1006** codepoints. | Use ≥ **v0.1.2**, or run `fontkit narrow-symbol-widths` on an existing TTF. `fontkit.verify2to1 --check-eaw` now gates this. |
 | `▶` `→` `①` `×` still look fullwidth | These are `EAW=A` (**ambiguous**) — genuinely user-configurable, so the build leaves them at 2 cells for CJK users who set “ambiguous = wide”. | Set your terminal to treat ambiguous as wide, or rebuild with `fontkit.narrow_symbol_widths --include-ambiguous`. |
 | `☰` `⚡` `ㆴ` sit in the left half of a 2-cell slot | Symmetric case: `EAW=W` codepoints that shipped at **half** advance. | Fixed in v0.1.2 (23 glyphs re-centred in the full cell). |
 | “Nerd symbols look ugly / squashed” | `--single-width-glyphs` forces icons into **1** cell; many source icons were drawn for ~1.5–2 cells. Patcher is **v3.4.0** (not an ancient script). | Expected for NFM; try fewer glyph sets (drop `--complete`) or accept Nerd Font **Propo** only outside strict grids. |
@@ -196,15 +190,16 @@ matters: it saves via fontTools, which recomputes `head`, so run
 ## Release package
 
 ```bash
-./scripts/package-release.sh 0.1.0
-# → dist/SarasaNZSSlabNFM-0.1.0.zip  (Nerd TTFs only)
+just release serif
+# → result-serif-release/SarasaNZSSlabNFM-0.1.0.zip  (Nerd TTFs only)
 ```
 
-Then:
+The zip is gated: `packaged` depends on `serif-verify`, so a red gate is a build
+failure rather than an archive nobody checked. Then:
 
 ```bash
 gh release create v0.1.0 \
-  dist/SarasaNZSSlabNFM-0.1.0.zip \
+  result-serif-release/SarasaNZSSlabNFM-0.1.0.zip \
   out/nerd/SarasaNZSSlabNFM-Regular.ttf \
   out/nerd/SarasaNZSSlabNFM-Bold.ttf \
   --title "SarasaNZSSlab NFM v0.1.0" \
@@ -221,15 +216,27 @@ python3 scripts/render-coding-sample.py \
 
 See [`samples/`](samples/).
 
-## Quilt workflow
+## Editing the patch stack
+
+`patches/series` lists the stack in order (`0001` pipeline, `0002` product
+config) and is read by both `quilt` and the derivation, so they cannot disagree.
+To re-roll a patch, work in a scratch copy of the pinned tree — `quilt` is no
+longer in the devShell, since nothing in the build drives it:
 
 ```bash
-export QUILT_PATCHES="$PWD/patches"
-cd work/Sarasa-Gothic
-quilt series   # 0001 pipeline, 0002 product config
+src=$(nix build --no-link --print-out-paths .#sarasa-src)
+cp -R "$src" /tmp/sarasa && chmod -R u+w /tmp/sarasa
+cd /tmp/sarasa && QUILT_PATCHES=$OLDPWD/serif/patches quilt push -a
 ```
 
-Do **not** commit multi‑MiB font binaries; CJK is fetched in `03-prepare-cjk.sh`.
+Bumping the Sarasa pin also moves `package-lock.json`, so re-derive
+`npmDepsHash` in `nix/families/serif.nix`:
+
+```bash
+nix run nixpkgs#prefetch-npm-deps -- "$src/package-lock.json"
+```
+
+Do **not** commit multi-MiB font binaries; the CJK master is a pinned fetch.
 
 ## Family name
 

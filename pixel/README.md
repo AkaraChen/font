@@ -109,8 +109,8 @@ same 12px grid, same hand, nothing scaled or redrawn. Targets are derived by
 comparing the two flavors, not hard-coded, and a donor glyph whose ink escapes
 `[0, 600]` is a hard failure. The `verify` gate's `--check-eaw` covers it.
 
-Same class of bug — and same remedy — as `serif/scripts/06-narrow-symbols.sh`,
-which pulls 1-cell symbols from Sarasa **Term**.
+Same class of bug — and same remedy — as serif's `nerd` step
+(`fontkit nerd-patch --donor …`), which pulls 1-cell symbols from Sarasa **Term**.
 
 ## Patcher policy
 

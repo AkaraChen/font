@@ -57,19 +57,34 @@ jobs:
             -D serif/out/nerd
           ls -lh serif/out/nerd
 
+      # Was serif/scripts/expand-default-ligatures.py, which Phase 2 folded into
+      # lib/fontkit and this workflow kept calling by its old path.
       - name: Expand default ligatures
         if: ${{ inputs.expand_ligatures }}
         run: |
-          python3 serif/scripts/expand-default-ligatures.py serif/out/nerd/*.ttf
+          PYTHONPATH=lib python3 -m fontkit.expand_ligatures serif/out/nerd/*.ttf
 
       - name: Verify 2:1 + nerd + EAW
         run: |
           PYTHONPATH=lib python3 -m fontkit.verify2to1 \
             --profile dense --check-nerd --check-eaw serif/out/nerd/*.ttf
 
+      # Was serif/scripts/package-release.sh, deleted with serif's shell pipeline
+      # (KIT-280). This workflow post-processes a *previous release's* TTFs
+      # rather than building from source, so it cannot use `nix build
+      # .#serif-release`, which builds the product it packages. Rewriting the
+      # release flow around the derivations is Phase 8 (KIT-283); until then it
+      # calls the same packaging step that derivation calls. The zip loses its
+      # README.txt in the process: that text is rendered by Nix from font.toml
+      # now (nix/families/serif.nix), and there is no Nix in this job.
       - name: Package zip
         run: |
-          ./serif/scripts/package-release.sh "${{ inputs.version }}"
+          mkdir -p serif/dist
+          PYTHONPATH=lib python3 -m fontkit.package \
+            --stem SarasaNZSSlabNFM \
+            --version "${{ inputs.version }}" \
+            --out serif/dist \
+            serif/out/nerd/*.ttf
           ls -lh serif/dist/
 
       - name: Publish GitHub Release

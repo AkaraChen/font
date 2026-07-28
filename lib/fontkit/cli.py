@@ -22,6 +22,7 @@ import sys
 # names, which still carry the family they were extracted from.
 STEPS = {
     "embolden": "embolden",
+    "scale-upem": "scale_upem",
     "prepare-cjk": "prepare_cjk",
     "merge": "merge_radon_wenkai",
     "expand-ligatures": "expand_ligatures",

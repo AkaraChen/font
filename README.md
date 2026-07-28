@@ -15,26 +15,27 @@ just verify sans      # diff the products against the committed fingerprint base
 just --list           # everything else
 ```
 
-Six of the seven families are Nix derivations, one per build step
+All seven families are Nix derivations, one per build step
 ([`nix/families/`](nix/families)) — there is no `<family>/scripts/build.sh` to
-run any more, and nothing to install first. serif still runs its own shell
-pipeline because it drives the upstream Sarasa toolchain; moving that into Nix
-is its own piece of work. See [`docs/build-toolchain.md`](docs/build-toolchain.md).
+run any more, and nothing to install first. serif was the last holdout because
+it drives the upstream Sarasa toolchain (patched tree + npm build); that lives
+in [`nix/families/serif.nix`](nix/families/serif.nix) now.
+See [`docs/build-toolchain.md`](docs/build-toolchain.md).
 
 ## serif/
 
 **Coding product: SarasaNZSSlab NFM** — MonoSlab Latin + 霞鹜新致宋 Opt CJK, **Nerd Font Mono**, 2:1 dual-width SC.
 
 ```bash
-nix develop --command serif/scripts/build.sh
+just build serif
 # → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
 ```
 
 Package for a GitHub Release:
 
 ```bash
-nix develop --command serif/scripts/package-release.sh 0.1.0
-# → dist/SarasaNZSSlabNFM-0.1.0.zip
+just release serif
+# → result-serif-release/SarasaNZSSlabNFM-0.1.0.zip
 ```
 
 Details: [`serif/README.md`](serif/README.md).
