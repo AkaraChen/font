@@ -36,6 +36,45 @@ FAMILY_DIR="${REPO_ROOT}/${FAMILY}"
 BUILD_SH="${FAMILY_DIR}/scripts/build.sh"
 [[ -x "${BUILD_SH}" ]] || die "no executable ${BUILD_SH}"
 
+# Realise the pinned source layer once, up front, and point the family scripts
+# at it. Everything the family is about to download is already hash-pinned, so
+# this is not a new trust boundary — it is the same bytes, fetched once per pin
+# for the whole repo instead of once per family per run. Five families pinning
+# the same FontPatcher.zip is the case that motivated it.
+#
+# Best-effort by design: no nix on PATH, or an offline machine with a cold
+# store, and every script falls back to its own curl exactly as before. Set
+# FONTKIT_SRC_CACHE=off to skip the realisation deliberately.
+NIX_BIN="${NIX_BIN:-nix}"
+realise() { # <flake attr> -> store path on stdout, empty on failure
+  # "nix-command flakes" is one space-separated value, so it must stay one word.
+  "${NIX_BIN}" --extra-experimental-features "nix-command flakes" \
+    build --no-link --print-out-paths "${REPO_ROOT}#$1" 2>/dev/null || true
+}
+if [[ ${DRY_RUN} -eq 1 ]]; then
+  : # --dry-run only prints the step list; realising 300 MiB of sources for that
+elif [[ "${FONTKIT_SRC_CACHE:-}" == "off" ]]; then
+  log "source cache disabled (FONTKIT_SRC_CACHE=off)"
+  unset FONTKIT_SRC_CACHE
+elif [[ -z "${FONTKIT_SRC_CACHE:-}" ]] && command -v "${NIX_BIN}" >/dev/null 2>&1; then
+  log "realising pinned sources"
+  if p="$(realise source-cache)" && [[ -n "${p}" ]]; then
+    export FONTKIT_SRC_CACHE="${p}"
+    log "source cache → ${p}"
+  else
+    log "warning: could not realise .#source-cache; scripts will curl their own inputs"
+  fi
+fi
+if [[ ${DRY_RUN} -eq 0 && "${FAMILY:-}" == "serif" && -z "${FONTKIT_SARASA_SRC:-}" ]] \
+  && command -v "${NIX_BIN}" >/dev/null 2>&1; then
+  if p="$(realise sarasa-src)" && [[ -n "${p}" ]]; then
+    export FONTKIT_SARASA_SRC="${p}"
+    log "sarasa source → ${p}"
+  else
+    log "warning: could not realise .#sarasa-src; falling back to git clone"
+  fi
+fi
+
 # fontTools reads SOURCE_DATE_EPOCH for head.modified. fontforge embeds its own
 # timestamps regardless, which is why the regression net fingerprints normalised
 # dumps rather than file hashes — but killing the noise we *can* kill is free.

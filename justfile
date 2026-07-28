@@ -29,7 +29,28 @@ dev:
 matrix:
     @for f in {{families}}; do echo "$f"; done
 
+# Realise every pinned upstream input (nix/sources). Prints the store path to
+# export as FONTKIT_SRC_CACHE; `just build` does this for you.
+sources:
+    @{{nix}} build --no-link --print-out-paths .#source-cache
+
+# Realise one family's sources under readable filenames, for poking at them.
+sources-of family:
+    {{nix}} build --out-link result-sources-{{family}} .#sources-{{family}}
+    @ls -lL result-sources-{{family}}/
+
+# What makes each build step rebuild — the derivation-granularity contract.
+# The axes listed here are the cache keys; anything not listed is shared.
+graph:
+    @{{nix}} eval --json .#lib.granularity.steps | jq -r \
+      'to_entries[] | "\(.key)\n  axes: \(.value.axes | join(", "))\n  \(.value.note)\n"'
+
+# Report the closure size of a cache layer (what CI counts against the 10 GB cap).
+cache-report layer +results:
+    @tools/cache-report.sh {{layer}} {{results}}
+
 # Build one family: runs its existing scripts/build.sh step by step, timed.
+# Pinned sources are realised once up front and shared across families.
 build family:
     {{nix}} develop --command tools/build-family.sh {{family}}
 

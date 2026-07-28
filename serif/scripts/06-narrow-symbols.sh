@@ -38,13 +38,7 @@ else
   die "need python3 (or ${VENV_DIR}/bin/python)"
 fi
 
-if [[ ! -f "${DONOR_ARCHIVE}" ]]; then
-  log "downloading half-width symbol donor"
-  curl -fL --retry 3 -o "${DONOR_ARCHIVE}.partial" "${SARASA_TERM_ARCHIVE_URL}"
-  mv "${DONOR_ARCHIVE}.partial" "${DONOR_ARCHIVE}"
-else
-  log "using cached ${DONOR_ARCHIVE}"
-fi
+download_file "${SARASA_TERM_ARCHIVE_URL}" "${DONOR_ARCHIVE}" "${SARASA_TERM_ARCHIVE_SHA256}"
 
 mkdir -p "${DONOR_DIR}"
 if [[ ! -f "${DONOR_DIR}/${SARASA_TERM_REGULAR}" ]]; then

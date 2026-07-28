@@ -1,11 +1,12 @@
 # Build toolchain
 
-Phases 0 and 2 of the pipeline modernisation plan (KIT-263). Phase 0 (KIT-274)
+Phases 0, 1 and 2 of the pipeline modernisation plan (KIT-263). Phase 0 (KIT-274)
 pinned the toolchain and built a regression net **before** any of the 14k lines
-got refactored; it changed no build logic. Phase 2 (KIT-276) then collapsed the
-17 duplicated per-family scripts into [`lib/fontkit`](#fontkit-the-shared-build-steps),
-with every per-family behavioural difference expressed as a flag so the products
-do not move.
+got refactored; it changed no build logic. Phase 1 (KIT-275) moved source
+fetching into Nix and fixed the derivation granularity later phases build on.
+Phase 2 (KIT-276) then collapsed the 17 duplicated per-family scripts into
+[`lib/fontkit`](#fontkit-the-shared-build-steps), with every per-family
+behavioural difference expressed as a flag so the products do not move.
 
 ## Quick start
 
@@ -16,7 +17,12 @@ just verify sans      # diff the products against the committed fingerprints
 just fingerprint sans # rewrite the baseline (only when a change is intended)
 just timings sans     # per-step wall-clock from the last build
 just test             # fontkit unit tests — seconds, no font build
+just sources          # realise every pinned upstream input (Phase 1)
+just graph            # what makes each build step rebuild (Phase 1)
 ```
+
+Source fetching, derivation granularity and the layered CI cache have their own
+document: [`caching.md`](caching.md).
 
 `nix` needs flakes enabled. The `just` recipes pass
 `--extra-experimental-features 'nix-command flakes'` themselves, so a fresh
