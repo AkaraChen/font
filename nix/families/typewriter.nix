@@ -128,7 +128,7 @@ let
     ${get "FAMILY_NAME"} @version@
     Derived from Courier Prime + Zhuque Fangsong 朱雀仿宋 (${get "ZHUQUE_RELEASE_TAG"})
     under SIL OFL 1.1.
-    Nerd Font icons via ${get "NERD_FONTS_TAG"} FontPatcher (--complete --single-width-glyphs).
+    Nerd Font icons via font-patcher ${get "NERD_FONTS_PATCHER_VERSION"} (--complete --single-width-glyphs).
     Not an official Courier Prime, Triones Type, or Nerd Fonts product.
 
     Name recipe:

@@ -68,6 +68,9 @@ build family:
       if [[ "${FONTKIT_SRC_CACHE:-}" != "off" ]]; then
         export FONTKIT_SRC_CACHE="$({{nix}} build --no-link --print-out-paths .#source-cache)"
       fi
+      # The Nerd patcher is a pinned checkout, not a release zip, so serif can no
+      # longer fetch it by URL+sha256 the way it fetches its font inputs.
+      export FONTKIT_FONT_PATCHER="$({{nix}} build --no-link --print-out-paths .#font-patcher)"
       {{nix}} develop --command serif/scripts/build.sh
       exit 0
     fi

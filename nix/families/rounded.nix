@@ -133,7 +133,7 @@ let
   readme = pkgs.writeText "rounded-README.txt" ''
     ${get "FAMILY_NAME"} @version@
     Derived from Iosevka Curly (ss20) + Resource Han Rounded SC (资源圆体) under SIL OFL 1.1.
-    Nerd Font icons via ${get "NERD_FONTS_TAG"} FontPatcher (--complete --single-width-glyphs).
+    Nerd Font icons via font-patcher ${get "NERD_FONTS_PATCHER_VERSION"} (--complete --single-width-glyphs).
     Not an official Iosevka, Resource Han Rounded, or Nerd Fonts product.
 
     Name recipe (inheritance in the family name):

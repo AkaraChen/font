@@ -131,21 +131,34 @@ baseline change, which is what the normalised text format exists for.
 
 ### Baseline provenance: CI is the only authority
 
-The first CI run answered the open question, and the answer was no: **the build
-is not reproducible across platforms.** All seven families built cleanly on
-`x86_64-linux`, and all seven products differed from baselines generated on
-`aarch64-darwin`.
+The first CI run looked like it answered the open question — all seven families
+built cleanly on `x86_64-linux` and all seven products differed from baselines
+generated on `aarch64-darwin`, so the conclusion recorded here was "the build is
+not reproducible across platforms". `pixel` was cited: **46661 glyphs on Linux
+against darwin's 46552**, from the same pinned fontforge and the same pinned
+`FontPatcher.zip`.
 
-`pixel` localises it. Its fontTools-only intermediate is identical on both
-platforms; its fontforge-patched product is not — Linux emits **46661 glyphs
-against darwin's 46552**, from the same pinned fontforge, the same pinned
-`FontPatcher.zip`, the same arguments and the same input font. `casual` and
-`handwriting` have no fontforge step and still differed, so fontforge is not the
-only source; `skia-pathops` is the obvious suspect for the CJK embolden, though
-that is inferred from which families failed rather than diagnosed.
+**That was the wrong conclusion, and it was not measuring platforms.** It was
+measuring two patchers. `pins.env` set `NERD_PATCH_METHOD=auto`, which picks the
+`nerdfonts/patcher` container whenever docker is present; GitHub runners have
+docker and the maintainer's Mac has it too, but the image is broken on `arm64`
+and fell back to the pinned local patcher there. So Linux was patched by the
+container (font-patcher 4.26.0, built from master) and darwin by
+`FontPatcher.zip` v3.4.0 (font-patcher 4.20.3) — 15 months of glyph additions
+apart.
 
-So the toolchain pin buys reproducibility *on* a platform, not *across* them,
-and a baseline is only meaningful relative to the platform that produced it.
+Pinning the commit the container was built from closes it: the same `pixel`
+product built on darwin from that pin has **46661 glyphs**, matching the number
+that was attributed to Linux, with identical `glyphorder`, `cmap` and advances.
+What is left between the two is `head.flags` / `lowestRecPPEM` — which the
+container was *failing* to copy, because it bind-mounts its input `/in:ro` and
+hits exactly the `PermissionError` described under [One thing the sandbox
+changed](#one-thing-the-sandbox-changed) — and a two-point `maxp.maxPoints`
+difference in the outlines.
+
+So the toolchain pin buys more than this document used to claim. What remains
+genuinely open is that last outline delta; a baseline is still only meaningful
+relative to the platform that produced it, and
 `x86_64-linux` on GitHub Actions is the canonical one. Baselines are bootstrapped
 from the `fingerprints-<family>` artifact, which every run uploads regardless of
 verdict — see [`../fingerprints/README.md`](../fingerprints/README.md).

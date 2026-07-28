@@ -18,7 +18,7 @@ Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sar
 
 ## Pins
 
-See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_TAG`.
+See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_PATCHER_COMMIT`.
 
 ## Optical weight (CJK vs Latin stems)
 
@@ -139,7 +139,7 @@ editor; no extra OpenType feature toggle is required for the expanded set.
 
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that forces *all* glyphs (incl. CJK) to 1 cell and breaks 2:1
-- Pin: `NERD_FONTS_TAG` in `pins.env` (currently **v3.4.0**, current upstream latest)
+- Pin: `NERD_FONTS_PATCHER_COMMIT` in `pins.env` (font-patcher **4.26.0**, master — the newest *release*, v3.4.0, carries 4.20.3)
 - After rename: `fontkit.fix_terminal_metrics` restores `post.isFixedPitch=1`, pins PANOSE `bProportion=9` and sets `OS/2.xAvgCharWidth` to the half-cell — the three things hosts read to decide the font is monospaced (see Troubleshooting)
 
 ## Verify

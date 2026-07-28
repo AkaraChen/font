@@ -10,8 +10,8 @@
 #   pythonEnv   the interpreter the steps run on. `common.sh`'s `ensure_python`
 #               — 30 lines of "uv, or venv, or pip, or die" per family — is
 #               exactly this attribute now.
-#   patcher     FontPatcher.zip unpacked once. Five families patched with it and
-#               each unzipped its own copy into <family>/work/.
+#   patcher     the pinned nerd-fonts checkout. Five families patch with it and
+#               each used to unzip its own copy into <family>/work/.
 #   step        granularity.mkStep with the defaults every step wants.
 { pkgs
 , lib
@@ -43,15 +43,11 @@ let
     fontkit
   ]);
 
-  patcher = pkgs.runCommand "font-patcher-unpacked"
-    {
-      nativeBuildInputs = [ pkgs.unzip ];
-    }
-    ''
-      mkdir -p $out
-      unzip -q ${sources.fontPatcher} -d $out
-      test -f $out/font-patcher
-    '';
+  # Already a directory: the pin is a sparse checkout of the nerd-fonts repo, not
+  # a release zip, so there is nothing to unpack. font-patcher resolves
+  # `bin/scripts/name_parser` and `src/glyphs/` relative to its own path, which
+  # is why those two are in the checkout.
+  patcher = sources.fontPatcher;
 
   # Every family builds the coding profile of the Simplified master. Phase 6
   # adds `text`, Phase 7 adds the other regions; both arrive as more values for

@@ -154,7 +154,7 @@ let
   readme = pkgs.writeText "sans-README.txt" ''
     ${get "FAMILY_NAME"} @version@
     Derived from Lilex + IBM Plex Sans SC under SIL OFL 1.1.
-    Nerd Font icons via ${get "NERD_FONTS_TAG"} FontPatcher (--complete --single-width-glyphs).
+    Nerd Font icons via font-patcher ${get "NERD_FONTS_PATCHER_VERSION"} (--complete --single-width-glyphs).
     Not an official Lilex, IBM, or Nerd Fonts product.
 
     Name recipe (same style as SarasaNZSSlab NFM):

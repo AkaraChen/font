@@ -117,7 +117,7 @@ let
     Grid:   Fusion Pixel 12px mono (EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"})
     Ligatures: hand-drawn pixel programming ligatures (calt)
     Icons:  Nerd Fonts complete set (single-cell), not redrawn
-            patcher ${get "NERD_FONTS_TAG"}
+            font-patcher ${get "NERD_FONTS_PATCHER_VERSION"}
 
     Install: copy the .ttf into your OS fonts directory.
     In terminals/IDEs pick family "${get "FAMILY_NAME"}" and enable font ligatures.

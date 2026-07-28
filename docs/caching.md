@@ -83,8 +83,8 @@ Nix reads those same files — it does not carry a second copy of any URL or has
 (`nix/lib/pins.nix`).
 
 A store path is keyed by `(url, hash)`, which is what makes the headline case
-work: **five families pin the same `FontPatcher.zip`, so there is one derivation
-and one download**, where before there were five, one per
+work: **five families pin the same font-patcher commit, so there is one
+derivation and one fetch**, where before there were five, one per
 `<family>/work/downloads/`. `nix/checks.nix` asserts it, and
 `nix/sources/default.nix` fails evaluation if a family drifts its patcher pin.
 
@@ -104,7 +104,8 @@ Two inputs are not plain `fetchurl`:
 
 Three artifacts had **no integrity check at all** before this phase and now do:
 `FontPatcher.zip` (five families), `LXGWNeoZhiSongPlus.ttf` and the Sarasa Term
-donor archive (serif).
+donor archive (serif). The patcher is a commit-pinned sparse checkout now rather
+than a release zip — sparse because the nerd-fonts repo is 27 GB.
 
 ### How the build steps consume it
 

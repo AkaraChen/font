@@ -116,7 +116,7 @@ which pulls 1-cell symbols from Sarasa **Term**.
 
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that would force CJK to 1 cell and break 2:1
-- Pin: `NERD_FONTS_TAG` in `pins.env` (currently **v3.4.0**)
+- Pin: `NERD_FONTS_PATCHER_COMMIT` in `pins.env` (font-patcher **4.26.0**)
 
 > **The container path is gone (KIT-277).** It was chosen at runtime — "docker
 > if it is installed, fontforge otherwise" — which meant two machines could
