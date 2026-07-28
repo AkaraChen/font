@@ -6,8 +6,8 @@
 # quote on top of the next character. Fusion's own latin flavor of the same
 # release draws them at 600 on the same grid — transplant those.
 #
-# Runs before the Nerd patch so 03's fix-terminal-metrics.py sees the final
-# outlines when it recomputes the head bbox.
+# Runs before the Nerd patch so the metric hygiene in 04 sees the final
+# advances.
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"

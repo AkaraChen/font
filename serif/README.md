@@ -65,7 +65,7 @@ serif/
                            # python3 -m fontkit.<module>:
   verify2to1.py            #   --profile dense here
   rename_nerd_family.py
-  fix_terminal_metrics.py  #   --keep-bbox here, serif only
+  fix_terminal_metrics.py
   narrow_symbol_widths.py  #   --protect-ambiguous --widen-shared skip here
   embolden.py              #   was serif/tools/embolden_cjk.py
   measure.py               #   was serif/tools/measure_stroke_width.py
@@ -138,7 +138,7 @@ editor; no extra OpenType feature toggle is required for the expanded set.
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that forces *all* glyphs (incl. CJK) to 1 cell and breaks 2:1
 - Pin: `NERD_FONTS_TAG` in `pins.env` (currently **v3.4.0**, current upstream latest)
-- After rename: `fontkit.fix_terminal_metrics --keep-bbox` sets `OS/2.xAvgCharWidth` to the half-cell and recomputes `head` bbox from half/full glyphs only (see Troubleshooting). `--keep-bbox` is serif-only — it holds that bbox through the save
+- After rename: `fontkit.fix_terminal_metrics` restores `post.isFixedPitch=1`, pins PANOSE `bProportion=9` and sets `OS/2.xAvgCharWidth` to the half-cell — the three things hosts read to decide the font is monospaced (see Troubleshooting)
 
 ## Verify
 
@@ -176,8 +176,8 @@ Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metr
 | `▶` `→` `①` `×` still look fullwidth | These are `EAW=A` (**ambiguous**) — genuinely user-configurable, so the build leaves them at 2 cells for CJK users who set “ambiguous = wide”. | Set your terminal to treat ambiguous as wide, or rebuild with `fontkit.narrow_symbol_widths --include-ambiguous`. |
 | `☰` `⚡` `ㆴ` sit in the left half of a 2-cell slot | Symmetric case: `EAW=W` codepoints that shipped at **half** advance. | Fixed in v0.1.2 (23 glyphs re-centred in the full cell). |
 | “Nerd symbols look ugly / squashed” | `--single-width-glyphs` forces icons into **1** cell; many source icons were drawn for ~1.5–2 cells. Patcher is **v3.4.0** (not an ancient script). | Expected for NFM; try fewer glyph sets (drop `--complete`) or accept Nerd Font **Propo** only outside strict grids. |
-| Terminal / editor does not list the font as **monospaced** at all | **Fixed in v0.1.3.** `post.isFixedPitch` is the flag hosts read to answer "is this mono?" (macOS Core Text `kCTFontTraitMonoSpace`, Chromium / VS Code pickers, "monospace only" filters). FontForge — and so the Nerd patcher — recomputes it from the advance histogram, sees a dual-width font and clears it to **0**, even though upstream Sarasa ships **1** on the same 2:1 grid. | Use ≥ **v0.1.3**, or run `fontkit.fix_terminal_metrics --keep-bbox` (now restores `isFixedPitch=1` and pins PANOSE `bProportion=9`). `fontkit.verify2to1` gates both. Note: **fontconfig** (Linux) derives spacing by scanning advances and will still classify any dual-width font as proportional — nothing in the font can change that. |
-| Large empty band on the **right** of the terminal after selecting this font | Dual-width font: ~33k glyphs @1000 + ~18k @500 → raw `OS/2.xAvgCharWidth≈832`. Some hosts treat that average (or a huge `head.xMax` from multi-em dashes) as the monospaced cell width. v0.1.2 and earlier also shipped `post.isFixedPitch=0` (see the row above). | Rebuild with current `05-nerd-patch.sh` (runs `fontkit.fix_terminal_metrics --keep-bbox`: `xAvgCharWidth=half`, tighter head bbox). Confirm terminal uses font advances / wcwidth, not average width. |
+| Terminal / editor does not list the font as **monospaced** at all | **Fixed in v0.1.3.** `post.isFixedPitch` is the flag hosts read to answer "is this mono?" (macOS Core Text `kCTFontTraitMonoSpace`, Chromium / VS Code pickers, "monospace only" filters). FontForge — and so the Nerd patcher — recomputes it from the advance histogram, sees a dual-width font and clears it to **0**, even though upstream Sarasa ships **1** on the same 2:1 grid. | Use ≥ **v0.1.3**, or run `fontkit.fix_terminal_metrics` (restores `isFixedPitch=1` and pins PANOSE `bProportion=9`). `fontkit.verify2to1` gates both. Note: **fontconfig** (Linux) derives spacing by scanning advances and will still classify any dual-width font as proportional — nothing in the font can change that. |
+| Large empty band on the **right** of the terminal after selecting this font | **Not a font bug.** This was originally diagnosed as hosts reading `OS/2.xAvgCharWidth` (~832 on a dual-width font) or a huge `head.xMax` as the monospaced cell width, and v0.1.2–v0.1.x shipped a tightened `head` bbox to work around it. It turned out to be a terminal bug; the non-conformant bbox was removed in KIT-284. `xAvgCharWidth=half` stays, because that is what a mono font is expected to advertise. | Update the terminal. If you can reproduce a band that moves with the *font*, reopen with the host and version — do not reintroduce the bbox hack without one. |
 | Mixed CN/EN column drift | Half vs full advances are intentional 2:1 (`A=500`, `中=1000`). Drift usually comes from **full-width punctuation/symbols** in the line (see non-gated set above), not from broken CJK metrics. | Use the coding sample ruler in `samples/coding-mixed.txt`; avoid fullwidth ASCII (`ＵＴＦ`) in code. |
 
 ```bash
@@ -185,7 +185,7 @@ Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metr
 python3 -m fontkit.narrow_symbol_widths SarasaNZSSlabNFM-Regular.ttf \
   --protect-ambiguous --widen-shared skip \
   --donor SarasaTermSlabSC-Regular.ttf      # donor URL: see pins.env
-python3 -m fontkit.fix_terminal_metrics --keep-bbox SarasaNZSSlabNFM-Regular.ttf
+python3 -m fontkit.fix_terminal_metrics SarasaNZSSlabNFM-Regular.ttf
 python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw SarasaNZSSlabNFM-Regular.ttf
 ```
 

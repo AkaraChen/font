@@ -9,8 +9,8 @@
 #   Sarasa *Term* has proper 1-cell drawings of the same shapes; we transplant
 #   them (falling back to geometric fitting for codepoints Term lacks).
 #
-# Runs after 05-nerd-patch.sh. Saving the font recomputes head bbox, so
-# fix-terminal-metrics.py is re-run here rather than left to 05.
+# Runs after 05-nerd-patch.sh. The narrow pass saves the font again, so the
+# mono advertisement is re-asserted here rather than left to 05.
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
@@ -81,11 +81,9 @@ for f in "${FONTS[@]}"; do
     --protect-ambiguous --widen-shared skip
 done
 
-# narrow_symbol_widths saves via fontTools, which recomputes head from all
-# glyphs; redo the dual-width metric hygiene afterwards. --keep-bbox pins the
-# half/full-only bbox through the save — serif is the only family that does.
-log "re-fix terminal metrics (xAvgCharWidth / head bbox)"
-"${PY}" -m fontkit.fix_terminal_metrics --keep-bbox "${FONTS[@]}"
+# Re-assert the mono advertisement after the narrow pass's own save.
+log "re-fix terminal metrics (isFixedPitch / PANOSE / xAvgCharWidth)"
+"${PY}" -m fontkit.fix_terminal_metrics "${FONTS[@]}"
 
 # Iosevka parks richer programming ligations under dlig / language packs.
 # Editors turn on calt with "font ligatures", but almost never dlig — fold

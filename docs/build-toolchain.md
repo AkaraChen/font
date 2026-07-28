@@ -170,21 +170,28 @@ checkout to point at.
 ### The differences that survived as flags
 
 Phase 2's completion criterion is that all seven fingerprints stay put, so the
-drifted copies could not simply be dropped in favour of the majority. Four
+drifted copies could not simply be dropped in favour of the majority. Three
 genuine behaviour differences became flags:
 
 | flag | who passes it | what it does |
 | --- | --- | --- |
-| `fix_terminal_metrics --keep-bbox` | serif | disables `TTFont.recalcBBoxes` so the half/full-only `head` bbox survives the save |
 | `narrow_symbol_widths --protect-ambiguous` | serif | never narrows an outline also reachable from an `EAW=A` codepoint |
 | `narrow_symbol_widths --widen-shared skip` | serif | leaves a shared `W`/half outline alone instead of forking a full-width copy |
 | `verify2to1 --profile dense` | serif handwriting casual | denser CJK sampling, four more bracket marks, Nerd-range (not whole-PUA) icon scan, no `xAvgCharWidth` check |
 
-**`--keep-bbox` is a live bug in the other four families**, not a preference:
-pixel, rounded, sans and typewriter compute the tight `head` bbox and then let
-fontTools recompute it from every glyph during the save, so the value they
-compute is discarded. The default therefore keeps discarding it. Fixing that is
-a deliberate product change with its own fingerprint churn — not this phase.
+There was a fourth, `fix_terminal_metrics --keep-bbox`, and its history is worth
+keeping: serif rewrote `head.xMin/xMax` from half/full-advance glyphs only, and
+disabled `TTFont.recalcBBoxes` so the value survived the save. The other four
+families ran the same computation and let fontTools overwrite it — a value
+computed and discarded on every build.
+
+**Both sides are now gone (KIT-284).** The bbox was a workaround for a "large
+empty band on the right of the terminal" report that turned out to be a terminal
+bug, not a font one, and the table it wrote is non-conformant: OpenType says
+`head`'s bbox covers *all* glyphs. Deleting it removes the dead computation from
+four families and one non-conformant table from serif's products —
+`test_head_bbox_still_covers_every_glyph` fails if it comes back. Do not
+reintroduce it without a font-side reproduction.
 
 `lib/tests/` pins each of these against synthetic fonts; `just test` runs them
 in about a second, and `nix flake check` runs them again against the installed

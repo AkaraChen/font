@@ -1,4 +1,4 @@
-"""--keep-bbox is the one behavioural difference between serif and the rest."""
+"""The mono advertisement, and the head bbox this module must NOT touch."""
 from __future__ import annotations
 
 from fontTools.ttLib import TTFont
@@ -9,8 +9,9 @@ from conftest import CP_A, CP_ZHONG, FULL, HALF
 
 
 def _font_with_an_oversized_glyph(make_font):
-    # U+2E3B (three-em dash) is deliberately 3 em wide in these products, so it
-    # is exactly the glyph that blows head.xMax out past the terminal cell.
+    # U+2E3B (three-em dash) is deliberately 3 em wide in these products, and is
+    # the glyph that used to be squeezed out of head's bbox by the removed
+    # --keep-bbox workaround.
     return make_font(
         glyphs={
             "A": (HALF, (20, 0, 480, 700)),
@@ -22,7 +23,7 @@ def _font_with_an_oversized_glyph(make_font):
     )
 
 
-def test_always_fixes_the_mono_advertisement(make_font):
+def test_fixes_the_mono_advertisement(make_font):
     path = make_font(
         glyphs={"A": (HALF, (20, 0, 480, 700)), "zhong": (FULL, (20, 0, 980, 700))},
         cmap={CP_A: "A", CP_ZHONG: "zhong"},
@@ -39,21 +40,13 @@ def test_always_fixes_the_mono_advertisement(make_font):
     font.close()
 
 
-def test_keep_bbox_pins_head_to_half_and_full_glyphs(make_font):
-    path = _font_with_an_oversized_glyph(make_font)
-    ftm.fix_font(path, keep_bbox=True)
+def test_head_bbox_still_covers_every_glyph(make_font):
+    """KIT-284: the tight-bbox workaround is gone and must stay gone.
 
-    font = TTFont(path, lazy=False)
-    assert font["head"].xMax == 980, "three-em dash must not set the cell width"
-    font.close()
-
-
-def test_without_keep_bbox_fonttools_recomputes_head_on_save(make_font):
-    """pixel / rounded / sans / typewriter have always shipped this.
-
-    Their copy of the script computed the tight bbox and then let
-    TTFont.recalcBBoxes overwrite it during save. Flipping that is a product
-    change, not a refactor, so the default must keep losing the tight bbox.
+    OpenType says head.xMin/xMax cover *all* glyphs. serif used to ship a
+    narrower bbox to stop hosts reading it as the terminal cell width; that
+    report turned out to be a terminal bug, so the non-conformant table is not
+    worth carrying. If someone reintroduces it, this fails.
     """
     path = _font_with_an_oversized_glyph(make_font)
     ftm.fix_font(path)
