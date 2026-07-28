@@ -4,8 +4,9 @@
 # per-step derivations depend on it rather than on a repo checkout.
 #
 # It also installs the `fontkit` console script (lib/pyproject.toml), which is
-# how every build step is invoked. serif is the last caller of the
-# `python3 -m fontkit.<module>` form, via its own common.sh.
+# how every build step is invoked. The `python3 -m fontkit.<module>` form still
+# works and is what the unit tests call, but nothing in the build uses it any
+# more — serif was the last caller and its shell pipeline is gone (KIT-280).
 { lib
 , buildPythonPackage
 , setuptools
@@ -54,6 +55,7 @@ buildPythonPackage {
     "fontkit.nerd_patch"
     "fontkit.package"
     "fontkit.prepare_cjk"
+    "fontkit.scale_upem"
     "fontkit.merge_radon_wenkai"
     "fontkit.expand_ligatures"
     "fontkit.fix_nerd_widths"

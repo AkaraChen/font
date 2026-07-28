@@ -42,7 +42,7 @@ installed on the machine running it.
 
 | | |
 | --- | --- |
-| system | `curl` `git` `quilt` `unzip` `zip` `p7zip` `fontforge` `ttfautohint` `nodejs` `harfbuzz` `afdko` `just` `jq` |
+| system | `curl` `git` `unzip` `zip` `p7zip` `fontforge` `ttfautohint` `nodejs` `harfbuzz` `afdko` `just` `jq` |
 | python | `fonttools` `brotli` `skia-pathops` `Pillow` `freetype-py` `numpy` `uharfbuzz` `wcwidth` |
 
 Three things worth knowing:
@@ -50,17 +50,22 @@ Three things worth knowing:
 - **`afdko` was never in any `need_cmd` list.** Sarasa's `verdafile.mjs` calls
   `otc2otf` and `otf2ttf` during source prep, and its own `check-env.mjs` only
   `console.error`s when they are missing. serif built at all because the
-  maintainer's machine happened to have AFDKO installed.
+  maintainer's machine happened to have AFDKO installed. It is a declared build
+  input of the serif derivation now (`nix/families/serif.nix`), and stays in the
+  shell so a hand-poke at the Sarasa tree has the same tools the build does.
+- **`quilt` is gone.** It was serif's patch stack driver; the stack is stdenv's
+  `patches` now, read from the same `serif/patches/series` file, so nothing
+  pushes or pops it by hand and there is no `.pc` state to reset.
 - **`hb-view` needs a harfbuzz override.** nixpkgs hard-disables cairo in
   harfbuzz, which drops `hb-view` — the one harfbuzz binary
   `pixel/scripts/preview.sh` calls. Without the override in `flake.nix` the
   shell silently falls through to the host's `hb-view` (homebrew's, on the
   maintainer's Mac), which is exactly the failure this phase exists to remove.
-- **`FONTKIT_PYTHON`.** Only serif reads it now — its `common.sh` uses it
-  instead of building a venv. The six derivation families never ask the
-  question: their interpreter is a build input
-  (`nix/families/support.nix`), which is also why the devShell's wider set
-  (Pillow, uharfbuzz, numpy — for the diagnostics) cannot leak into a product.
+- **`FONTKIT_PYTHON` is gone** with serif's shell pipeline (KIT-280), which was
+  its last reader. No family asks the interpreter question any more: it is a
+  build input (`nix/families/support.nix`), which is also why the devShell's
+  wider set (Pillow, uharfbuzz, numpy — for the diagnostics) cannot leak into a
+  product.
 
 nixpkgs is pinned to the `nixos-25.11` release rather than unstable — this is a
 toolchain pin, not a place to chase upstream, and unstable currently carries an
@@ -73,18 +78,19 @@ with wrong or missing products:
 
 | where | was | now |
 | --- | --- | --- |
-| `serif/scripts/04-build.sh` | `ttfautohint` missing → warning | `need_cmd ttfautohint` |
-| Sarasa `check-env.mjs` | `otc2otf`/`otf2ttf` missing → `console.error` | `need_cmd otc2otf` / `need_cmd otf2ttf` as a preflight in `04-build.sh`, before Sarasa is invoked |
+| `serif/scripts/04-build.sh` | `ttfautohint` missing → warning | a declared build input of the serif derivation: absent means the build does not evaluate |
+| Sarasa `check-env.mjs` | `otc2otf`/`otf2ttf` missing → `console.error` | same — `afdko` is in `nativeBuildInputs`, and the sandbox has nothing else on PATH to fall through to |
 | `*/scripts/common.sh` ×5 | Pillow / freetype-py fail to install → warning, sample render skipped | `die` |
 
-The AFDKO check lives in our `04-build.sh` rather than as a quilt patch against
-Sarasa's `check-env.mjs`: it fails earlier, and it does not drift when the
-pinned Sarasa commit moves.
+Phase 0 spelled the first two as `need_cmd` preflights in `04-build.sh`, ahead
+of Sarasa rather than as a quilt patch against its `check-env.mjs`. Phase 5
+(KIT-280) made them declarations instead: a derivation's `nativeBuildInputs` is
+checked before the build runs, and the sandbox has no host PATH to silently fall
+back to.
 
-One related soft-skip is **not** fixed here, because it is outside this issue's
-scope: `serif/scripts/05-nerd-patch.sh` silently skips the family rename when it
-cannot resolve a Python interpreter. Under the devShell `FONTKIT_PYTHON` is
-always set, so the branch cannot be taken — but the branch is still there.
+The related soft-skip is gone with the same change: `05-nerd-patch.sh` used to
+skip the family rename when it could not resolve a Python interpreter. The step
+is `fontkit nerd-patch` now, and its interpreter is a build input.
 
 ## Fingerprints: the regression net
 
@@ -217,6 +223,9 @@ genuine behaviour differences became flags:
 | `narrow_symbol_widths --protect-ambiguous` | serif | never narrows an outline also reachable from an `EAW=A` codepoint |
 | `narrow_symbol_widths --widen-shared skip` | serif | leaves a shared `W`/half outline alone instead of forking a full-width copy |
 | `verify2to1 --profile dense` | serif handwriting casual | denser CJK sampling, four more bracket marks, Nerd-range (not whole-PUA) icon scan, no `xAvgCharWidth` check |
+| `nerd_patch --no-nerd-widths` | serif | skips the PUA half-cell pass its shell pipeline never ran — its patcher output is already half-cell, and forcing it would move a fingerprint for no product reason |
+| `nerd_patch --donor` | serif | transplants half-cell symbol outlines from Sarasa Term; the merged families have no donor on their grid and fit geometrically |
+| `nerd_patch --expand-ligatures` | serif | folds Iosevka's `dlig` into default `calt` (KIT-240) |
 
 There was a fourth, `fix_terminal_metrics --keep-bbox`, and its history is worth
 keeping: serif rewrote `head.xMin/xMax` from half/full-advance glyphs only, and
@@ -252,11 +261,11 @@ message instead of as a confusing behavioural assertion.
 
 ## The build graph
 
-Phase 3 (KIT-277). Every step of every family except serif is a derivation, and
-the shell that used to sequence them is gone: 6 × `common.sh`, 6 × `build.sh`,
-6 × `package-release.sh`, the numbered step scripts and `tools/build-family.sh` —
-about 2,900 lines. `tools/src-cache.sh` stays for serif alone, which still curls
-its own inputs; see [`caching.md`](caching.md).
+Phase 3 (KIT-277) for six families, Phase 5 (KIT-280) for serif. Every step of
+every family is a derivation now, and the shell that used to sequence them is
+gone: 7 × `common.sh`, 7 × `build.sh`, 7 × `package-release.sh`, the numbered
+step scripts, `tools/build-family.sh` and `tools/src-cache.sh` — about 3,300
+lines. What is left under `<family>/scripts/` is hand-run diagnostics only.
 
 ### What a step is
 
@@ -289,13 +298,54 @@ than a fixed pipeline:
 | pixel | | ✓ | | | ✓ | ✓ | ✓ |
 | rounded | ✓ | ✓ | | ✓ | ✓ | ✓ | ✓ |
 | sans | ✓ | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| serif | | ✓ | | ✓ | ✓ | ✓ | ✓ |
 | typewriter | ✓ | ✓ | | ✓ | ✓ | ✓ | ✓ |
 
 handwriting and casual carry their Nerd icons in the upstream Latin face, so
 they have no `nerd` step. pixel's Latin and CJK arrive in the same upstream
-file, so it has no Latin side to prepare separately. sans, rounded and
-typewriter scale their Latin inside the merge engine — Phase 5 is where that
-gets pulled apart.
+file, so it has no Latin side to prepare separately. serif has no Latin side of
+its own at all: its Latin is Iosevka N Slab *inside* the Sarasa tree, and the
+merge is upstream's (see below). sans, rounded and typewriter scale their Latin
+inside the merge engine — that is what the merge-engine phase pulls apart.
+
+### serif's merge is upstream's
+
+serif is the one family whose merge this repo does not perform. Sarasa's own
+verda build takes the Latin (Iosevka N Slab, shipped inside its tree) and a Han
+master from `sources/shs/`, and emits the merged faces. Two quilt patches make
+that ours: `0001` adds an unhinted-only target and lets a TrueType Han drop-in
+skip the OTC/CFF conversions, `0002` cuts `config.json` down to MonoSlab × SC ×
+{Regular, Bold} and points it at Neo ZhiSong. They are applied by stdenv, in
+`patches/series` order, from the same file `quilt push -a` used to read.
+
+The upstream build is **not** a granularity step. `npm run build ttf-unhinted`
+emits every style in `config.json` in a single verda run, so a per-weight
+derivation would run the whole build twice and throw half of each away. It is
+`.#serif-sarasa`, and the per-weight `merged` step extracts one face from it —
+cheap, and correctly keyed, so `nix build .#serif-merged-Bold` still means what
+it means everywhere else.
+
+What that buys, beyond the shell going away:
+
+- the tree is `fetchFromGitHub` at the pinned commit, so it is hash-verified
+  bytes rather than a `git clone --depth 1` whose only check was asking the
+  server to confirm the name of what it had just served
+- `npm install` into a mutable checkout — with `node_modules` manually moved out
+  and back around the `rm -rf` as a speed hack — is `buildNpmPackage` plus
+  `npmDepsHash`: the dependency set is an input, and the store is the cache
+- `afdko` and `ttfautohint` are declared build inputs. Both were previously
+  "whatever the host had", and both fail quietly upstream: Sarasa's
+  `check-env.mjs` `console.error`s for the first, and the `ttfautohint` oracle
+  just reports absence for the second
+
+`npmDepsHash` is pinned in `nix/families/serif.nix` and moves with
+`package-lock.json`, i.e. with the Sarasa commit. To re-derive it after a pin
+bump:
+
+```bash
+nix run nixpkgs#prefetch-npm-deps -- \
+  "$(nix build --no-link --print-out-paths .#sarasa-src)/package-lock.json"
+```
 
 ### The merge runs once per weight
 

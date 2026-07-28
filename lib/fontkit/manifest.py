@@ -228,8 +228,11 @@ def _artifact(manifest: Manifest, source: str, artifact: str) -> Artifact:
 def legacy_environment(manifest: Manifest) -> dict[str, str]:
     """Translate semantic fields to names still used by shell diagnostics.
 
-    The compatibility names are code, not duplicated manifest data.  They can
-    disappear with serif's shell pipeline without changing ``font.toml``.
+    The compatibility names are code, not duplicated manifest data.  What reads
+    them is ``tools/diagnostic.sh`` — the hand-run calibration and preview
+    scripts, not the build, which takes its values from ``font.toml`` through
+    Nix.  They can disappear whenever those scripts stop wanting shell
+    variables, without changing ``font.toml``.
     """
 
     def text(value: object) -> str:

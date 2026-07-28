@@ -120,15 +120,13 @@ Phase 1 had to bridge this with a lookup by sha256, because every consumer was a
 shell script that curled its own inputs — `tools/src-cache.sh` checked
 `$FONTKIT_SRC_CACHE/by-sha256/` first and fell back to curl.
 
-**That bridge still exists, for serif and nothing else**, until its Sarasa
-toolchain moves into Nix. `just build serif` realises `.#source-cache` and
-exports the variable; `FONTKIT_SRC_CACHE=off` falls back to curl, still
-hash-gated, at the cost of re-downloading 300 MiB of Sarasa.
+**That bridge is gone (KIT-280)**, along with `tools/src-cache.sh`,
+`FONTKIT_SRC_CACHE` and serif's shell pipeline — its last user. All seven
+families take their inputs as build inputs.
 
-For the other six the fallback is gone, and so is what it was for. "Load-bearing
-— a laptop with no Nix still builds" was true of a shell pipeline and is no
-longer the deal: those families are derivations, so Nix is the requirement
-rather than the accelerant.
+With it goes what it was for. "Load-bearing — a laptop with no Nix still builds"
+was true of a shell pipeline and is no longer the deal: every family is a
+derivation, so Nix is the requirement rather than the accelerant.
 
 `nix build .#source-cache` still produces the by-name / by-sha256 view:
 

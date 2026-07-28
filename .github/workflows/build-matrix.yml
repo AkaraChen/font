@@ -161,7 +161,7 @@ jobs:
     name: ${{ matrix.family }}
     needs: [sources, toolchain]
     runs-on: ubuntu-latest
-    # serif runs the full upstream Sarasa toolchain (clone + quilt + npm build);
+    # serif runs the full upstream Sarasa toolchain (patched tree + npm build);
     # it is by far the longest pole. No family has a measured number yet, which
     # is exactly what this run produces.
     timeout-minutes: 180
@@ -227,16 +227,16 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: |
           nix develop --command bash -c '
-            for c in curl git quilt unzip zip 7z fontforge ttfautohint node npm \
+            for c in curl git unzip zip 7z fontforge ttfautohint node npm \
                      hb-view otc2otf otf2ttf python3; do
               printf "%-14s %s\n" "$c" "$(command -v "$c")"
             done
             python3 -c "import fontTools; print(\"fontTools\", fontTools.version)"
           '
 
-      # serif still runs its shell pipeline inside the devShell; the other six
-      # are derivations, so `just build` is a `nix build` plus the copy into
-      # <family>/out that the fingerprint net reads. Per-step wall-clock is a
+      # All seven are derivations since KIT-280, so `just build` is a `nix build`
+      # plus the copy into <family>/out that the fingerprint net reads.
+      # Per-step wall-clock is a
       # property of the build graph now — `nix build -L` prints it per
       # derivation and Nix skips the steps a change did not touch, which is
       # what the timings job existed to inform.
@@ -248,7 +248,7 @@ jobs:
       # separate step from the fingerprint check on purpose: this one says "the
       # product is wrong", the next says "the product changed".
       - name: Gate
-        if: steps.gate.outputs.run == 'true' && matrix.family != 'serif'
+        if: steps.gate.outputs.run == 'true'
         run: nix build --print-build-logs .#${{ matrix.family }}-verify
 
       - name: Fingerprint check

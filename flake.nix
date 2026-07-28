@@ -17,8 +17,8 @@
       sourcesFor = pkgs: import ./nix/sources { inherit pkgs; root = ./.; };
       fontkitFor = pkgs: pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
 
-      # The six families that build from source here (serif still runs its own
-      # shell pipeline — see nix/families/default.nix).
+      # All seven families, every one of them a derivation graph since serif's
+      # Sarasa toolchain moved in (KIT-280).
       familiesFor = pkgs: import ./nix/families {
         inherit pkgs granularity;
         inherit (pkgs) lib;
@@ -54,7 +54,7 @@
 
           # serif's Sarasa tree, replacing `git clone --depth 1`. 304 MiB; the
           # largest input in the repo and the reason docs/caching.md splits the
-          # CI cache into layers.
+          # CI cache into layers. `.#serif-sarasa` is the build on top of it.
           sarasa-src = sources.sarasaSrc;
         }
         # Per-family source sets, for `nix build .#sources-sans`.
@@ -71,6 +71,7 @@
         // families.outputs
         // families.releases
         // families.steps
+        // families.extras
         // families.verifies);
 
       # `just check` (nix flake check) builds fontkit, which runs its pytest
@@ -115,7 +116,10 @@
             # afdko ships otc2otf / otf2ttf as console scripts, which Sarasa's
             # verdafile.mjs calls during source prep. It was never in this repo's
             # need_cmd list — serif only ever built because the maintainer's
-            # machine happened to have AFDKO installed.
+            # machine happened to have AFDKO installed. The serif derivation
+            # declares it as a build input of its own; it stays here so a shell
+            # poking at the Sarasa tree by hand has the same tools the build
+            # does.
             afdko
           ] ++ [ fontkit ]);
 
@@ -134,10 +138,12 @@
 
           # System tools. Everything here was previously discovered with `need_cmd`
           # or called bare, i.e. "whatever happened to be on the maintainer's PATH".
+          # quilt is gone with serif's shell pipeline: the patch stack is
+          # stdenv's `patches` now (nix/families/serif.nix), applied from the
+          # same patches/series file, so nothing pushes or pops it by hand.
           systemTools = with pkgs; [
             curl
             git
-            quilt
             unzip
             zip
             p7zip
@@ -153,11 +159,6 @@
           default = pkgs.mkShell {
             name = "akr-fonts";
             packages = systemTools ++ [ pythonEnv ];
-
-            # serif still runs its shell pipeline and its common.sh reads this to
-            # skip venv creation. The six derivation families do not look at it:
-            # their interpreter is a build input.
-            FONTKIT_PYTHON = "${pythonEnv}/bin/python3";
 
             # fontTools honours SOURCE_DATE_EPOCH for head.modified. fontforge's
             # output still is not byte-reproducible (it embeds its own timestamps),
