@@ -71,6 +71,28 @@ id16 = "RadonWenKai NFM"
 id17 = "{weight}"
 rfn_note = "Monaspace reserves Radon and LXGW reserves upstream names; rename before public OFL redistribution."
 
+[merge]
+version = "1.000"
+# {slant} is filled from [calibration.<weight>].slant_deg, per weight — the CJK
+# shear is the italic mechanism, so it is a parameter and not a constant.
+sources_note = "Monaspace Radon NF + LXGW WenKai {slant}° slant"
+# Both sides arrive on the product grid already: latin-prepared narrows and
+# scales Radon, cjk-prepared weight-matches and shears WenKai. A UPM mismatch
+# here would mean one of those steps is wrong, so it is an error, not a fixup.
+latin = "none"
+cjk = "require-same-upm"
+# A terminal sizes cells from Unicode East_Asian_Width and never asks the font,
+# so the cell an import lands on is decided per codepoint rather than per range.
+import_policy = "east-asian-width"
+placement = "fit"
+glyph_prefix = "wk."
+required_sample = "中文荷塘月色霞鹜楷编程注释"
+# Radon's Nerd icons draw at one cell but several are EAW-wide, so a terminal
+# reserves two for them regardless.
+widen_wide_base_glyphs = true
+drop_vertical_metrics = true
+check_glyph_budget = true
+
 [metrics.coding]
 hhea_ascent = 950
 hhea_descent = -250

@@ -74,6 +74,28 @@ id17 = "{weight}"
 rfn_note = "Recursive and Yozai reserve upstream names; review before public OFL redistribution."
 version = "0.1.0"
 
+[merge]
+version = "0.1.0"
+# BUG, preserved on purpose: this string names Radon and WenKai, which are
+# handwriting's donors, not casual's. It is wrong in the shipped name ID 5 of
+# every RecursiveYozai Dual built so far, because casual borrowed handwriting's
+# merge script and that script hardcoded its own sources. Correcting it moves
+# casual's fingerprint, and Phase 5's completion criterion is that no
+# fingerprint moves — so it is recorded here, where it is visible, and fixed by
+# a change that owns the rebaseline.
+sources_note = "Monaspace Radon NF + LXGW WenKai {slant}° slant"
+# Both sides arrive prepared: latin-prepared scales Recursive, cjk-prepared
+# weight-matches Yozai.
+latin = "none"
+cjk = "require-same-upm"
+import_policy = "east-asian-width"
+placement = "fit"
+glyph_prefix = "wk."
+required_sample = "中文荷塘月色霞鹜楷编程注释"
+widen_wide_base_glyphs = true
+drop_vertical_metrics = true
+check_glyph_budget = true
+
 [metrics.coding]
 hhea_ascent = 950
 hhea_descent = -250

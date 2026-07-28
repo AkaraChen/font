@@ -100,7 +100,7 @@ casual/
 ```
 
 CJK embolden uses [`fontkit.prepare_cjk`](../lib/fontkit/prepare_cjk.py)
-and merge uses [`fontkit.merge_radon_wenkai`](../lib/fontkit/merge_radon_wenkai.py)
+and merge uses [`fontkit.merge`](../lib/fontkit/merge.py), configured by `[merge]` in `font.toml`
 (both were reached by hardcoded path into `../handwriting/scripts/` until KIT-277)
 (Latin base + CJK import policy). Stroke tools: [`../lib/fontkit/`](../lib/fontkit/).
 

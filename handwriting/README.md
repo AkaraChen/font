@@ -155,7 +155,7 @@ handwriting/
 
 Shared rather than duplicated, from [`../lib/fontkit/`](../lib/fontkit/):
 `fontkit.measure`, `fontkit.embolden`, `fontkit.verify2to1`, `fontkit.prepare_cjk`,
-`fontkit.merge_radon_wenkai`, `fontkit.expand_ligatures`. The build itself is
+`fontkit.merge`, `fontkit.expand_ligatures`. The build itself is
 [`../nix/families/handwriting.nix`](../nix/families/handwriting.nix), one derivation per step.
 
 ## Dependencies
