@@ -14,7 +14,7 @@ Coding dual-width face: **Courier Prime** (Latin slab mono) + **朱雀仿宋 Zhu
 | Family name | Project product name (not upstream RFN) | **TypewriterMono NFM** |
 | Metrics gate | `verify-2to1.py --expect-half 600 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
-Courier Prime ships UPM **2048** mono cell **1228**; the merge normalizes to UPM **1000** (EN **600**). Zhuque’s embedded Alegreya Latin is **dropped** — only CJK-side ranges are imported. Zhuque is single-weight; Bold CJK is stem-measured embolden (`CJK_EMBOLDEN_BOLD=32`, via `serif/tools/embolden_cjk.py`).
+Courier Prime ships UPM **2048** mono cell **1228**; the merge normalizes to UPM **1000** (EN **600**). Zhuque’s embedded Alegreya Latin is **dropped** — only CJK-side ranges are imported. Zhuque is single-weight; both product weights stem-match Latin verticals via embolden (`CJK_EMBOLDEN_REGULAR=8`, `CJK_EMBOLDEN_BOLD=32`, via `serif/tools/embolden_cjk.py`) so mixed CJK/EN coding text reads at the same optical weight.
 
 v1 does **not** add programming `calt` ligatures (Courier Prime has none). Optional later: slashed `0`, `1`/`l`/`I`/`|` tuning.
 
@@ -102,7 +102,7 @@ Step by step:
 
 ```bash
 ./scripts/01-fetch-sources.sh   # download pinned sources
-./scripts/02-prepare-cjk.sh     # Bold CJK embolden
+./scripts/02-prepare-cjk.sh     # Regular+Bold CJK embolden (stem-matched)
 ./scripts/03-merge.sh           # merge EN=600 / CJK=1200
 ./scripts/04-nerd-patch.sh      # Nerd complete + half-cell icons + EAW
 ./scripts/05-verify.sh          # hard-fail if advances / flags / EAW drift

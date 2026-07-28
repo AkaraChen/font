@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Prepare Zhuque CJK: optional Regular embolden + Bold stem-matched embolden.
-# Latin Bold is real Courier Prime Bold; CJK only ships Regular upstream.
+# Prepare Zhuque CJK: stem-matched embolden for Regular + Bold.
+# Latin uses real Courier Prime weights; CJK only ships Regular upstream, so
+# both product weights are emboldened to match Latin vertical-stem medians
+# (see pins.env CJK_EMBOLDEN_*).
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"

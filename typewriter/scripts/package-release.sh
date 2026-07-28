@@ -51,7 +51,8 @@ Name recipe:
 Sources:
   Latin = Courier Prime (slab mono; UPM 2048→1000)
   CJK   = Zhuque Fangsong technical preview (Alegreya Latin dropped)
-  Bold CJK = stem-measured embolden of Zhuque Regular
+  CJK weight = stem-measured embolden of Zhuque Regular
+               (Regular strength 8 / Bold strength 32 vs Courier Prime)
 
 Cell metrics: EN ${EN_ADV} / CJK ${CJK_ADV} (strict 2:1)
 Mono flags:   post.isFixedPitch=1, PANOSE bProportion=9
