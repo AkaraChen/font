@@ -3,14 +3,18 @@
 set -euo pipefail
 
 SANS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "${SANS_ROOT}/.." && pwd)"
 # shellcheck disable=SC1091
 source "${SANS_ROOT}/pins.env"
 
 WORK_DIR="${SANS_ROOT}/work"
 DOWNLOADS_DIR="${WORK_DIR}/downloads"
 EXTRACT_DIR="${WORK_DIR}/src"
+STAGE_DIR="${WORK_DIR}/stage"
 VENV_DIR="${WORK_DIR}/venv"
 OUT_DIR="${SANS_ROOT}/out"
+# Stroke measuring / embolden tools are shared with serif/ — not duplicated here.
+SERIF_TOOLS="${REPO_ROOT}/serif/tools"
 
 log() { printf '==> %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -20,7 +24,7 @@ need_cmd() {
 }
 
 ensure_dirs() {
-  mkdir -p "${WORK_DIR}" "${DOWNLOADS_DIR}" "${EXTRACT_DIR}" "${OUT_DIR}"
+  mkdir -p "${WORK_DIR}" "${DOWNLOADS_DIR}" "${EXTRACT_DIR}" "${STAGE_DIR}" "${OUT_DIR}"
 }
 
 sha256_of() {
@@ -56,15 +60,17 @@ download_zip() {
 }
 
 ensure_python() {
-  if [[ -x "${VENV_DIR}/bin/python" ]] && "${VENV_DIR}/bin/python" -c "import fontTools" 2>/dev/null; then
+  if [[ -x "${VENV_DIR}/bin/python" ]] \
+    && "${VENV_DIR}/bin/python" -c "import fontTools, pathops" 2>/dev/null; then
     return 0
   fi
   mkdir -p "${WORK_DIR}"
   log "creating venv at ${VENV_DIR}"
   # Prefer uv (works without distro ensurepip); fall back to python -m venv.
+  # skia-pathops: CJK optical-weight embolden (shared serif/tools/embolden_cjk.py).
   if command -v uv >/dev/null 2>&1; then
     uv venv "${VENV_DIR}"
-    uv pip install --python "${VENV_DIR}/bin/python" -q 'fonttools>=4.50' brotli
+    uv pip install --python "${VENV_DIR}/bin/python" -q 'fonttools>=4.50' brotli skia-pathops
     uv pip install --python "${VENV_DIR}/bin/python" -q Pillow \
       || log "Pillow not installed; sample render will be skipped"
   else
@@ -73,12 +79,12 @@ ensure_python() {
     # shellcheck disable=SC1091
     source "${VENV_DIR}/bin/activate"
     python -m pip install -q --upgrade pip
-    python -m pip install -q 'fonttools>=4.50' brotli
+    python -m pip install -q 'fonttools>=4.50' brotli skia-pathops
     python -m pip install -q Pillow \
       || log "Pillow not installed; sample render will be skipped"
   fi
-  "${VENV_DIR}/bin/python" -c "import fontTools" \
-    || die "fontTools not importable in ${VENV_DIR}"
+  "${VENV_DIR}/bin/python" -c "import fontTools, pathops" \
+    || die "fontTools + skia-pathops not importable in ${VENV_DIR}"
 }
 
 python_bin() {
