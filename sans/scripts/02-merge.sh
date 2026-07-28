@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Merge pinned Lilex + SC into out/LilexSansSCDual-{Regular,Bold}.ttf
+# Merge pinned Lilex + SC into out/LilexSansSCDual-{Regular,Bold}.ttf (pre-Nerd).
 set -euo pipefail
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
@@ -16,9 +16,11 @@ do
   [[ -f "${f}" ]] || die "missing source ${f}; run 01-fetch-sources.sh first"
 done
 
-FAMILY="${FAMILY_NAME}"
+# Intermediate (pre-Nerd) family keeps Dual so merge output is distinct from NFM.
+FAMILY="${BASE_FAMILY_NAME:-${FAMILY_NAME}}"
+FAMILY_PS_MERGE="${BASE_FAMILY_PS:-${FAMILY_PS}}"
 if [[ -n "${FAMILY_SUFFIX:-}" ]]; then
-  FAMILY="${FAMILY_NAME} ${FAMILY_SUFFIX}"
+  FAMILY="${FAMILY} ${FAMILY_SUFFIX}"
 fi
 
 log "merging EN=${EN_ADV} CJK=${CJK_ADV} family='${FAMILY}'"
@@ -32,7 +34,7 @@ log "merging EN=${EN_ADV} CJK=${CJK_ADV} family='${FAMILY}'"
   --cjk-adv "${CJK_ADV}" \
   --latin-src-adv "${LILEX_SRC_ADV}" \
   --family "${FAMILY}" \
-  --family-ps "${FAMILY_PS}" \
+  --family-ps "${FAMILY_PS_MERGE}" \
   --hhea-ascent "${HHEA_ASCENT}" \
   --hhea-descent "${HHEA_DESCENT}" \
   --hhea-line-gap "${HHEA_LINE_GAP}" \
@@ -42,12 +44,12 @@ log "merging EN=${EN_ADV} CJK=${CJK_ADV} family='${FAMILY}'"
   --os2-win-ascent "${OS2_WIN_ASCENT}" \
   --os2-win-descent "${OS2_WIN_DESCENT}"
 
-# Bundle OFLs next to product
+# Bundle OFLs next to intermediate products
 for lic in OFL-Lilex.txt OFL-IBM-Plex.txt; do
   if [[ -f "${SANS_ROOT}/licenses/${lic}" ]]; then
     cp "${SANS_ROOT}/licenses/${lic}" "${OUT_DIR}/${lic}"
   fi
 done
 
-log "products:"
+log "intermediate products:"
 ls -lh "${OUT_DIR}"/*.ttf

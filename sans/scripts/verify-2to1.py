@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Strict 2:1 dual-width metric verification for LilexSansSC Dual.
+"""Strict 2:1 dual-width metric verification for LilexSansSC Dual / NFM.
 
 half_unit = advance('A')   # default product: 550
 full_unit = 2 * half_unit  # default product: 1100
@@ -52,6 +52,13 @@ CJK_PUNCT = [
 ]
 CJK_FIXED = [ord(c) for c in "中文测试字体等宽对齐汉字编程注释字符串荷塘月色"]
 
+# BMP PUA + SPUA-A (Material Design Icons etc.) — Nerd complete set
+PUA_RANGES = (
+    (0xE000, 0xF8FF),
+    (0xF0000, 0xFFFFD),
+    (0x100000, 0x10FFFD),
+)
+
 
 def advance(font: TTFont, cp: int) -> int | None:
     cm = font.getBestCmap() or {}
@@ -83,7 +90,35 @@ def check_set(
             bad.append(f"U+{cp:04X} '{ch}' {label}: advance={w} expected={expected}")
 
 
-def verify_one(path: Path, epsilon: int, expect_half: int | None) -> int:
+def check_nerd(font: TTFont, half: int, epsilon: int, bad: list[str]) -> int:
+    """Require present Nerd/PUA icons at half-cell. Returns count scanned."""
+    cmap = font.getBestCmap() or {}
+    nerd_cps = [
+        cp
+        for cp in cmap
+        if any(a <= cp <= b for a, b in PUA_RANGES)
+    ]
+    if not nerd_cps:
+        bad.append("nerd: no Nerd/PUA icons found (is the font patched?)")
+        return 0
+    for cp in nerd_cps:
+        w = advance(font, cp)
+        if w is None or w == 0:
+            continue
+        if abs(w - half) > epsilon:
+            bad.append(
+                f"U+{cp:04X} nerd/PUA: advance={w} expected {half} (half-cell icon)"
+            )
+    return len(nerd_cps)
+
+
+def verify_one(
+    path: Path,
+    epsilon: int,
+    expect_half: int | None,
+    *,
+    check_nerd_flag: bool,
+) -> int:
     font = TTFont(path)
     half = advance(font, ord("A"))
     if half is None:
@@ -164,6 +199,7 @@ def verify_one(path: Path, epsilon: int, expect_half: int | None) -> int:
 
     # Hosts answer "is this mono?" from post.isFixedPitch + PANOSE proportion.
     # Dual-width 2:1 still advertises fixed pitch (matches serif/pixel/handwriting).
+    # FontForge/Nerd patcher often clears isFixedPitch — fix-terminal-metrics restores it.
     is_fp = font["post"].isFixedPitch
     print(f"  post.isFixedPitch={is_fp} (expected 1)")
     if is_fp != 1:
@@ -175,6 +211,14 @@ def verify_one(path: Path, epsilon: int, expect_half: int | None) -> int:
         )
     else:
         print(f"  PANOSE bProportion={panose.bProportion} (Monospaced)")
+    avg = font["OS/2"].xAvgCharWidth
+    print(f"  OS/2.xAvgCharWidth={avg} (expected {half})")
+    if avg != half:
+        bad.append(f"OS/2.xAvgCharWidth={avg} expected {half} (half-cell)")
+
+    if check_nerd_flag:
+        n = check_nerd(font, half, epsilon, bad)
+        print(f"  nerd/PUA icons scanned={n}")
 
     font.close()
 
@@ -207,6 +251,11 @@ def main() -> int:
         default=None,
         help="Optional hard pin for EN cell (e.g. 550)",
     )
+    ap.add_argument(
+        "--check-nerd",
+        action="store_true",
+        help="Require Nerd/PUA icons present at half-cell advance",
+    )
     args = ap.parse_args()
 
     worst = 0
@@ -214,7 +263,9 @@ def main() -> int:
         if not f.exists():
             print(f"missing file: {f}", file=sys.stderr)
             return 2
-        rc = verify_one(f, args.epsilon, args.expect_half)
+        rc = verify_one(
+            f, args.epsilon, args.expect_half, check_nerd_flag=args.check_nerd
+        )
         worst = max(worst, rc)
     return worst
 

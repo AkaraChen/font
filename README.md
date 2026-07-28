@@ -22,16 +22,23 @@ Details: [`serif/README.md`](serif/README.md).
 
 ## sans/
 
-**Coding product: LilexSansSC Dual** — Lilex Latin (ligatures / OT features) + Plex Sans SC CJK, dual-width **EN 550 / CJK 1100**.
+**Coding product: LilexSansSC NFM** — Lilex Latin (ligatures / OT features) + Plex Sans SC CJK + **Nerd Font Mono**, dual-width **EN 550 / CJK 1100**.
 
-Name recipe (same style as `SarasaNZSSlab NFM`): **Lilex** + **SansSC** + **Dual**.
+Name recipe (same style as `SarasaNZSSlab NFM`): **Lilex** + **SansSC** + **NFM**.
 
 ```bash
 cd sans && ./scripts/build.sh
-# → out/LilexSansSCDual-{Regular,Bold}.ttf
+# → out/nerd/LilexSansSCNFM-{Regular,Bold}.ttf
 ```
 
-Upstream pins (release tags + zip SHA-256) live in [`sans/pins.env`](sans/pins.env).
+Package for a GitHub Release:
+
+```bash
+cd sans && ./scripts/package-release.sh 0.1.0
+# → dist/LilexSansSCNFM-0.1.0.zip
+```
+
+Upstream pins live in [`sans/pins.env`](sans/pins.env).
 
 Details: [`sans/README.md`](sans/README.md).
 
