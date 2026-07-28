@@ -1,0 +1,18 @@
+// vertical midline check · brackets / ops / arrows vs digits + CJK
+// reference line (x-height / cap / body)
+Hx0中  Hx0中  Hx0中  Hx0中
+// brackets
+()[]{}<>  (中) [中] {中} <中>
+// equals / arithmetic
+a = b + c - d * e / f % g
+x == y != z <= w >= v
+// bits / logic
+a & b | c ^ d ~ e << f >> g
+// arrows (BMP)
+a → b ← c ↑ d ↓ e ↔ f
+// fullwidth counterparts (if present)
+（中）［中］｛中｝＝＋－
+【中】「中」『中』
+// mixed coding line
+const n = (a[i] + b) => { return n >= 0 ? n : -1; }; // 中文注释
+fn(x) { return (x + 1) * 2; } // []{}() = +
