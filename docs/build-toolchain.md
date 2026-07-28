@@ -190,6 +190,20 @@ a deliberate product change with its own fingerprint churn — not this phase.
 in about a second, and `nix flake check` runs them again against the installed
 package.
 
+### The interpreter's Unicode version is a build input
+
+Every narrow/widen decision reads `unicodedata.east_asian_width`, and
+`unicodedata` ships **with the interpreter**. A nixpkgs bump therefore moves the
+Unicode version under the build: U+2630 ☰ is `EAW=N` through Unicode 15.1 and
+`W` from 16.0, so the same source font gains or loses a full-cell glyph
+depending on which Python built it. This is a second, less obvious reason the
+devShell pins `python3` — and `just update` is a deliberate act that must be
+followed by a rebuild and a fingerprint diff.
+
+`lib/tests/test_eaw_assumptions.py` asserts the width class of every codepoint
+the fixtures rely on, so a pin bump that moves one fails with the version in the
+message instead of as a confusing behavioural assertion.
+
 ## CI
 
 `.github/workflows/build-matrix.yml` runs the fontkit unit tests first — the

@@ -75,13 +75,28 @@ def build_font(
 
 
 # Codepoints picked for their East_Asian_Width class, which is what every
-# advance rule in this package keys off:
+# advance rule in this package keys off.
+#
+# They must be codepoints whose class is *stable across Unicode versions*:
+# unicodedata ships with the interpreter, so a nixpkgs bump moves it. U+2630 ☰
+# was the first pick here and it is exactly the wrong kind: N through Unicode
+# 15.1, W from 16.0. test_fixture_codepoints_still_have_the_expected_eaw_class
+# fails loudly if any of these ever moves.
 CP_A = ord("A")  # Na → half
 CP_ZHONG = ord("中")  # W  → full
 CP_NEUTRAL = 0x23F5  # ⏵ N  → half
 CP_AMBIGUOUS = 0x25B6  # ▶ A  → user's choice, left alone by default
-CP_WIDE = 0x2630  # ☰ W  → full
+CP_WIDE = 0x3042  # あ W  → full
 CP_PUA = 0xE0B0  # Powerline separator (also EAW=A, being PUA)
+
+EXPECTED_EAW = {
+    CP_A: "Na",
+    CP_ZHONG: "W",
+    CP_NEUTRAL: "N",
+    CP_AMBIGUOUS: "A",
+    CP_WIDE: "W",
+    CP_PUA: "A",
+}
 
 
 @pytest.fixture

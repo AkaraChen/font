@@ -39,7 +39,7 @@ def test_protect_ambiguous_leaves_it_alone(make_font):
 
 
 def _shared_wide_and_neutral(make_font):
-    """One outline at half advance reachable from ☰ (EAW=W) and ⏵ (EAW=N)."""
+    """One outline at half advance reachable from あ (EAW=W) and ⏵ (EAW=N)."""
     return make_font(
         glyphs={
             "A": (HALF, (20, 0, 480, 700)),
