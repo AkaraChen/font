@@ -23,7 +23,16 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont, newTable
 from fontTools.ttLib.scaleUpem import scale_upem
+from fontTools.ttLib.tables import ttProgram
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
+
+# scale_upem() rewrites glyf coordinates but leaves TrueType hinting alone:
+# cvt values, prep/fpgm and per-glyph bytecode all keep measuring in the OLD
+# UPM. Courier Prime ships full hinting at UPM 2048, so after 2048→1000 every
+# grid-fit distance is ~2.05× too large and FreeType mangles the outlines at
+# coding sizes (i loses its dot, crossbars slide off the stem, parens shear).
+# Same table list as handwriting/scripts/prepare_cjk.py.
+HINT_TABLES = ("prep", "fpgm", "cvt ", "gasp", "hdmx", "LTSH", "VDMX")
 
 
 def is_cjk_side(cp: int) -> bool:
@@ -52,6 +61,24 @@ def is_cjk_side(cp: int) -> bool:
         (0x2F800, 0x2FA1F),
     )
     return any(a <= cp <= b for a, b in ranges)
+
+
+def drop_hinting(font: TTFont) -> None:
+    """Strip TrueType hinting that no longer matches the glyf coordinates."""
+    for tag in HINT_TABLES:
+        if tag in font:
+            del font[tag]
+
+    glyf = font["glyf"]
+    empty = ttProgram.Program()
+    empty.fromBytecode(b"")
+    stripped = 0
+    for name in font.getGlyphOrder():
+        glyph = glyf[name]
+        if getattr(glyph, "program", None) is not None:
+            glyph.program = empty
+            stripped += 1
+    print(f"  dropped hinting ({stripped} glyph program(s) + {'/'.join(HINT_TABLES)})")
 
 
 def scale_glyph_x(glyph, glyf_table, scale: float) -> None:
@@ -138,9 +165,10 @@ def scale_latin_font(font: TTFont, scale: float, target_adv: int, src_adv: int) 
     glyf = font["glyf"]
     hmtx = font["hmtx"].metrics
 
-    for tag in ("hdmx", "LTSH", "VDMX", "kern"):
-        if tag in font:
-            del font[tag]
+    if "kern" in font:
+        del font["kern"]
+    # Anisotropic X scaling invalidates any surviving hinting too.
+    drop_hinting(font)
 
     for name in font.getGlyphOrder():
         g = glyf[name]
@@ -320,6 +348,7 @@ def prepare_latin(
     if target_upm and current_upm != target_upm:
         print(f"  scale_upem {current_upm} → {target_upm}")
         scale_upem(latin, target_upm)
+        drop_hinting(latin)
         # After UPM normalize, mono cell becomes latin_src_adv (e.g. 600)
         current_src_adv = latin_src_adv
     else:
@@ -387,6 +416,7 @@ def merge_pair(
     if cjk["head"].unitsPerEm != latin_target_upm:
         print(f"  scale_upem CJK {cjk['head'].unitsPerEm} → {latin_target_upm}")
         scale_upem(cjk, latin_target_upm)
+        drop_hinting(cjk)
 
     print("  Importing CJK-side only (discard Alegreya Latin from Zhuque)")
     latin_cmap = latin.getBestCmap() or {}
