@@ -18,7 +18,7 @@ Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sar
 
 ## Pins
 
-See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_TAG` + docker digest.
+See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_TAG`.
 
 ## Optical weight (CJK vs Latin stems)
 
@@ -75,14 +75,16 @@ serif/
 
 - `git`, `curl`, `quilt`, `node` (≥ 20), `npm`, `ttfautohint`, `unzip`, `zip`
 - Python 3.10+ (`venv` or `uv`) → `fonttools` + `skia-pathops`
-- **Nerd patch** — one of:
-  1. **Docker** (preferred): image in `pins.env` (`nerdfonts/patcher@sha256:…`)
-  2. **Local**: `fontforge` + FontPatcher.zip (cached under `work/`)
+- **Nerd patch** — `fontforge` + FontPatcher.zip (pinned; `nix build .#font-patcher`)
+
+The container path was removed in KIT-277 along with the other five families':
+it was selected at runtime depending on what happened to be installed, so two
+machines could produce two different fonts silently. `just dev` provides all of
+the above.
 
 ```bash
-# Debian/Ubuntu example
-sudo apt install git curl quilt nodejs npm ttfautohint python3-venv unzip zip
-# docker recommended for Nerd; or: sudo apt install fontforge
+# Debian/Ubuntu example, if you are not using the flake
+sudo apt install git curl quilt nodejs npm ttfautohint python3-venv unzip zip fontforge
 ```
 
 ## Build (Nerd only product)

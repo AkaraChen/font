@@ -13,17 +13,17 @@ Coding product: **Fusion Pixel 12px monospaced** + **hand-drawn programming liga
 ## Pipeline
 
 ```
-01-fetch-sources    → pin-fetch Fusion 12px mono zip
+src-cjk             → pinned Fusion 12px mono zip, base + half-width donor
 02-add-ligatures    → draw ligatures/ligatures.txt into the base + calt GSUB
 03-narrow-ambiguous → EAW=Ambiguous punctuation → 1 cell (donor: latin flavor)
-04-nerd-patch       → Nerd complete + --single-width-glyphs (no --mono)
-05-verify           → advances / calt / EAW / Nerd PUA gates
-preview             → HarfBuzz render sheets (not part of build.sh)
+nerd                → Nerd complete + --single-width-glyphs (no --mono)
+verify              → advances / calt / EAW / Nerd PUA gates
+preview             → HarfBuzz render sheets (a diagnostic, not a build step)
 ```
 
 ```bash
 cd pixel
-./scripts/build.sh
+just build pixel
 # → out/nerd/FusionPixel12NFM-Regular.ttf
 ```
 
@@ -107,7 +107,7 @@ following character:
 flavor of the **same release** (`FUSION_TTF_HALFWIDTH_DONOR` in `pins.env`) —
 same 12px grid, same hand, nothing scaled or redrawn. Targets are derived by
 comparing the two flavors, not hard-coded, and a donor glyph whose ink escapes
-`[0, 600]` is a hard failure. `05-verify.sh --check-eaw` gates the result.
+`[0, 600]` is a hard failure. The `verify` gate's `--check-eaw` covers it.
 
 Same class of bug — and same remedy — as `serif/scripts/06-narrow-symbols.sh`,
 which pulls 1-cell symbols from Sarasa **Term**.
@@ -118,11 +118,11 @@ which pulls 1-cell symbols from Sarasa **Term**.
 - **Never** `--mono` / `-s` — that would force CJK to 1 cell and break 2:1
 - Pin: `NERD_FONTS_TAG` in `pins.env` (currently **v3.4.0**)
 
-> **Known upstream breakage:** the pinned `nerdfonts/patcher` image (and its
-> current `latest`, same digest) ships **without fontforge**, so the Docker path
-> fails with `/bin/sh: fontforge: not found`. Use the local path until upstream
-> republishes: `brew install fontforge`, then
-> `NERD_PATCH_METHOD=fontforge ./scripts/04-nerd-patch.sh`.
+> **The container path is gone (KIT-277).** It was chosen at runtime — "docker
+> if it is installed, fontforge otherwise" — which meant two machines could
+> produce two different fonts with nothing to say so. It also happened to be
+> broken: the pinned `nerdfonts/patcher` image ships *without* fontforge. The
+> patcher now runs on the nixpkgs fontforge the flake pins, in the sandbox.
 
 ## Pins
 
@@ -132,15 +132,15 @@ See [`pins.env`](pins.env). Do not bump casually.
 
 - `bash`, `curl`, `unzip`, `zip`
 - Python 3.10+ via `uv` or `venv` → `fonttools`
-- **Nerd patch** — `fontforge` (see the note above), or Docker once fixed
+- **Nerd patch** — `fontforge`, as a build input of the `nerd` step
 - **Preview** (optional) — `harfbuzz` (`hb-view`), `imagemagick` to stack sheets
 
 ## Verify
 
 ```bash
-./scripts/05-verify.sh
-# or:
-work/venv/bin/python scripts/verify.py \
+just gate pixel
+# or, against an arbitrary file:
+python3 scripts/verify.py \
   --half 600 --full 1200 --check-nerd --check-ligatures --check-eaw \
   out/nerd/*.ttf
 ```

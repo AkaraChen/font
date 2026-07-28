@@ -58,7 +58,7 @@ Everything reproducible lives in [`pins.env`](pins.env):
 - RHR-CN 7z SHA-256 + Regular/Bold TTF names
 - `EN_ADV` / `CJK_ADV` / vertical metrics / family names
 - Optional `CJK_EMBOLDEN_*` (default 0 — RHR has real Bold)
-- Nerd Fonts patcher tag + docker image digest
+- Nerd Fonts patcher tag
 
 Do **not** bump pins casually; change them in a dedicated commit with a short rationale.
 
@@ -71,16 +71,8 @@ rounded/
     OFL-Iosevka.txt
     OFL-Resource-Han-Rounded.txt
   scripts/
-    build.sh               # one-shot fetch → prepare → merge → nerd → verify
-    01-fetch-sources.sh
-    02-prepare-cjk.sh      # optional embolden (pins)
-    03-merge.sh            # Curly + RHR → Dual intermediate
-    04-nerd-patch.sh
-    05-verify.sh
-    merge_rounded.py
-    # shared steps now live in lib/fontkit (run as python3 -m fontkit.<module>)
-    render-sample.py
-    package-release.sh
+    merge_rounded.py       # the merge engine; everything else is lib/fontkit
+    render-sample.py       # diagnostic
   samples/
     coding-mixed.txt
     rendered/              # gitignored PNGs
@@ -96,13 +88,13 @@ Embolden / stroke tools are shared: [`../lib/fontkit/`](../lib/fontkit/).
 
 - `bash`, `curl`, `unzip`, `zip`, `7z` (for RHR `.7z`)
 - Python 3.10+ (`venv` or `uv`) → `fonttools`, `skia-pathops` (optional embolden), optional `Pillow`
-- **Docker** (preferred) or **FontForge** for the Nerd Font patcher
+- **FontForge** for the Nerd Font patcher (a build input; the container path was removed in KIT-277)
 
 ## Build
 
 ```bash
 cd rounded
-./scripts/build.sh
+just build rounded
 # → out/IosevkaCurlyRHRDual-{Regular,Bold}.ttf
 # → out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf
 ```
@@ -110,17 +102,15 @@ cd rounded
 Step by step:
 
 ```bash
-./scripts/01-fetch-sources.sh
-./scripts/02-prepare-cjk.sh
-./scripts/03-merge.sh
-./scripts/04-nerd-patch.sh
-./scripts/05-verify.sh
+just steps rounded                  # what the family is made of
+just step rounded cjk-prepared-Bold # build one step
+just gate rounded                   # 2:1 / mono flags / EAW / Nerd cells
 ```
 
 ### Sample render
 
 ```bash
-work/venv/bin/python scripts/render-sample.py \
+python3 scripts/render-sample.py \
   --font out/nerd/IosevkaCurlyRHRNFM-Regular.ttf \
   --title "圆体 IosevkaCurlyRHR NFM · EN 500 / CJK 1000 · Iosevka Curly × RHR"
 # → samples/rendered/sample-{dark,light}.png
@@ -129,7 +119,7 @@ work/venv/bin/python scripts/render-sample.py \
 ### Release package
 
 ```bash
-./scripts/package-release.sh 0.1.0
+just release rounded
 # → dist/IosevkaCurlyRHRNFM-0.1.0.zip
 ```
 

@@ -1,21 +1,27 @@
 # Build toolchain
 
-Phases 0, 1 and 2 of the pipeline modernisation plan (KIT-263). Phase 0 (KIT-274)
+Phases 0-3 of the pipeline modernisation plan (KIT-263). Phase 0 (KIT-274)
 pinned the toolchain and built a regression net **before** any of the 14k lines
 got refactored; it changed no build logic. Phase 1 (KIT-275) moved source
 fetching into Nix and fixed the derivation granularity later phases build on.
 Phase 2 (KIT-276) then collapsed the 17 duplicated per-family scripts into
 [`lib/fontkit`](#fontkit-the-shared-build-steps), with every per-family
 behavioural difference expressed as a flag so the products do not move.
+Phase 3 (KIT-277) turned each remaining build step into its own derivation and
+deleted the shell orchestration — see
+[The build graph](#the-build-graph).
 
 ## Quick start
 
 ```bash
 just dev              # enter the pinned toolchain shell
-just build sans       # run sans/scripts/build.sh in it, one step at a time, timed
+just build sans       # nix build .#sans, materialised into sans/out
+just gate sans        # the family's own 2:1 / EAW / Nerd / feature gate
+just release sans     # the release zip (depends on the gate passing)
 just verify sans      # diff the products against the committed fingerprints
 just fingerprint sans # rewrite the baseline (only when a change is intended)
-just timings sans     # per-step wall-clock from the last build
+just steps sans       # the build steps this family has
+just step sans merged-Bold   # build one step in isolation
 just test             # fontkit unit tests — seconds, no font build
 just sources          # realise every pinned upstream input (Phase 1)
 just graph            # what makes each build step rebuild (Phase 1)
@@ -50,9 +56,11 @@ Three things worth knowing:
   `pixel/scripts/preview.sh` calls. Without the override in `flake.nix` the
   shell silently falls through to the host's `hb-view` (homebrew's, on the
   maintainer's Mac), which is exactly the failure this phase exists to remove.
-- **`FONTKIT_PYTHON`.** The devShell exports it, and each family's `common.sh`
-  uses it instead of building a venv and `pip install`-ing. Outside the shell
-  the old venv path is unchanged, so nothing breaks for someone not using Nix.
+- **`FONTKIT_PYTHON`.** Only serif reads it now — its `common.sh` uses it
+  instead of building a venv. The six derivation families never ask the
+  question: their interpreter is a build input
+  (`nix/families/support.nix`), which is also why the devShell's wider set
+  (Pillow, uharfbuzz, numpy — for the diagnostics) cannot leak into a product.
 
 nixpkgs is pinned to the `nixos-25.11` release rather than unstable — this is a
 toolchain pin, not a place to chase upstream, and unstable currently carries an
@@ -167,11 +175,23 @@ the other three kept the bug. They now live once, in `lib/fontkit/`, and run as
 | `fontkit.rename_nerd_family` | `rename_nerd_family.py` ×4 | pixel rounded sans serif typewriter |
 | `fontkit.measure` / `fontkit.embolden` | `serif/tools/*` | six families imported them by hardcoded path |
 
-`<family>/scripts/common.sh` puts `lib/` on `PYTHONPATH`, so the working copy is
-what runs — an edit is live without a Nix rebuild, and CI gates the committed
-code. `nix/fontkit.nix` packages the same tree as a `buildPythonPackage` for the
-devShell and for the per-step derivations KIT-275 introduces, which have no
-checkout to point at.
+`nix/fontkit.nix` packages the tree as a `buildPythonPackage`, which is what the
+per-step derivations depend on — they have no checkout to point at. It also
+installs a `fontkit` console script, so a step is `fontkit merge …` rather than
+`"${PY}" -m fontkit.merge_radon_wenkai …` with 30 lines above it working out
+what `PY` should be. Both spellings work; the module form is what the unit tests
+call.
+
+Phase 3 added four more modules and promoted three that were still family-local:
+
+| module | replaces | note |
+| --- | --- | --- |
+| `fontkit.nerd_patch` | `0N-nerd-patch.sh` ×4 | 130-141 lines each, differing only in an input glob |
+| `fontkit.package` | `package-release.sh` ×6 | deterministic zip; the README body is rendered by Nix from the same pins the build read |
+| `fontkit.cli` | `common.sh` ×7 | the dispatch table those 104-line files were building up to |
+| `fontkit.prepare_cjk` | `handwriting/scripts/prepare_cjk.py` | casual reached across for it |
+| `fontkit.merge_radon_wenkai` | `handwriting/scripts/merge_radon_wenkai.py` | casual reached across for it |
+| `fontkit.expand_ligatures` | `serif/scripts/expand-default-ligatures.py` | handwriting reached across for it |
 
 ### The differences that survived as flags
 
@@ -217,6 +237,117 @@ followed by a rebuild and a fingerprint diff.
 the fixtures rely on, so a pin bump that moves one fails with the version in the
 message instead of as a confusing behavioural assertion.
 
+## The build graph
+
+Phase 3 (KIT-277). Every step of every family except serif is a derivation, and
+the shell that used to sequence them is gone: 6 × `common.sh`, 6 × `build.sh`,
+6 × `package-release.sh`, the numbered step scripts, `tools/build-family.sh` and
+`tools/src-cache.sh` — about 2,900 lines.
+
+### What a step is
+
+`nix/granularity.nix` (Phase 1) already said what the steps are and which axes
+each may depend on. Phase 3 builds against it rather than beside it:
+`granularity.mkStep` names the derivation from the contract and refuses an axis
+the step did not declare, so `latin-prepared` cannot quietly acquire a `region`
+and stop being shared. The resulting names are the cache keys, and they are
+greppable:
+
+```
+src-latin-sans-Bold
+cjk-prepared-sans-sc-Bold
+merged-sans-coding-sc-Bold
+nerd-sans-sc-Bold
+packaged-sans-coding-sc-Regular-ttf
+```
+
+`just steps sans` lists them; `just step sans merged-Bold` builds one.
+
+### Which family has which steps
+
+Not every family uses every step, and that is the point of a vocabulary rather
+than a fixed pipeline:
+
+| | src-latin | src-cjk | latin-prepared | cjk-prepared | merged | nerd | packaged |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| casual | ✓ | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| handwriting | ✓ | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| pixel | | ✓ | | | ✓ | ✓ | ✓ |
+| rounded | ✓ | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| sans | ✓ | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| typewriter | ✓ | ✓ | | ✓ | ✓ | ✓ | ✓ |
+
+handwriting and casual carry their Nerd icons in the upstream Latin face, so
+they have no `nerd` step. pixel's Latin and CJK arrive in the same upstream
+file, so it has no Latin side to prepare separately. sans, rounded and
+typewriter scale their Latin inside the merge engine — Phase 5 is where that
+gets pulled apart.
+
+### The merge runs once per weight
+
+The merge engines write both faces from both input pairs in a single pass, so
+each weight's derivation runs the merge and keeps its own face. That costs a
+second merge and buys a per-weight cache entry: a Bold-only pin change stops
+rebuilding Regular. A step that took both weights would have had to declare no
+`weight` axis at all, which is a false statement about what makes it rebuild.
+
+### The coupling that stopped being possible
+
+A derivation sees only what it was given. These are the reaches Phase 3 removed,
+and none of them needs a CI grep to stay removed:
+
+```
+sans/scripts/02-merge.sh             → ${REPO_ROOT}/serif/tools/embolden_cjk.py
+rounded/scripts/02-prepare-cjk.sh    → same
+typewriter/scripts/02-prepare-cjk.sh → same
+handwriting/scripts/06-verify.sh     → ${REPO_ROOT}/serif/scripts/verify-2to1.py
+casual/scripts/common.sh             → SERIF_TOOLS + HANDWRITING_SCRIPTS
+sans/scripts/04-verify.sh:48         → sys.path.insert(0, os.environ["SERIF_TOOLS"])
+casual/scripts/05-verify.sh          → if [[ -f serif/… ]] elif [[ -f rounded/… ]]
+```
+
+That last one is the shape worth remembering: a build step doing filesystem
+archaeology at runtime to find a script it was not given.
+
+### The docker path is gone
+
+Four families patched Nerd icons through `NERD_FONTS_DOCKER_IMAGE` when docker
+happened to be installed, and through local fontforge when it was not — chosen
+at runtime, per machine, per run, with `NERD_PATCH_METHOD=auto` as the default.
+Two runners could therefore produce two different fonts and nothing in the
+pipeline would say so, which is precisely what the fingerprint net exists to
+catch. fontforge comes from nixpkgs now and a build sandbox cannot reach a
+docker socket anyway. serif's copy went with them even though serif is otherwise
+untouched. What is left in the tree is prose: this section, one note in
+`pixel/README.md` and the module docstring of `fontkit.nerd_patch`. Deleting the
+explanation too is how the branch grows back.
+
+The same reasoning removed the other "look around and hope" branches: the
+`7zz` → `7z` → `py7zr` ladder, `uv` → `python -m venv` → `pip`, and
+`find … | head -1` for an archive whose layout is pinned by its hash.
+
+### One thing the sandbox changed
+
+`font-patcher` reopens its **source** file read-write near the end of a run, to
+copy `head.flags`, `head.lowestRecPPEM` and `OS/2.xAvgCharWidth` across to the
+patched output. Patching straight out of a store path makes that raise, and the
+patcher swallows it as `ERROR: Can not handle font flags (PermissionError…)` and
+carries on with those three fields unset — two of which are in the fingerprint.
+`fontkit.nerd_patch` therefore stages its input into a writable directory first,
+which is what the old shell got for free by patching a file in `<family>/out`.
+
+It is worth noting where that error surfaced: the products still built, the gate
+still passed, and only a fingerprint diff against the pre-change build named it.
+
+### Verification is a build input
+
+Each family's gate is a `<family>-verify` derivation that reads the products and
+writes nothing, and `packaged` depends on it. A release archive whose gate is
+red does not exist, rather than existing next to a check somebody was supposed
+to run. The gates are deliberately **not** in `nix flake check`: `just check` is
+the seconds-long gate a contributor runs before pushing, and six font builds
+inside it would stop anyone running it.
+
 ## CI
 
 `.github/workflows/build-matrix.yml` runs the fontkit unit tests first — the
@@ -226,10 +357,10 @@ families from source on every push and PR. Before this, `release-nfm.yml` was th
 only, and it does not build from source — it downloads the previous tag's
 products and post-processes them. Six families had no automated verification.
 
-Every step is timed, per family, into the job summary and an artifact. Those
-numbers are the input KIT-265 needs: the plan currently has no measured
-wall-clock data, only script reading.
+Per-step wall-clock used to be collected by `tools/build-family.sh` into a TSV
+and summarised in a job. That job is gone: `nix build -L` prints per-derivation
+timing already, and — more to the point — Nix skips the steps a change did not
+touch, so a table of "how long every step took" no longer describes what a run
+actually does. What a run does is now visible in which derivations it built.
 
-Binary cache and GHA cache layering are deliberately **not** here. That is
-KIT-265, and it needs these timings before it can pick a strategy against GHA
-cache's 10 GB / 7-day limits.
+Cache layering has its own document: [`caching.md`](caching.md).

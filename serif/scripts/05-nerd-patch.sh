@@ -3,7 +3,6 @@
 #
 # Strategy:
 #   - Use official FontPatcher from ryanoasis/nerd-fonts (pinned in pins.env)
-#   - Prefer Docker image nerdfonts/patcher when available (no local FontForge)
 #   - Else: local fontforge -script font-patcher
 #   - ALWAYS pass --single-width-glyphs (icons = 1 cell)
 #   - NEVER pass --mono / -s: that forces ALL existing glyphs (incl. CJK) to 1 cell
@@ -44,31 +43,6 @@ PATCH_ARGS=(
   --quiet
 )
 
-patch_with_docker() {
-  need_cmd docker
-  local img="${NERD_FONTS_DOCKER_IMAGE}"
-  log "pulling/using docker image ${img}"
-  docker pull "${img}" >/dev/null
-
-  # One font per container: parallel patching with --name can race on filenames;
-  # sequential also keeps Regular/Bold style suffixes stable.
-  local stage="${WORK_DIR}/nerd-in"
-  log "docker patch → ${NERD_OUT}"
-  for f in "${BASE_FONTS[@]}"; do
-    rm -rf "${stage}"
-    mkdir -p "${stage}"
-    cp -f "$f" "${stage}/"
-    log "  docker: $(basename "$f")"
-    # PN=1: single job; entrypoint finds fonts under /in
-    docker run --rm \
-      -e PN=1 \
-      -v "${stage}:/in:ro" \
-      -v "${NERD_OUT}:/out" \
-      "${img}" \
-      "${PATCH_ARGS[@]}"
-  done
-}
-
 ensure_local_patcher() {
   if [[ -f "${PATCHER_DIR}/font-patcher" ]]; then
     return 0
@@ -98,19 +72,10 @@ patch_with_fontforge() {
   done
 }
 
-# Prefer docker (reproducible, no FontForge install); fall back to local.
-if [[ "${NERD_PATCH_METHOD:-auto}" == "docker" ]] || {
-  [[ "${NERD_PATCH_METHOD:-auto}" == "auto" ]] && command -v docker >/dev/null 2>&1
-}; then
-  if ! patch_with_docker; then
-    log "docker patch failed; trying local fontforge"
-    patch_with_fontforge
-  fi
-elif [[ "${NERD_PATCH_METHOD:-auto}" == "fontforge" ]] || command -v fontforge >/dev/null 2>&1; then
-  patch_with_fontforge
-else
-  die "need docker or fontforge for Nerd patch (set NERD_PATCH_METHOD=docker|fontforge)"
-fi
+# One patcher, no ladder. The container existed because FontForge used to be
+# "whatever the maintainer installed", which meant two runners could produce
+# two different fonts and nothing would say so. The toolchain is pinned now.
+patch_with_fontforge
 
 log "nerd products (pre-rename):"
 ls -lh "${NERD_OUT}"/*.{ttf,otf} 2>/dev/null || ls -lh "${NERD_OUT}/"

@@ -7,35 +7,28 @@
 # Lilex Bold stems are wide relative to glyph bbox — use stem_max_ratio=0.40.
 set -euo pipefail
 # shellcheck disable=SC1091
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/tools/diagnostic.sh"
 
-need_cmd python3
-ensure_dirs
-PY="$(python_bin)"
+log "realising the source steps"
+LILEX_R="$(step src-latin-Regular)/Lilex-Regular.ttf"
+LILEX_B="$(step src-latin-Bold)/Lilex-Bold.ttf"
+PLEX_R="$(step src-cjk-Regular)/IBMPlexSansSC-Regular.ttf"
+PLEX_B="$(step src-cjk-Bold)/IBMPlexSansSC-Bold.ttf"
 
-for f in \
-  "${EXTRACT_DIR}/Lilex-Regular.ttf" \
-  "${EXTRACT_DIR}/Lilex-Bold.ttf" \
-  "${EXTRACT_DIR}/IBMPlexSansSC-Regular.ttf" \
-  "${EXTRACT_DIR}/IBMPlexSansSC-Bold.ttf"
-do
-  [[ -f "${f}" ]] || die "missing ${f}; run 01-fetch-sources.sh first"
-done
-
-CAL_DIR="${WORK_DIR}/stroke-calibrate"
+CAL_DIR="${FAMILY_ROOT}/work/stroke-calibrate"
 mkdir -p "${CAL_DIR}"
 
 STRENGTHS_REG="${STRENGTHS_REG:-0,1,2,3,4,5,5.5,6,7,8,10}"
 STRENGTHS_BOLD="${STRENGTHS_BOLD:-0,1,2,3,4,5,6,8,10,12}"
 export CAL_DIR EN_ADV LILEX_SRC_ADV UPM
 export STRENGTHS_REG STRENGTHS_BOLD
-export LATIN_REG="${EXTRACT_DIR}/Lilex-Regular.ttf"
-export LATIN_BOLD="${EXTRACT_DIR}/Lilex-Bold.ttf"
-export CJK_REG="${EXTRACT_DIR}/IBMPlexSansSC-Regular.ttf"
-export CJK_BOLD="${EXTRACT_DIR}/IBMPlexSansSC-Bold.ttf"
+export LATIN_REG="${LILEX_R}"
+export LATIN_BOLD="${LILEX_B}"
+export CJK_REG="${PLEX_R}"
+export CJK_BOLD="${PLEX_B}"
 
 log "measure + calibrate embolden (subset CJK; Latin at product X-scale)"
-"${PY}" - <<'PY'
+python3 - <<'PY'
 from __future__ import annotations
 import os
 import statistics

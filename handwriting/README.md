@@ -17,7 +17,7 @@ to Radon's own lean.
 | Product | Regular + Bold | `out/RadonWenKaiNFM-{Regular,Bold}.ttf` |
 
 ```bash
-cd handwriting && ./scripts/build.sh
+just build handwriting
 # → out/RadonWenKaiNFM-{Regular,Bold}.ttf   (~3.5 min, ~330 MiB of upstream never downloaded)
 ```
 
@@ -94,8 +94,9 @@ set (shape a battery, diff the glyph run) gives:
 | `ss09` | `=>` |
 | `ss10` | nothing in the probe battery (folded for completeness) |
 
-`05-expand-ligatures.sh` unions those lookups into every `calt` feature record (reusing
-`serif/scripts/expand-default-ligatures.py`, which does the same job for Iosevka's `dlig`).
+`fontkit.expand_ligatures` unions those lookups into every `calt` feature record — the same
+module that does the job for Iosevka's `dlig` in `serif/`, which is why it lives in
+`lib/fontkit/` and not in either family. It runs at the tail of the `merged` step.
 The `ss**` features stay intact for anyone toggling them individually.
 
 The gate for this is a **shaping** test, not a tag check: `verify-features.py` runs HarfBuzz over
@@ -106,12 +107,14 @@ as its plain glyphs. Before the fold it scores 1/10; after, 10/10.
 
 The product is a **Nerd Font Mono**: every icon sits on one cell. That comes for free from the
 upstream `MonaspaceRadonNF-*` build, where all 12 697 glyphs — 2 320 PUA icons included — share
-the single 1240 cell, so the same 0.4032 x-scale that makes ASCII 500 makes the icons 500. No
-patcher, no FontForge, no Docker in this tree (unlike `serif/`).
+the single 1240 cell, so the same 0.4032 x-scale that makes ASCII 500 makes the icons 500. This
+family has no `nerd` step at all: no patcher, no FontForge.
 
-The 315 MiB `monaspace-nerdfonts-*.zip` is never downloaded: `fetch_zip_member.py` reads the
-zip's central directory with two ranged GETs and inflates just the two OTFs it needs (~2.3 MiB
-each), checked against both the zip's CRC-32 and a pinned sha256.
+The 315 MiB `monaspace-nerdfonts-*.zip` is never downloaded: `tools/fetch_zip_member.py` reads
+the zip's central directory with two ranged GETs and inflates just the two OTFs it needs
+(~2.3 MiB each), checked against both the zip's CRC-32 and a pinned sha256. It runs inside a
+fixed-output derivation (`nix/sources/`), so the ranged fetch happens once per pin for the whole
+repo rather than once per build.
 
 ## Character policy
 
@@ -141,40 +144,30 @@ Two subtleties the gate caught:
 ```
 handwriting/
   pins.env                 # upstream refs, grid, slant, weight-match, naming
-  licenses/                # OFL-Monaspace.txt · OFL-LXGWWenKai.txt (refreshed by 01-)
+  licenses/                # OFL-Monaspace.txt · OFL-LXGWWenKai.txt (committed, not re-fetched)
   scripts/
-    build.sh               # one-shot 01 → 06
-    01-fetch-sources.sh    # ranged zip member fetch + WenKai TTFs + OFLs
-    02-prepare-latin.sh    → prepare_latin.py      # CFF→glyf, narrow+scale to the half cell
-    03-prepare-cjk.sh      → prepare_cjk.py        # embolden (measured) then shear
-    04-merge.sh            → merge_radon_wenkai.py # import by EAW, keep Radon layout
-    05-expand-ligatures.sh # fold ss01–ss10 into default calt
-    06-verify.sh           # 2:1 + EAW + Nerd cells, features, stroke report
-    calibrate-stroke.sh    → calibrate_cjk_weight.py + measure-slant.py
-    fetch_zip_member.py    # HTTP-range single-member zip extraction
+    prepare_latin.py       # CFF→glyf, narrow+scale to the half cell
     verify-features.py     # feature + HarfBuzz shaping gate
-    render-sample.py       # HarfBuzz + FreeType sample (Pillow cannot shape)
-    package-release.sh
+    calibrate-stroke.sh    # diagnostic: stem survey + embolden sweep
   samples/coding-mixed.txt · samples/rendered/
   work/ out/ dist/         # gitignored
 ```
 
 Shared rather than duplicated, from [`../lib/fontkit/`](../lib/fontkit/):
-`fontkit.measure`, `fontkit.embolden`, `fontkit.verify2to1`,
-`serif/scripts/expand-default-ligatures.py`.
+`fontkit.measure`, `fontkit.embolden`, `fontkit.verify2to1`, `fontkit.prepare_cjk`,
+`fontkit.merge_radon_wenkai`, `fontkit.expand_ligatures`. The build itself is
+[`../nix/families/handwriting.nix`](../nix/families/handwriting.nix), one derivation per step.
 
 ## Dependencies
 
-- `bash`, `curl` (must support `Range`), `zip`
-- Python 3.10+ (`uv` or `venv`) → `fonttools`, `skia-pathops`, `uharfbuzz`
-- optional, sample render only: `Pillow`, `freetype-py`, `numpy`
-
-No FontForge, no Docker, no Node — the whole build is Python over two OFL fonts.
+Nix. Everything else — the interpreter, `fonttools`, `skia-pathops`, `uharfbuzz` — is a build
+input of the steps that need it; see [`../nix/families/support.nix`](../nix/families/support.nix).
+There is no FontForge and no Node in this family: the whole build is Python over two OFL fonts.
 
 ## Verify
 
 ```bash
-./scripts/06-verify.sh
+just gate handwriting
 # or individually:
 python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw out/RadonWenKaiNFM-*.ttf
 python3 scripts/verify-features.py --expect-half 500 out/RadonWenKaiNFM-*.ttf
@@ -207,7 +200,7 @@ dedicated commit with the new measurement in the message.
 ## Sample render
 
 ```bash
-work/venv/bin/python scripts/render-sample.py --font out/RadonWenKaiNFM-Regular.ttf
+python3 scripts/render-sample.py --font out/RadonWenKaiNFM-Regular.ttf
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -218,7 +211,7 @@ rasterises glyph outlines with FreeType.
 ## Release package
 
 ```bash
-./scripts/package-release.sh 0.1.0
+just release handwriting
 # → dist/RadonWenKaiNFM-0.1.0.zip
 ```
 

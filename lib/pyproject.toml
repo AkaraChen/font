@@ -12,5 +12,10 @@ requires-python = ">=3.10"
 # disagree.
 dependencies = ["fonttools", "skia-pathops"]
 
+# The per-step derivations call `fontkit <step>`; nothing puts lib/ on
+# PYTHONPATH for them. See lib/fontkit/cli.py.
+[project.scripts]
+fontkit = "fontkit.cli:main"
+
 [tool.setuptools]
 packages = ["fontkit"]

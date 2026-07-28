@@ -8,14 +8,18 @@ The toolchain is pinned by a Nix flake; `just` is a thin alias layer over it.
 
 ```bash
 just dev              # enter the pinned shell (fontforge, ttfautohint, afdko, node, python deps)
-just build sans       # run sans/scripts/build.sh inside it, one step at a time, timed
+just build sans       # nix build .#sans, materialised into sans/out
+just gate sans        # run the family's 2:1 / EAW / Nerd / feature gate
+just release sans     # build the release zip (depends on the gate)
 just verify sans      # diff the products against the committed fingerprint baseline
 just --list           # everything else
 ```
 
-The per-family `cd <family> && ./scripts/build.sh` invocations below still work
-unchanged outside the shell, but then you are back to whatever versions happen
-to be on your `PATH`. See [`docs/build-toolchain.md`](docs/build-toolchain.md).
+Six of the seven families are Nix derivations, one per build step
+([`nix/families/`](nix/families)) — there is no `<family>/scripts/build.sh` to
+run any more, and nothing to install first. serif still runs its own shell
+pipeline because it drives the upstream Sarasa toolchain; moving that into Nix
+is its own piece of work. See [`docs/build-toolchain.md`](docs/build-toolchain.md).
 
 ## serif/
 
@@ -42,15 +46,15 @@ Details: [`serif/README.md`](serif/README.md).
 Name recipe (same style as `SarasaNZSSlab NFM`): **Lilex** + **SansSC** + **NFM**.
 
 ```bash
-cd sans && ./scripts/build.sh
+just build sans
 # → out/nerd/LilexSansSCNFM-{Regular,Bold}.ttf
 ```
 
 Package for a GitHub Release:
 
 ```bash
-cd sans && ./scripts/package-release.sh 0.1.0
-# → dist/LilexSansSCNFM-0.1.0.zip
+just release sans
+# → result-*-release/LilexSansSCNFM-0.1.0.zip
 ```
 
 Upstream pins live in [`sans/pins.env`](sans/pins.env).
@@ -62,7 +66,7 @@ Details: [`sans/README.md`](sans/README.md).
 **Coding product: FusionPixel12 NFM** — [Fusion Pixel](https://github.com/TakWolf/fusion-pixel-font) 12px mono + **pixelized** programming ligatures (`calt`) + **Nerd Font Mono** (icons not pixelized).
 
 ```bash
-cd pixel && ./scripts/build.sh
+just build pixel
 # → out/nerd/FusionPixel12NFM-Regular.ttf
 ```
 
@@ -75,7 +79,7 @@ pre-patched Nerd icons) + **霞鹜文楷 LXGW WenKai** CJK, **Nerd Font Mono**, 
 (EN 500 / CJK 1000), CJK sheared **7.5°** to match Radon's measured lean.
 
 ```bash
-cd handwriting && ./scripts/build.sh
+just build handwriting
 # → out/RadonWenKaiNFM-{Regular,Bold}.ttf
 ```
 
@@ -94,7 +98,7 @@ dual-width **EN 600 / CJK 1200** (Prime UPM 2048→1000).
 Name recipe (same style as `LilexSansSC NFM`): **CourierPrime** + **Zhuque** + **NFM**.
 
 ```bash
-cd typewriter && ./scripts/build.sh
+just build typewriter
 # → out/nerd/CourierPrimeZhuqueNFM-{Regular,Bold}.ttf
 ```
 
@@ -108,7 +112,7 @@ Details: [`typewriter/README.md`](typewriter/README.md).
 Latin + **Resource Han Rounded SC** CJK + **Nerd Font Mono**, dual-width **EN 500 / CJK 1000**.
 
 ```bash
-cd rounded && ./scripts/build.sh
+just build rounded
 # → out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf
 ```
 
@@ -120,7 +124,7 @@ Upstream pins: [`rounded/pins.env`](rounded/pins.env). Details: [`rounded/README
 strict **2:1** dual width (EN 500 / CJK 1000), measured stroke match (no Nerd in v0.1).
 
 ```bash
-cd casual && ./scripts/build.sh
+just build casual
 # → out/RecursiveYozaiDual-{Regular,Bold}.ttf
 ```
 

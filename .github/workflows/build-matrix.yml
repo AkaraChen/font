@@ -234,9 +234,22 @@ jobs:
             python3 -c "import fontTools; print(\"fontTools\", fontTools.version)"
           '
 
+      # serif still runs its shell pipeline inside the devShell; the other six
+      # are derivations, so `just build` is a `nix build` plus the copy into
+      # <family>/out that the fingerprint net reads. Per-step wall-clock is a
+      # property of the build graph now — `nix build -L` prints it per
+      # derivation and Nix skips the steps a change did not touch, which is
+      # what the timings job existed to inform.
       - name: Build
         if: steps.gate.outputs.run == 'true'
-        run: nix develop --command tools/build-family.sh ${{ matrix.family }}
+        run: nix develop --command just build ${{ matrix.family }}
+
+      # The family's own gate (2:1 / EAW / Nerd cells / features). It is a
+      # separate step from the fingerprint check on purpose: this one says "the
+      # product is wrong", the next says "the product changed".
+      - name: Gate
+        if: steps.gate.outputs.run == 'true' && matrix.family != 'serif'
+        run: nix build --print-build-logs .#${{ matrix.family }}-verify
 
       - name: Fingerprint check
         if: steps.gate.outputs.run == 'true'
@@ -270,14 +283,6 @@ jobs:
           path: fingerprints-current/${{ matrix.family }}/
           if-no-files-found: warn
 
-      - name: Upload step timings
-        if: steps.gate.outputs.run == 'true' && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: timings-${{ matrix.family }}
-          path: ${{ matrix.family }}/work/step-timings.tsv
-          if-no-files-found: warn
-
       - name: Upload products
         if: steps.gate.outputs.run == 'true' && always()
         uses: actions/upload-artifact@v4
@@ -286,32 +291,6 @@ jobs:
           path: ${{ matrix.family }}/out/
           if-no-files-found: warn
           retention-days: 7
-
-  timings:
-    name: Collect timings
-    needs: build
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: timings-*
-          path: timings
-          merge-multiple: false
-      - name: Summarise
-        run: |
-          {
-            echo "## Wall-clock per step"
-            echo
-            echo "| family | step | seconds | status |"
-            echo "| --- | --- | ---: | --- |"
-            find timings -name step-timings.tsv -print0 \
-              | xargs -0 -r tail -q -n +2 \
-              | sort \
-              | while IFS=$'\t' read -r fam step secs st; do
-                  echo "| $fam | \`$step\` | $secs | $st |"
-                done
-          } >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
   # The 10 GB ceiling is a repository-wide budget with no warning when you cross

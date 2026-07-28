@@ -106,10 +106,24 @@ Three artifacts had **no integrity check at all** before this phase and now do:
 `FontPatcher.zip` (five families), `LXGWNeoZhiSongPlus.ttf` and the Sarasa Term
 donor archive (serif).
 
-### How the shell steps consume it
+### How the build steps consume it
 
-The family scripts already knew the sha256 of everything they downloaded, so the
-bridge is a lookup by that hash. `nix build .#source-cache` produces:
+Directly. Each family's `src-*` derivation takes the pinned artifact as a build
+input, so there is nothing to look up and nothing to fall back to:
+
+```nix
+sources.perFamily.sans."Lilex.zip"   # a store path, already fetched and hashed
+```
+
+Phase 1 had to bridge this with a lookup by sha256, because the consumers were
+shell scripts that curled their own inputs — `tools/src-cache.sh` checked
+`$FONTKIT_SRC_CACHE/by-sha256/` first and fell back to curl. Phase 3 deleted
+both the bridge and the fallback along with the scripts that needed them. What
+was described then as "load-bearing" — a laptop with no Nix still builds — was
+true of a shell pipeline and is no longer the deal: the build is derivations, so
+Nix is the requirement, not the accelerant.
+
+`nix build .#source-cache` still produces the by-name / by-sha256 view:
 
 ```
 by-sha256/<hex>            the bytes
@@ -118,13 +132,8 @@ manifest.tsv               sha256, kind, families, filename
 sizes.tsv                  bytes per artifact
 ```
 
-`tools/src-cache.sh` makes `download_file` / `download_zip` check
-`$FONTKIT_SRC_CACHE/by-sha256/` before reaching for curl.
-`tools/build-family.sh` realises the cache and exports the variable.
-
-**The fallback is load-bearing.** With no cache realised — no Nix, offline, cold
-store — every script curls its own inputs exactly as before. A laptop that
-cannot reach the flake still builds.
+It is the GC root the CI source layer keeps, and it is how you find out what a
+pin actually resolved to. It is no longer on any build path.
 
 ---
 
@@ -170,14 +179,20 @@ budget on one push and evict the layers that pay for themselves.
 
 ### What is deliberately not cached
 
-**The products layer.** The issue that scoped this phase asked for one. It is
-not here, and this is the honest reason rather than a silent omission: today the
-families build into `<family>/work/` and `<family>/out/` with shell scripts.
-Those are not store paths, so there is nothing store-shaped to cache — a
-products layer would be an `actions/cache` of a work directory, which is exactly
-the kind of output-hash caching this repo must not do (§4). Phase 3 (KIT-277)
-turns each step into a derivation; that is when a products layer becomes both
-possible and worth its share of the 10 GB.
+**The products layer.** Phase 1 deferred this because the families built into
+`<family>/work/` with shell scripts, and caching a work directory is exactly the
+output-hash caching this repo must not do (§4). Phase 3 removed that objection —
+every step is a derivation now, so a products layer would be store-shaped and
+legitimate.
+
+It is still not here, for a different and smaller reason: the six families'
+closures do not fit the remaining budget alongside the source and toolchain
+layers, and the numbers to decide what does fit come from the first green
+seven-family run on this graph. Deciding before measuring is what produced the
+"seven jobs each saving a snapshot" design this document exists to argue
+against. When the numbers land, the natural cut is per-step rather than
+per-family: `latin-prepared` is shared across regions and `cjk-prepared` across
+profiles, so those two are worth far more per byte than a `packaged` zip.
 
 **Prefix fallback on the source layer.** A partial source set from an older pin
 list is worse than a clean fetch: it gets carried forward, counted against the

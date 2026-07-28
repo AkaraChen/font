@@ -9,6 +9,7 @@
 , lib ? pkgs.lib
 , sources
 , granularity
+, families
 ,
 }:
 
@@ -116,6 +117,47 @@ in
   # accepted and CI's rejected outright as an invalid POSIX ERE. A green
   # `nix flake check` on one machine is not evidence for the other unless the
   # interpolation path is actually exercised.
+  # --- Phase 3 -------------------------------------------------------------
+
+  # Nerd patching only exists in the coding profile, so a text-profile nerd
+  # derivation is a bug rather than a cache miss. Same enforcement as
+  # latin-prepared/region, asserted because Phase 6 is the phase that will be
+  # tempted to pass it.
+  nerd-rejects-profile = ok "nerd-rejects-profile"
+    (throws (mkName "nerd" {
+      family = "sans";
+      profile = "coding";
+      region = "sc";
+      weight = "Bold";
+    })) "nerd accepted a profile axis";
+
+  # A missing axis is as wrong as an extra one: a `packaged` without `format`
+  # would name two different products identically.
+  packaged-needs-format = ok "packaged-needs-format"
+    (throws (mkName "packaged" {
+      family = "sans";
+      profile = "coding";
+      region = "sc";
+      weight = "Bold";
+    })) "packaged accepted a call with no format axis";
+
+  # Every step a family builds has to be part of the shared vocabulary. Without
+  # this a family can invent `merged-and-patched` and be the only one that has
+  # it, which is how seven families ended up with seven pipelines the first
+  # time. The suffix after the step name is the weight, which is not part of the
+  # vocabulary.
+  family-steps-are-contract-steps = ok "family-steps-are-contract-steps"
+    (
+      let
+        stepOf = name: lib.head (lib.filter (s: s == name || lib.hasPrefix "${s}-" name) granularity.known
+          ++ [ null ]);
+        bad = lib.concatMap
+          (family: lib.filter (n: stepOf n == null) (lib.attrNames families.byFamily.${family}.steps))
+          (lib.attrNames families.byFamily);
+      in
+      bad == [ ]
+    ) "a family declares a step that is not in nix/granularity.nix";
+
   pins-interpolation = ok "pins-interpolation"
     (
       let

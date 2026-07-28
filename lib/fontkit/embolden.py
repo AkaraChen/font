@@ -138,13 +138,13 @@ def embolden_font(
     return stats
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("src")
     ap.add_argument("dst")
     ap.add_argument("--strength", type=float, required=True)
     ap.add_argument("--all-glyphs", action="store_true")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     stats = embolden_font(
         Path(args.src),
         Path(args.dst),

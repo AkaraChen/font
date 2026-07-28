@@ -48,7 +48,10 @@ let
     family: file: spec:
     let
       p = familyPins.${family};
-      extractor = root + "/${family}/scripts/fetch_zip_member.py";
+      # Repo-level, not family-level: nothing about HTTP-range extraction is
+      # specific to handwriting, and it was only under handwriting/scripts/
+      # because that is the family whose upstream ships a 315 MiB zip.
+      extractor = root + "/tools/fetch_zip_member.py";
     in
     pkgs.runCommand file
       {
