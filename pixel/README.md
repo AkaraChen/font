@@ -104,7 +104,7 @@ following character:
 | **Product** | **600** | **600** |
 
 `03-narrow-ambiguous.sh` transplants the half-width drawings from the `latin`
-flavor of the **same release** (`FUSION_TTF_HALFWIDTH_DONOR` in `pins.env`) —
+flavor of the **same release** (`options.fusion_ttf_halfwidth_donor` in `font.toml`) —
 same 12px grid, same hand, nothing scaled or redrawn. Targets are derived by
 comparing the two flavors, not hard-coded, and a donor glyph whose ink escapes
 `[0, 600]` is a hard failure. The `verify` gate's `--check-eaw` covers it.
@@ -116,7 +116,7 @@ which pulls 1-cell symbols from Sarasa **Term**.
 
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that would force CJK to 1 cell and break 2:1
-- Pin: `NERD_FONTS_PATCHER_COMMIT` in `pins.env` (font-patcher **4.26.0**)
+- Pin: `nerd.commit` in `font.toml` (font-patcher **4.26.0**)
 
 > **The container path is gone (KIT-277).** It was chosen at runtime — "docker
 > if it is installed, fontforge otherwise" — which meant two machines could
@@ -126,7 +126,7 @@ which pulls 1-cell symbols from Sarasa **Term**.
 
 ## Pins
 
-See [`pins.env`](pins.env). Do not bump casually.
+See [`font.toml`](font.toml). Do not bump casually.
 
 ## Dependencies
 

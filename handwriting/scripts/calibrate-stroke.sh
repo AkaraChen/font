@@ -2,7 +2,7 @@
 # Measure Radon vs WenKai stems and print the pins they imply.
 #
 # The Light weight is downloaded here rather than pinned: it is a survey input
-# that never reaches a product, so putting it in pins.env would add a hash the
+# that never reaches a product, so putting it in font.toml would add a hash the
 # build must keep valid for a font it never opens.
 set -euo pipefail
 # shellcheck disable=SC1091
@@ -48,7 +48,7 @@ python3 "${CAL}" \
 
 cat >&2 <<'EOF'
 
-Read the tables above into pins.env:
+Read the tables above into font.toml:
   WENKAI_FOR_REGULAR / WENKAI_FOR_BOLD  ← the weight whose Δv is smallest
   CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD ← the sweep's BEST strength (0 if the
     design weight already lands within a few units — a real weight beats a

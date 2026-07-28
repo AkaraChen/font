@@ -45,10 +45,10 @@ let
   built = lib.mapAttrs
     (
       family: module:
-      import module {
-        inherit pkgs lib support sources;
-        pins = sources.familyPins.${family};
-      }
+        import module {
+          inherit pkgs lib support sources;
+          manifest = sources.manifests.${family};
+        }
     )
     families;
 
@@ -61,8 +61,7 @@ let
   packaged =
     family: rel:
     let
-      pins = sources.familyPins.${family};
-      version = pins.pins.PRODUCT_VERSION or "0.1.0";
+      version = sources.manifests.${family}.data.naming.version or "0.1.0";
       licenses = lib.mapAttrsToList (name: _: "--license ${rel.licenseDir}/${name}") (
         builtins.readDir rel.licenseDir
       );
@@ -118,7 +117,7 @@ in
       lib.mapAttrsToList
         (
           family: fam:
-          lib.mapAttrsToList (name: drv: lib.nameValuePair "${family}-${name}" drv) fam.steps
+            lib.mapAttrsToList (name: drv: lib.nameValuePair "${family}-${name}" drv) fam.steps
         )
         built
     )

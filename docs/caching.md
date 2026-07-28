@@ -78,9 +78,9 @@ Inspect it any time with `just graph`.
 
 ## 2. Sources
 
-Everything pinned in a `pins.env` is now a Nix derivation (`nix/sources/`).
+Everything pinned in a `font.toml` is now a Nix derivation (`nix/sources/`).
 Nix reads those same files — it does not carry a second copy of any URL or hash
-(`nix/lib/pins.nix`).
+(`nix/lib/manifest.nix`).
 
 A store path is keyed by `(url, hash)`, which is what makes the headline case
 work: **five families pin the same font-patcher commit, so there is one
@@ -96,7 +96,7 @@ Two inputs are not plain `fetchurl`:
   downloads, so it runs inside a fixed-output derivation, which has network
   access in the sandbox. Without a binary cache this matters *more*, not less —
   it is 315 MiB saved on every cold run. The FOD's output hash is the member
-  sha256 that was already in `pins.env`, so nothing new has to be kept in sync.
+  sha256 that was already in `font.toml`, so nothing new has to be kept in sync.
 * **Sarasa Gothic** (serif) was a `git clone --depth 1`; it is now
   `fetchFromGitHub` at `SARASA_COMMIT`, hash-pinned by `SARASA_SRC_HASH`. The
   clone verified the commit id, which pins history but not the bytes delivered
@@ -159,7 +159,7 @@ every run publishes its own numbers.
 
 | layer | key | measured size | why separate |
 | --- | --- | --- | --- |
-| sources | `hashFiles('*/pins.env')` | 447 MiB + 304 MiB Sarasa | biggest, changes least |
+| sources | `hashFiles('*/font.toml')` | 447 MiB + 304 MiB Sarasa | biggest, changes least |
 | toolchain | `hashFiles('flake.lock', 'flake.nix')` | measured per run | changes on flake bumps only |
 | products | — | not cached yet | see below |
 

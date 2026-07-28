@@ -4,8 +4,22 @@ set -euo pipefail
 
 SERIF_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "${SERIF_ROOT}/.." && pwd)"
-# shellcheck disable=SC1091
-source "${SERIF_ROOT}/pins.env"
+
+# The working copy wins over an installed fontkit so manifest validation and
+# shell compatibility use the code being built.
+export PYTHONPATH="${REPO_ROOT}/lib${PYTHONPATH:+:${PYTHONPATH}}"
+PY="${FONTKIT_PYTHON:-python3}"
+command -v "${PY}" >/dev/null 2>&1 || {
+  printf 'error: missing Python interpreter: %s\n' "${PY}" >&2
+  exit 1
+}
+"${PY}" -c 'import pydantic' 2>/dev/null || {
+  printf '%s\n' \
+    'error: serif manifest validation requires the pinned dev shell.' \
+    'run from the repository root: nix develop --command serif/scripts/build.sh' >&2
+  exit 1
+}
+eval "$("${PY}" -m fontkit.manifest shell "${SERIF_ROOT}/font.toml")"
 
 # Pinned artifacts come from the Nix store when it has been realised
 # (FONTKIT_SRC_CACHE), and from curl when it has not. Same sha256 gate either
@@ -32,15 +46,13 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 # purpose — an edit is live without a Nix rebuild, and CI gates the code that is
 # actually committed. The Nix package exists for derivations that have no
 # checkout; see nix/fontkit.nix.
-export PYTHONPATH="${REPO_ROOT}/lib${PYTHONPATH:+:${PYTHONPATH}}"
-
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
 }
 
 # serif fetched LXGWNeoZhiSongPlus.ttf and the Sarasa Term donor with a bare
 # curl and no integrity check at all — the only family that did. Both now have
-# a sha256 in pins.env, and both go through src_fetch like everywhere else.
+# a sha256 in font.toml, and both go through src_fetch like everywhere else.
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$1" | awk '{print $1}'

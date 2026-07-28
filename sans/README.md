@@ -29,7 +29,7 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 
 ```bash
 ./scripts/calibrate-stroke.sh   # realises the source steps it needs
-# → recommends CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD for pins.env
+# → recommends calibration.regular.embolden / calibration.bold.embolden for font.toml
 ```
 
 | Face | Latin v-stem (U, product scale) | CJK v @ s=0 | Embolden | CJK v @ pin |
@@ -56,7 +56,7 @@ Same style as serif’s `SarasaNZSSlab NFM` — long, concatenated sources + pro
 
 ## Pins
 
-Everything reproducible lives in [`pins.env`](pins.env):
+Everything reproducible lives in [`font.toml`](font.toml):
 
 - GitHub release tags + download URLs
 - SHA-256 of Lilex zip and of the two Plex Sans SC TTFs (individual files; not the ~500 MB full zip)
@@ -71,7 +71,7 @@ Do **not** bump pins casually; change them in a dedicated commit with a short ra
 
 ```
 sans/
-  pins.env                 # upstream refs + product metrics + weight + Nerd pins
+  font.toml                # sources + grid + naming + metrics + calibration + matrix
   licenses/
     OFL-Lilex.txt
     OFL-IBM-Plex.txt

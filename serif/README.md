@@ -18,7 +18,7 @@ Upstream is **not forked permanently**. Scripts clone a **pinned** [be5invis/Sar
 
 ## Pins
 
-See `pins.env`: Sarasa / LXGW / embolden strengths / `NERD_FONTS_PATCHER_COMMIT`.
+See `font.toml`: Sarasa / LXGW / embolden strengths / `nerd.commit`.
 
 ## Optical weight (CJK vs Latin stems)
 
@@ -29,8 +29,8 @@ Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlin
 3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Vertical stems dominate mixed CN/EN optical weight in a mono face; Song horizontals stay thinner by design.
 
 ```bash
-./scripts/calibrate-stroke.sh
-# → recommends CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD for pins.env
+nix develop --command serif/scripts/calibrate-stroke.sh
+# → recommends calibration.regular.embolden / calibration.bold.embolden for font.toml
 ```
 
 | Face | Latin v-stem (U) | Old embolden | Measured CJK v @ old | New embolden | CJK v @ new |
@@ -44,7 +44,7 @@ The previous Regular **s=14** made CJK verticals noticeably heavier than Latin �
 
 ```
 serif/
-  pins.env
+  font.toml
   patches/                 # quilt series
   scripts/
     build.sh               # one-shot → Nerd product
@@ -80,18 +80,14 @@ serif/
 The container path was removed in KIT-277 along with the other five families':
 it was selected at runtime depending on what happened to be installed, so two
 machines could produce two different fonts silently. `just dev` provides all of
-the above.
-
-```bash
-# Debian/Ubuntu example, if you are not using the flake
-sudo apt install git curl quilt nodejs npm ttfautohint python3-venv unzip zip fontforge
-```
+the above. The shell pipeline now also validates `font.toml` with Pydantic before
+doing any work, so the pinned Nix dev shell is the supported entry point.
 
 ## Build (Nerd only product)
 
 ```bash
-cd serif
-./scripts/build.sh
+# From the repository root:
+nix develop --command serif/scripts/build.sh
 # → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
 # Family name: "SarasaNZSSlab NFM"  (Windows-safe ≤31)
 ```
@@ -99,12 +95,13 @@ cd serif
 Step by step (same end product):
 
 ```bash
-./scripts/01-clone-sarasa.sh
-./scripts/02-apply-quilt.sh
-./scripts/03-prepare-cjk.sh
-./scripts/04-build.sh          # intermediate out/*.ttf
-./scripts/05-nerd-patch.sh     # product + verify --check-nerd
-./scripts/06-narrow-symbols.sh # EAW symbol widths + expand calt + verify --check-eaw
+nix develop
+serif/scripts/01-clone-sarasa.sh
+serif/scripts/02-apply-quilt.sh
+serif/scripts/03-prepare-cjk.sh
+serif/scripts/04-build.sh          # intermediate out/*.ttf
+serif/scripts/05-nerd-patch.sh     # product + verify --check-nerd
+serif/scripts/06-narrow-symbols.sh # EAW symbol widths + expand calt + verify --check-eaw
 ```
 
 ### Ligatures (calt + dlig)
@@ -139,7 +136,7 @@ editor; no extra OpenType feature toggle is required for the expanded set.
 
 - `--complete` + **`--single-width-glyphs`** (icons = 1 cell)
 - **Never** `--mono` / `-s` — that forces *all* glyphs (incl. CJK) to 1 cell and breaks 2:1
-- Pin: `NERD_FONTS_PATCHER_COMMIT` in `pins.env` (font-patcher **4.26.0**, master — the newest *release*, v3.4.0, carries 4.20.3)
+- Pin: `nerd.commit` in `font.toml` (font-patcher **4.26.0**, master — the newest *release*, v3.4.0, carries 4.20.3)
 - After rename: `fontkit.fix_terminal_metrics` restores `post.isFixedPitch=1`, pins PANOSE `bProportion=9` and sets `OS/2.xAvgCharWidth` to the half-cell — the three things hosts read to decide the font is monospaced (see Troubleshooting)
 
 ## Verify
@@ -186,7 +183,7 @@ Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metr
 # Repair an already-built/released TTF without a full rebuild:
 python3 -m fontkit.narrow_symbol_widths SarasaNZSSlabNFM-Regular.ttf \
   --protect-ambiguous --widen-shared skip \
-  --donor SarasaTermSlabSC-Regular.ttf      # donor URL: see pins.env
+  --donor SarasaTermSlabSC-Regular.ttf      # donor URL: see font.toml
 python3 -m fontkit.fix_terminal_metrics SarasaNZSSlabNFM-Regular.ttf
 python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw SarasaNZSSlabNFM-Regular.ttf
 ```

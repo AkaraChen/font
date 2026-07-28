@@ -26,14 +26,14 @@ is its own piece of work. See [`docs/build-toolchain.md`](docs/build-toolchain.m
 **Coding product: SarasaNZSSlab NFM** — MonoSlab Latin + 霞鹜新致宋 Opt CJK, **Nerd Font Mono**, 2:1 dual-width SC.
 
 ```bash
-cd serif && ./scripts/build.sh
+nix develop --command serif/scripts/build.sh
 # → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
 ```
 
 Package for a GitHub Release:
 
 ```bash
-cd serif && ./scripts/package-release.sh 0.1.0
+nix develop --command serif/scripts/package-release.sh 0.1.0
 # → dist/SarasaNZSSlabNFM-0.1.0.zip
 ```
 
@@ -57,7 +57,7 @@ just release sans
 # → result-*-release/LilexSansSCNFM-0.1.0.zip
 ```
 
-Upstream pins live in [`sans/pins.env`](sans/pins.env).
+Upstream pins live in [`sans/font.toml`](sans/font.toml).
 
 Details: [`sans/README.md`](sans/README.md).
 
@@ -116,7 +116,7 @@ just build rounded
 # → out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf
 ```
 
-Upstream pins: [`rounded/pins.env`](rounded/pins.env). Details: [`rounded/README.md`](rounded/README.md).
+Upstream pins: [`rounded/font.toml`](rounded/font.toml). Details: [`rounded/README.md`](rounded/README.md).
 
 ## casual/
 
@@ -128,4 +128,4 @@ just build casual
 # → out/RecursiveYozaiDual-{Regular,Bold}.ttf
 ```
 
-Upstream pins: [`casual/pins.env`](casual/pins.env). Details: [`casual/README.md`](casual/README.md).
+Upstream pins: [`casual/font.toml`](casual/font.toml). Details: [`casual/README.md`](casual/README.md).

@@ -2,7 +2,7 @@
 # Patch serif/out TTFs with Nerd Font icons (single-width icons, keep CJK 2-cell).
 #
 # Strategy:
-#   - Use the pinned ryanoasis/nerd-fonts checkout (see pins.env / nix/sources)
+#   - Use the pinned ryanoasis/nerd-fonts checkout (see font.toml / nix/sources)
 #   - Else: local fontforge -script font-patcher
 #   - ALWAYS pass --single-width-glyphs (icons = 1 cell)
 #   - NEVER pass --mono / -s: that forces ALL existing glyphs (incl. CJK) to 1 cell

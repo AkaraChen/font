@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Measure Lilex (Latin, product X-scale) vs Plex Sans SC (CJK) stem widths and
-# recommend CJK_EMBOLDEN_* values for pins.env. Does not write pins.env.
+# recommend calibration.*.embolden values for font.toml. Does not write it.
 #
 # Metric: scanline vertical-stem median (shared lib/fontkit/measure.py).
 # Latin is X-scaled EN_ADV/LILEX_SRC_ADV so the target matches the merge product.
@@ -243,7 +243,7 @@ rec_b = sweep(
     Path(os.environ["CJK_BOLD"]),
 )
 
-print("\n=== pins.env suggestion ===")
+print("\n=== font.toml suggestion ===")
 print(f"CJK_EMBOLDEN_REGULAR={rec_r:g}")
 print(f"CJK_EMBOLDEN_BOLD={rec_b:g}")
 print(
@@ -257,4 +257,4 @@ print(
 )
 PY
 
-log "done. Compare recommendations with pins.env (CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD)."
+log "done. Compare recommendations with font.toml ([calibration.regular] / [calibration.bold])."

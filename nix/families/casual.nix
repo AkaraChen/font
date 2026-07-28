@@ -13,34 +13,38 @@
 , lib
 , support
 , sources
-, pins
+, manifest
 ,
 }:
 
 let
   inherit (support) step file profile region;
-  get = pins.get;
+  m = manifest.data;
+  inherit (m) grid naming;
+  metrics = m.metrics.coding;
+  recursive = m.sources.recursive;
+  yozai = m.sources.yozai;
 
   family = "casual";
-  weights = [ "Regular" "Bold" ];
+  weights = map support.weightName m.build.weights;
 
-  ps = get "FAMILY_PS";
+  ps = naming.ps;
   familyName =
-    let
-      suffix = pins.pins.FAMILY_SUFFIX or "";
-    in
-    if suffix == "" then get "FAMILY_NAME" else "${get "FAMILY_NAME"} ${suffix}";
+    if (naming.suffix or "") == "" then
+      naming.family
+    else
+      "${naming.family} ${naming.suffix}";
 
   # Which Yozai master backs each product face, and how hard to stroke it.
-  # Measured, not guessed — see casual/pins.env and tools/calibrate-cjk-weight.py.
+  # Measured, not guessed — see casual/font.toml and tools/calibrate-cjk-weight.py.
   cjkFor = {
     Regular = {
-      master = get "YOZAI_FOR_REGULAR";
-      embolden = get "CJK_EMBOLDEN_REGULAR";
+      master = support.weightName m.calibration.regular.source_weight;
+      embolden = m.calibration.regular.embolden;
     };
     Bold = {
-      master = get "YOZAI_FOR_BOLD";
-      embolden = get "CJK_EMBOLDEN_BOLD";
+      master = support.weightName m.calibration.bold.source_weight;
+      embolden = m.calibration.bold.embolden;
     };
   };
 
@@ -50,8 +54,8 @@ let
     buildCommand = ''
       mkdir -p $out unpacked
       unzip -q ${sources.perFamily.casual."ArrowType-Recursive.zip"} \
-        ${lib.escapeShellArg (get "RECURSIVE_TTF_${lib.toUpper weight}")} -d unpacked
-      cp unpacked/${lib.escapeShellArg (get "RECURSIVE_TTF_${lib.toUpper weight}")} \
+        ${lib.escapeShellArg recursive.artifacts.${lib.toLower weight}.member} -d unpacked
+      cp unpacked/${lib.escapeShellArg recursive.artifacts.${lib.toLower weight}.member} \
         $out/RecursiveMonoCsl-${weight}.ttf
     '';
   };
@@ -75,8 +79,8 @@ let
       python3 ${file "casual/scripts/prepare_latin.py"} \
         ${srcLatin weight}/RecursiveMonoCsl-${weight}.ttf \
         $out/RecursiveLatin-${weight}.ttf \
-        --src-adv ${get "LATIN_SRC_ADV"} \
-        --en-adv ${get "EN_ADV"} \
+        --src-adv ${toString grid.latin_src_adv} \
+        --en-adv ${toString grid.en_adv} \
         --uniform
     '';
   };
@@ -90,9 +94,9 @@ let
       fontkit prepare-cjk \
         ${srcCjk weight}/Yozai-${cjkFor.${weight}.master}.ttf \
         $out/YozaiPrepared-${weight}.ttf \
-        --embolden ${cjkFor.${weight}.embolden} \
-        --slant-deg ${get "CJK_SLANT_DEG"} \
-        --pivot-y ${get "CJK_SLANT_PIVOT_Y"}
+        --embolden ${toString cjkFor.${weight}.embolden} \
+        --slant-deg ${toString m.calibration.regular.slant_deg} \
+        --pivot-y ${toString m.calibration.regular.slant_pivot_y}
     '';
   };
 
@@ -110,20 +114,20 @@ let
         --cjk-regular ${cjkPrepared "Regular"}/YozaiPrepared-Regular.ttf \
         --cjk-bold ${cjkPrepared "Bold"}/YozaiPrepared-Bold.ttf \
         --out-dir merged \
-        --en-adv ${get "EN_ADV"} \
-        --cjk-adv ${get "CJK_ADV"} \
+        --en-adv ${toString grid.en_adv} \
+        --cjk-adv ${toString grid.cjk_adv} \
         --family ${lib.escapeShellArg familyName} \
         --family-ps ${ps} \
-        --version ${pins.pins.PRODUCT_VERSION or "0.1.0"} \
-        --slant-deg ${get "CJK_SLANT_DEG"} \
-        --hhea-ascent ${get "HHEA_ASCENT"} \
-        --hhea-descent ${get "HHEA_DESCENT"} \
-        --hhea-line-gap ${get "HHEA_LINE_GAP"} \
-        --os2-typo-ascender ${get "OS2_TYPO_ASCENDER"} \
-        --os2-typo-descender ${get "OS2_TYPO_DESCENDER"} \
-        --os2-typo-line-gap ${get "OS2_TYPO_LINE_GAP"} \
-        --os2-win-ascent ${get "OS2_WIN_ASCENT"} \
-        --os2-win-descent ${get "OS2_WIN_DESCENT"}
+        --version ${naming.version} \
+        --slant-deg ${toString m.calibration.regular.slant_deg} \
+        --hhea-ascent ${toString metrics.hhea_ascent} \
+        --hhea-descent ${toString metrics.hhea_descent} \
+        --hhea-line-gap ${toString metrics.hhea_line_gap} \
+        --os2-typo-ascender ${toString metrics.os2_typo_ascender} \
+        --os2-typo-descender ${toString metrics.os2_typo_descender} \
+        --os2-typo-line-gap ${toString metrics.os2_typo_line_gap} \
+        --os2-win-ascent ${toString metrics.os2_win_ascent} \
+        --os2-win-descent ${toString metrics.os2_win_descent}
       cp merged/${ps}-${weight}.ttf $out/
     '';
   };
@@ -147,14 +151,14 @@ let
       nativeBuildInputs = [ support.pythonEnv ];
     }
     ''
-      fontkit verify-2to1 --profile dense --expect-half ${get "EN_ADV"} ${out}/${ps}-*.ttf
+      fontkit verify-2to1 --profile dense --expect-half ${toString grid.en_adv} ${out}/${ps}-*.ttf
       touch $out
     '';
 
   readme = pkgs.writeText "casual-README.txt" ''
-    ${get "FAMILY_NAME"} @version@
-    Derived from Recursive Mono Casual (${get "RECURSIVE_RELEASE_TAG"}) and
-    Yozai 悠哉 (${get "YOZAI_RELEASE_TAG"}) under SIL OFL 1.1.
+    ${naming.family} @version@
+    Derived from Recursive Mono Casual (${recursive.version}) and
+    Yozai 悠哉 (${yozai.version}) under SIL OFL 1.1.
     Not an official ArrowType Recursive or LXGW product.
 
     Name recipe:
@@ -162,10 +166,10 @@ let
       Yozai     = 悠哉 (CJK handwriting)
       Dual      = 2:1 dual-width coding face
 
-    Cell metrics: EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"} (strict 2:1)
-    CJK embolden: Regular s=${get "CJK_EMBOLDEN_REGULAR"} (Yozai ${get "YOZAI_FOR_REGULAR"})
-                  Bold    s=${get "CJK_EMBOLDEN_BOLD"} (Yozai ${get "YOZAI_FOR_BOLD"})
-    Upstream pins: see casual/pins.env in the build repository.
+    Cell metrics: EN ${toString grid.en_adv} / CJK ${toString grid.cjk_adv} (strict 2:1)
+    CJK embolden: Regular s=${toString m.calibration.regular.embolden} (Yozai ${cjkFor.Regular.master})
+                  Bold    s=${toString m.calibration.bold.embolden} (Yozai ${cjkFor.Bold.master})
+    Upstream pins: see casual/font.toml in the build repository.
   '';
 
 in
@@ -187,7 +191,7 @@ in
   release = {
     inherit family profile region readme verify;
     weight = "Regular";
-    stem = get "PRODUCT_STEM";
+    stem = naming.stem;
     fontDir = out;
     licenseDir = file "casual/licenses";
   };

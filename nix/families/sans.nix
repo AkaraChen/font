@@ -12,34 +12,36 @@
 , lib
 , support
 , sources
-, pins
+, manifest
 ,
 }:
 
 let
   inherit (support) step file profile region patcher;
-  get = pins.get;
+  m = manifest.data;
+  inherit (m) grid naming;
+  metrics = m.metrics.coding;
 
   family = "sans";
-  weights = [ "Regular" "Bold" ];
+  weights = map support.weightName m.build.weights;
 
-  ps = get "FAMILY_PS";
-  basePs = get "BASE_FAMILY_PS";
+  ps = naming.ps;
+  basePs = naming.base_ps;
   mergeFamily =
-    let
-      suffix = pins.pins.FAMILY_SUFFIX or "";
-    in
-    if suffix == "" then get "BASE_FAMILY_NAME" else "${get "BASE_FAMILY_NAME"} ${suffix}";
+    if (naming.suffix or "") == "" then
+      naming.base_family
+    else
+      "${naming.base_family} ${naming.suffix}";
 
-  emboldenFor = weight: get "CJK_EMBOLDEN_${lib.toUpper weight}";
+  emboldenFor = weight: toString m.calibration.${lib.toLower weight}.embolden;
 
   srcLatin = weight: step "src-latin" { inherit family weight; } {
     nativeBuildInputs = [ pkgs.unzip ];
     buildCommand = ''
       mkdir -p $out unpacked
       unzip -q ${sources.perFamily.sans."Lilex.zip"} \
-        ${lib.escapeShellArg (get "LILEX_TTF_${lib.toUpper weight}")} -d unpacked
-      cp unpacked/${lib.escapeShellArg (get "LILEX_TTF_${lib.toUpper weight}")} \
+        ${lib.escapeShellArg m.options.${"lilex_ttf_${lib.toLower weight}"}} -d unpacked
+      cp unpacked/${lib.escapeShellArg m.options.${"lilex_ttf_${lib.toLower weight}"}} \
         $out/Lilex-${weight}.ttf
     '';
   };
@@ -77,19 +79,19 @@ let
         --sc-regular ${cjkPrepared "Regular"}/IBMPlexSansSC-Regular-weight.ttf \
         --sc-bold ${cjkPrepared "Bold"}/IBMPlexSansSC-Bold-weight.ttf \
         --out-dir merged \
-        --en-adv ${get "EN_ADV"} \
-        --cjk-adv ${get "CJK_ADV"} \
-        --latin-src-adv ${get "LILEX_SRC_ADV"} \
+        --en-adv ${toString grid.en_adv} \
+        --cjk-adv ${toString grid.cjk_adv} \
+        --latin-src-adv ${toString grid.latin_src_adv} \
         --family ${lib.escapeShellArg mergeFamily} \
         --family-ps ${basePs} \
-        --hhea-ascent ${get "HHEA_ASCENT"} \
-        --hhea-descent ${get "HHEA_DESCENT"} \
-        --hhea-line-gap ${get "HHEA_LINE_GAP"} \
-        --os2-typo-ascender ${get "OS2_TYPO_ASCENDER"} \
-        --os2-typo-descender ${get "OS2_TYPO_DESCENDER"} \
-        --os2-typo-line-gap ${get "OS2_TYPO_LINE_GAP"} \
-        --os2-win-ascent ${get "OS2_WIN_ASCENT"} \
-        --os2-win-descent ${get "OS2_WIN_DESCENT"}
+        --hhea-ascent ${toString metrics.hhea_ascent} \
+        --hhea-descent ${toString metrics.hhea_descent} \
+        --hhea-line-gap ${toString metrics.hhea_line_gap} \
+        --os2-typo-ascender ${toString metrics.os2_typo_ascender} \
+        --os2-typo-descender ${toString metrics.os2_typo_descender} \
+        --os2-typo-line-gap ${toString metrics.os2_typo_line_gap} \
+        --os2-win-ascent ${toString metrics.os2_win_ascent} \
+        --os2-win-descent ${toString metrics.os2_win_descent}
 
       cp merged/${basePs}-${weight}.ttf $out/
       # Terminals size cells from Unicode EAW, not from font metrics. Geometric
@@ -107,7 +109,7 @@ let
       fontkit nerd-patch \
         --patcher ${patcher} \
         --out $out \
-        --family ${lib.escapeShellArg (get "FAMILY_NAME")} \
+        --family ${lib.escapeShellArg naming.family} \
         --family-ps ${ps} \
         --narrow-symbols \
         ${merged weight}/*.ttf
@@ -127,7 +129,7 @@ let
     }
     ''
       fontkit verify-2to1 \
-        --expect-half ${get "EN_ADV"} --check-nerd --check-eaw ${out}/nerd/${ps}-*.ttf
+        --expect-half ${toString grid.en_adv} --check-nerd --check-eaw ${out}/nerd/${ps}-*.ttf
       python3 ${file "sans/scripts/verify-features.py"} ${out}/nerd/${ps}-*.ttf
 
       # Informational, and deliberately still allowed to fail: it confirms Latin
@@ -152,9 +154,9 @@ let
     '';
 
   readme = pkgs.writeText "sans-README.txt" ''
-    ${get "FAMILY_NAME"} @version@
+    ${naming.family} @version@
     Derived from Lilex + IBM Plex Sans SC under SIL OFL 1.1.
-    Nerd Font icons via font-patcher ${get "NERD_FONTS_PATCHER_VERSION"} (--complete --single-width-glyphs).
+    Nerd Font icons via font-patcher ${m.nerd.version} (--complete --single-width-glyphs).
     Not an official Lilex, IBM, or Nerd Fonts product.
 
     Name recipe (same style as SarasaNZSSlab NFM):
@@ -162,15 +164,15 @@ let
       SansSC = Plex Sans SC CJK
       NFM    = Nerd Font Mono
 
-    Cell metrics: EN ${get "EN_ADV"} / CJK ${get "CJK_ADV"} (strict 2:1)
+    Cell metrics: EN ${toString grid.en_adv} / CJK ${toString grid.cjk_adv} (strict 2:1)
     Mono flags:   post.isFixedPitch=1, PANOSE bProportion=9
     Icons:        Nerd complete set at half-cell advance
     EAW:          N/Na/H → half, W/F → full (ambiguous left alone by default)
 
     Install: copy the .ttf into your OS fonts directory.
-    In terminals/IDEs pick family "${get "FAMILY_NAME"}" and enable font ligatures.
+    In terminals/IDEs pick family "${naming.family}" and enable font ligatures.
 
-    Upstream pins: see pins.env in the build repository.
+    Upstream pins: see font.toml in the build repository.
   '';
 
 in

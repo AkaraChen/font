@@ -33,7 +33,7 @@ v1 does **not** add programming `calt` ligatures (Courier Prime has none). Optio
 
 ## Pins
 
-Everything reproducible lives in [`pins.env`](pins.env):
+Everything reproducible lives in [`font.toml`](font.toml):
 
 - Courier Prime commit + TTF SHA-256
 - Zhuque release tag + zip SHA-256
@@ -47,7 +47,7 @@ Do **not** bump pins casually; change them in a dedicated commit with a short ra
 
 ```
 typewriter/
-  pins.env
+  font.toml
   licenses/
     OFL-CourierPrime.txt
     OFL-Zhuque.txt

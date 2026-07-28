@@ -139,7 +139,7 @@ against darwin's 46552**, from the same pinned fontforge and the same pinned
 `FontPatcher.zip`.
 
 **That was the wrong conclusion, and it was not measuring platforms.** It was
-measuring two patchers. `pins.env` set `NERD_PATCH_METHOD=auto`, which picks the
+measuring two patchers. The old `pins.env` set `NERD_PATCH_METHOD=auto`, which picks the
 `nerdfonts/patcher` container whenever docker is present; GitHub runners have
 docker and the maintainer's Mac has it too, but the image is broken on `arm64`
 and fell back to the pinned local patcher there. So Linux was patched by the
