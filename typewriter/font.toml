@@ -63,6 +63,24 @@ rfn_note = "Review Courier Prime and Zhuque reserved names before public OFL red
 base_family = "CourierPrimeZhuque Dual"
 base_ps = "CourierPrimeZhuqueDual"
 
+[merge]
+version = "1.000"
+sources_note = "Courier Prime + Zhuque Fangsong"
+latin = "normalize"
+cjk = "normalize"
+# Courier Prime is fully hinted at UPM 2048. scale_upem rewrites glyf
+# coordinates and leaves cvt / prep / fpgm / per-glyph bytecode measuring in the
+# old UPM, so after 2048 -> 1000 every grid-fit distance is ~2.05x too large and
+# FreeType mangles the outlines at coding sizes.
+drop_hinting = true
+# Zhuque embeds an Alegreya Latin; only the CJK side comes across.
+import_policy = "cjk-side"
+placement = "center"
+glyph_prefix = "cjk."
+required_sample = "中文荷塘月色"
+set_weight_class = true
+recalc_bounds = true
+
 [metrics.coding]
 hhea_ascent = 1050
 hhea_descent = -300

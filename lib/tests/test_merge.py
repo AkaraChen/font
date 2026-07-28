@@ -263,7 +263,7 @@ def test_a_missing_sample_glyph_fails_the_build(tmp_path, make_font):
 # the manifests the repo actually ships
 # --------------------------------------------------------------------------- #
 
-MERGING_FAMILIES = ["rounded", "sans"]
+MERGING_FAMILIES = ["rounded", "sans", "typewriter"]
 
 
 @pytest.mark.parametrize("family", MERGING_FAMILIES)
