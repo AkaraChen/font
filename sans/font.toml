@@ -67,6 +67,21 @@ rfn_note = "Lilex and Plex are reserved upstream names; review before public OFL
 base_family = "LilexSansSC Dual"
 base_ps = "LilexSansSCDual"
 
+[merge]
+version = "1.000"
+sources_note = "Lilex + Plex Sans SC"
+# Lilex's mono cell is a known 600 at UPM 1000, so the Latin side needs no
+# normalising and no measuring — scale straight onto the 550 cell.
+latin = "scale"
+cjk = "as-is"
+# Plex covers codepoints Lilex does not (Greek/Cyrillic gaps, symbols), and
+# those are worth having even outside the CJK ranges.
+import_policy = "cjk-side-or-missing"
+placement = "center"
+glyph_prefix = "sc."
+required_sample = "中文荷塘月色"
+recalc_bounds = true
+
 [metrics.coding]
 hhea_ascent = 1025
 hhea_descent = -275

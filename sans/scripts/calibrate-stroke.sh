@@ -56,7 +56,7 @@ STEM_MAX_RATIO = 0.40
 
 
 def scale_latin_x(src: Path, dst: Path, scale: float, src_adv: int, en_adv: int) -> None:
-    """Match merge_plex.py X-scale so stem targets equal the product face."""
+    """Match the merge engine's X-scale so stem targets equal the product face."""
     font = TTFont(str(src))
     glyf = font["glyf"]
     hmtx = font["hmtx"].metrics
