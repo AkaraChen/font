@@ -49,8 +49,11 @@ _BRACKETS = (
     0x003E,  # >
 )
 
-# ASCII / common coding operators (intentionally omit . , ; : ' " ` _ which
-# sit on the baseline by design)
+# ASCII / common coding operators.
+# Intentionally omit:
+#   . , ; : ' " ` _   — sit on the baseline by design
+#   ^                 — high diacritic-style caret (centering looks wrong)
+#   ! ? @ # $         — letter-like, baseline-aligned forms
 _OPERATORS = (
     0x003D,  # =
     0x002B,  # +
@@ -61,13 +64,7 @@ _OPERATORS = (
     0x007C,  # |
     0x0026,  # &
     0x0025,  # %
-    0x005E,  # ^
     0x007E,  # ~
-    0x0021,  # !
-    0x003F,  # ?
-    0x0040,  # @
-    0x0023,  # #
-    0x0024,  # $
 )
 
 # Math / comparison (often used in code / comments)
@@ -102,7 +99,9 @@ _ARROWS = (
     0x27F7,  # ⟷
 )
 
-# Fullwidth counterparts (SC / FW forms when present)
+# Fullwidth counterparts (SC / FW forms when present).
+# Omit ＾！？＠＃＄ (mirror ASCII exclusions) and corner quotes 「」『』
+# which are intentionally high/low, not mid-cell brackets.
 _FULLWIDTH = (
     0xFF08,  # （
     0xFF09,  # ）
@@ -121,22 +120,12 @@ _FULLWIDTH = (
     0xFF5C,  # ｜
     0xFF06,  # ＆
     0xFF05,  # ％
-    0xFF3E,  # ＾
     0xFF5E,  # ～
-    0xFF01,  # ！
-    0xFF1F,  # ？
-    0xFF20,  # ＠
-    0xFF03,  # ＃
-    0xFF04,  # ＄
-    # CJK brackets often mixed in code comments
+    # CJK brackets often mixed in code comments (not corner quotes)
     0x3008,  # 〈
     0x3009,  # 〉
     0x300A,  # 《
     0x300B,  # 》
-    0x300C,  # 「
-    0x300D,  # 」
-    0x300E,  # 『
-    0x300F,  # 』
     0x3010,  # 【
     0x3011,  # 】
     0x3014,  # 〔

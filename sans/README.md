@@ -153,12 +153,16 @@ glyph’s outline centre sits on a shared visual midline.
 | Group | Codepoints (examples) |
 | --- | --- |
 | ASCII brackets | `()[]{}<>` |
-| ASCII ops | `=+-\*/\\|&%^~!?@#$` |
+| ASCII ops | `=+-*/\\|&%~` |
 | Math / compare | `±×÷≠≤≥≈≡−∗⋅•` |
 | Arrows | `←↑→↓↔↕⇐⇒⇔⟵⟶⟷` |
-| Fullwidth / CJK brackets | `（）［］｛｝＜＞＝＋…` `【】「」『』《》〈〉〔〕〖〗` |
+| Fullwidth / CJK brackets | `（）［］｛｝＜＞＝＋…` `【】《》〈〉〔〕〖〗` |
 
-Not shifted (baseline punctuation by design): `. , ; : ' " \` _`.
+**Not shifted** (baseline / intentional high-low by design):
+
+- `. , ; : ' " \` _`
+- `^ ! ? @ # $` and fullwidth `＾！？＠＃＄`
+- CJK corner quotes `「」『』`
 
 Re-run on an existing Dual intermediate:
 
