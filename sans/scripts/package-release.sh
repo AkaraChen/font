@@ -21,9 +21,10 @@ if [[ ${#FONTS[@]} -eq 0 ]]; then
 fi
 [[ ${#FONTS[@]} -gt 0 ]] || die "no Nerd fonts in ${NERD_OUT}; run ./scripts/build.sh first"
 
-# Gate before packaging
+# Gate before packaging (2:1 + nerd + EAW + features)
 PY="$(python_bin)"
-"${PY}" "${SANS_ROOT}/scripts/verify-2to1.py" --expect-half "${EN_ADV}" --check-nerd "${FONTS[@]}"
+"${PY}" "${SANS_ROOT}/scripts/verify-2to1.py" \
+  --expect-half "${EN_ADV}" --check-nerd --check-eaw "${FONTS[@]}"
 "${PY}" "${SANS_ROOT}/scripts/verify-features.py" "${FONTS[@]}"
 
 mkdir -p "${DIST_DIR}"
@@ -53,6 +54,7 @@ Name recipe (same style as SarasaNZSSlab NFM):
 Cell metrics: EN ${EN_ADV} / CJK ${CJK_ADV} (strict 2:1)
 Mono flags:   post.isFixedPitch=1, PANOSE bProportion=9
 Icons:        Nerd complete set at half-cell advance
+EAW:          N/Na/H → half, W/F → full (ambiguous left alone by default)
 
 Install: copy the .ttf into your OS fonts directory.
 In terminals/IDEs pick family "${FAMILY_NAME}" and enable font ligatures.

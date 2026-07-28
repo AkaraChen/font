@@ -51,5 +51,17 @@ for lic in OFL-Lilex.txt OFL-IBM-Plex.txt; do
   fi
 done
 
+# EAW-correct Dual intermediate (N/Na/H ↔ half, W/F ↔ full). Nerd step re-runs
+# this after patch because icons can dual-map onto CJK outlines.
+mapfile -t DUAL_FONTS < <(
+  find "${OUT_DIR}" -maxdepth 1 -type f -name 'LilexSansSCDual-*.ttf' | sort
+)
+if [[ ${#DUAL_FONTS[@]} -gt 0 ]]; then
+  log "narrow/widen Dual intermediate to match East_Asian_Width"
+  "${PY}" "${SANS_ROOT}/scripts/narrow-symbol-widths.py" --no-donor "${DUAL_FONTS[@]}"
+  log "fix Dual terminal metrics"
+  "${PY}" "${SANS_ROOT}/scripts/fix-terminal-metrics.py" "${DUAL_FONTS[@]}"
+fi
+
 log "intermediate products:"
 ls -lh "${OUT_DIR}"/*.ttf

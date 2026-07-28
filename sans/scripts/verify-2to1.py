@@ -5,11 +5,17 @@ half_unit = advance('A')   # default product: 550
 full_unit = 2 * half_unit  # default product: 1100
 
 Exit: 0 pass · 1 metric fail · 2 usage / I/O
+
+Optional gates:
+  --check-nerd  present Nerd/PUA icons must be half_unit
+  --check-eaw   every mapped advance must match East_Asian_Width
+                (N/Na/H → half; W/F → full; A left unchecked by design)
 """
 from __future__ import annotations
 
 import argparse
 import sys
+import unicodedata
 from pathlib import Path
 
 try:
@@ -58,6 +64,15 @@ PUA_RANGES = (
     (0xF0000, 0xFFFFD),
     (0x100000, 0x10FFFD),
 )
+
+# Documented EAW exceptions: advance may disagree with the Unicode width table
+# without it being a bug (mirrors serif/scripts/verify-2to1.py).
+EAW_EXCEPTIONS = {
+    0x2E3A,  # ⸺ two-em dash: deliberately 2 em wide
+    0x2E3B,  # ⸻ three-em dash: deliberately 3 em wide
+    0xFE19,  # ︙ vertical presentation form, shares outline with U+22EE
+    0xFE30,  # ︰ vertical presentation form, shares outline with U+2025
+}
 
 
 def advance(font: TTFont, cp: int) -> int | None:
@@ -112,12 +127,52 @@ def check_nerd(font: TTFont, half: int, epsilon: int, bad: list[str]) -> int:
     return len(nerd_cps)
 
 
+def check_eaw(
+    font: TTFont, half: int, full: int, epsilon: int, bad: list[str]
+) -> int:
+    """Require advances match East_Asian_Width. Returns violation count.
+
+    Terminals size cells from EAW via wcwidth(), never from font metadata.
+    N/Na/H → half cell; W/F → full cell. Ambiguous (A) is intentionally
+    not gated — see sans/README.md EAW policy.
+    """
+    cmap = font.getBestCmap() or {}
+    hmtx = font["hmtx"]
+    n = 0
+    for cp, gname in cmap.items():
+        if cp in EAW_EXCEPTIONS:
+            continue
+        adv = hmtx.metrics[gname][0]
+        if adv == 0:
+            continue
+        try:
+            w = unicodedata.east_asian_width(chr(cp))
+        except (ValueError, TypeError):
+            continue
+        if w in ("N", "Na", "H") and abs(adv - half) > epsilon:
+            ch = chr(cp) if cp < 0x110000 and chr(cp).isprintable() else ""
+            label = f" '{ch}'" if ch else ""
+            bad.append(
+                f"U+{cp:04X}{label} eaw-{w}: advance={adv} expected {half} (half-cell)"
+            )
+            n += 1
+        elif w in ("W", "F") and abs(adv - full) > epsilon:
+            ch = chr(cp) if cp < 0x110000 and chr(cp).isprintable() else ""
+            label = f" '{ch}'" if ch else ""
+            bad.append(
+                f"U+{cp:04X}{label} eaw-{w}: advance={adv} expected {full} (full-cell)"
+            )
+            n += 1
+    return n
+
+
 def verify_one(
     path: Path,
     epsilon: int,
     expect_half: int | None,
     *,
     check_nerd_flag: bool,
+    check_eaw_flag: bool,
 ) -> int:
     font = TTFont(path)
     half = advance(font, ord("A"))
@@ -220,6 +275,10 @@ def verify_one(
         n = check_nerd(font, half, epsilon, bad)
         print(f"  nerd/PUA icons scanned={n}")
 
+    if check_eaw_flag:
+        eaw_n = check_eaw(font, half, full, epsilon, bad)
+        print(f"  eaw-violations={eaw_n}")
+
     font.close()
 
     ok = True
@@ -256,6 +315,11 @@ def main() -> int:
         action="store_true",
         help="Require Nerd/PUA icons present at half-cell advance",
     )
+    ap.add_argument(
+        "--check-eaw",
+        action="store_true",
+        help="Require every advance to match the codepoint's East_Asian_Width",
+    )
     args = ap.parse_args()
 
     worst = 0
@@ -264,7 +328,11 @@ def main() -> int:
             print(f"missing file: {f}", file=sys.stderr)
             return 2
         rc = verify_one(
-            f, args.epsilon, args.expect_half, check_nerd_flag=args.check_nerd
+            f,
+            args.epsilon,
+            args.expect_half,
+            check_nerd_flag=args.check_nerd,
+            check_eaw_flag=args.check_eaw,
         )
         worst = max(worst, rc)
     return worst
