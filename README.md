@@ -69,3 +69,18 @@ gates that with a HarfBuzz shaping test. Weight pairing and slant are measured, 
 (`./scripts/calibrate-stroke.sh`).
 
 Details: [`handwriting/README.md`](handwriting/README.md).
+
+## typewriter/
+
+**Coding product: TypewriterMono NFM** — [Courier Prime](https://github.com/quoteunquoteapps/CourierPrime)
+slab mono Latin + [朱雀仿宋 Zhuque Fangsong](https://github.com/TrionesType/zhuque) CJK + **Nerd Font Mono**,
+dual-width **EN 600 / CJK 1200** (Prime UPM 2048→1000). Typewriter / archive vibe; distinct from `serif/`.
+
+```bash
+cd typewriter && ./scripts/build.sh
+# → out/nerd/TypewriterMonoNFM-{Regular,Bold}.ttf
+```
+
+Bold CJK is stem-measured embolden of Zhuque Regular. Upstream Alegreya Latin inside Zhuque is dropped.
+
+Details: [`typewriter/README.md`](typewriter/README.md).

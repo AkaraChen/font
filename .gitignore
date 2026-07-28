@@ -13,6 +13,10 @@ pixel/samples/rendered/
 handwriting/work/
 handwriting/out/
 handwriting/dist/
+typewriter/work/
+typewriter/out/
+typewriter/dist/
+typewriter/samples/rendered/
 **/.pc/
 **/node_modules/
 *.ttf
