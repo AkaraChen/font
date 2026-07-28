@@ -8,13 +8,37 @@ Coding dual-width face: **Lilex** (Latin / programming ligatures) + **IBM Plex S
 | CJK | [IBM Plex Sans SC](https://github.com/IBM/plex) complete TTF (hinted) | `@ibm/plex-sans-sc@1.1.0` (font **v1.000**) |
 | Icons | [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) FontPatcher | **v3.4.0** (`--complete --single-width-glyphs`) |
 | Grid | EN cell / CJK cell | **550 / 1100** |
+| Weight match | pathops embolden on SC (measured vs Lilex) | **s=5** Regular / **s=4** Bold |
 | Symbol widths | EAW-correct (N/Na/H → half, W/F → full; A left alone) | `narrow-symbol-widths.py` after Nerd |
 | Intermediate | Regular + Bold (pre-Nerd) | `out/LilexSansSCDual-{Regular,Bold}.ttf` |
 | Product | Regular + Bold (Nerd Mono) | `out/nerd/LilexSansSCNFM-{Regular,Bold}.ttf` |
 | Family name | Source-encoding (see below) | **LilexSansSC NFM** |
 | Metrics gate | `verify-2to1.py --expect-half 550 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
-Lilex is an extended face on IBM Plex Mono with programming ligatures and OpenType features. The merge keeps Lilex **GSUB / GPOS / GDEF** (so `calt` ligatures, stylistic sets, character variants, and mark attach survive), X-scales the mono cell from native **600 → 550**, and imports SC for CJK. The Nerd step patches the complete icon set at half-cell width and restores mono host flags that FontForge clears on dual-width faces.
+Lilex is an extended face on IBM Plex Mono with programming ligatures and OpenType features. The merge keeps Lilex **GSUB / GPOS / GDEF** (so `calt` ligatures, stylistic sets, character variants, and mark attach survive), X-scales the mono cell from native **600 → 550**, emboldens SC full-cell outlines for optical weight, and imports SC for CJK. The Nerd step patches the complete icon set at half-cell width and restores mono host flags that FontForge clears on dual-width faces.
+
+## Optical weight (CJK vs Latin stems)
+
+Unifying advance (**550 / 1100**) does **not** unify perceived weight. Plex Sans SC vertical stems run lighter than Lilex once Latin is X-scaled for the product grid — the common “中文比英文细” look on mixed lines.
+
+Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlines (same tools as `serif/`):
+
+1. **Latin target** — Lilex X-scaled **600 → EN_ADV** (same scale as `merge_plex.py`).
+2. **CJK trial** — IBM Plex Sans SC emboldened at candidate strengths (`serif/tools/embolden_cjk.py`).
+3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Use `stem_max_ratio=0.40` so Lilex Bold stems are not filtered out.
+
+```bash
+./scripts/01-fetch-sources.sh
+./scripts/calibrate-stroke.sh
+# → recommends CJK_EMBOLDEN_REGULAR / CJK_EMBOLDEN_BOLD for pins.env
+```
+
+| Face | Latin v-stem (U, product scale) | CJK v @ s=0 | Embolden | CJK v @ pin |
+| --- | ---: | ---: | ---: | ---: |
+| Regular | ≈77 | ≈65.8 (−11) | **s=5** | ≈78.3 (+1) |
+| Bold | ≈138 | ≈130 (−8) | **s=4** | ≈138 (matched) |
+
+Embolden runs in `02-merge.sh` **before** the merge (full-cell SC only; advances stay source widths and are recentred to `CJK_ADV` by `merge_plex.py`). Shared tools: `serif/tools/measure_stroke_width.py`, `serif/tools/embolden_cjk.py`.
 
 ## Name recipe
 
@@ -39,6 +63,7 @@ Everything reproducible lives in [`pins.env`](pins.env):
 - SHA-256 of Lilex zip and of the two Plex Sans SC TTFs (individual files; not the ~500 MB full zip)
 - Paths / commit for SC TTFs
 - `EN_ADV` / `CJK_ADV` / vertical metrics / family names
+- `CJK_EMBOLDEN_REGULAR` / `CJK_EMBOLDEN_BOLD` (optical weight)
 - Nerd Fonts patcher tag + docker image digest
 
 Do **not** bump pins casually; change them in a dedicated commit with a short rationale.
@@ -47,16 +72,17 @@ Do **not** bump pins casually; change them in a dedicated commit with a short ra
 
 ```
 sans/
-  pins.env                 # upstream refs + product metrics + Nerd pins
+  pins.env                 # upstream refs + product metrics + weight + Nerd pins
   licenses/
     OFL-Lilex.txt
     OFL-IBM-Plex.txt
   scripts/
     build.sh               # one-shot fetch → merge → nerd → verify
     01-fetch-sources.sh
-    02-merge.sh            # Lilex + SC → Dual intermediate
+    02-merge.sh            # embolden SC → Lilex + SC Dual intermediate
     03-nerd-patch.sh       # Nerd complete + rename + EAW widths + metric hygiene
-    04-verify.sh           # 2:1 + mono flags + nerd + EAW + features
+    04-verify.sh           # 2:1 + mono flags + nerd + EAW + features + stem report
+    calibrate-stroke.sh    # measure stems → recommend CJK_EMBOLDEN_*
     merge_plex.py
     rename_nerd_family.py
     fix-nerd-widths.py
@@ -69,16 +95,19 @@ sans/
   samples/
     coding-mixed.txt
     rendered/              # gitignored PNGs
-  work/                    # gitignored downloads / venv / extract
+  work/                    # gitignored downloads / venv / extract / stage
   out/                     # gitignored intermediate Dual TTFs
   out/nerd/                # gitignored product NFM TTFs
   dist/                    # gitignored release zips
 ```
 
+Shared with `serif/` (not duplicated): `serif/tools/measure_stroke_width.py`,
+`serif/tools/embolden_cjk.py`.
+
 ## Dependencies
 
 - `bash`, `curl`, `unzip`, `zip`
-- Python 3.10+ (`venv` or `uv`) → `fonttools`, optional `Pillow` for samples
+- Python 3.10+ (`venv` or `uv`) → `fonttools`, `skia-pathops` (CJK embolden), optional `Pillow` for samples
 - **Docker** (preferred) or **FontForge** for the Nerd Font patcher
 
 ```bash
@@ -100,7 +129,7 @@ Step by step:
 
 ```bash
 ./scripts/01-fetch-sources.sh   # download + extract pinned sources
-./scripts/02-merge.sh           # merge EN=550 / CJK=1100 (preserve Lilex GSUB)
+./scripts/02-merge.sh           # embolden SC (pins) + merge EN=550 / CJK=1100
 ./scripts/03-nerd-patch.sh      # Nerd complete + half-cell icons + EAW widths + mono flags
 ./scripts/04-verify.sh          # hard-fail if advances / flags / EAW / features drift
 ```
@@ -113,7 +142,7 @@ Force patcher backend: `NERD_PATCH_METHOD=docker|fontforge ./scripts/03-nerd-pat
 # after build; needs Pillow in work/venv
 work/venv/bin/python scripts/render-sample.py \
   --font out/nerd/LilexSansSCNFM-Regular.ttf \
-  --title "LilexSansSC NFM · EN 550 / CJK 1100"
+  --title "LilexSansSC NFM · EN 550 / CJK 1100 · weight s=5"
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -129,16 +158,19 @@ work/venv/bin/python scripts/render-sample.py \
 | Source | Role |
 | --- | --- |
 | **Lilex** (scaled to 550; OT tables kept) | ASCII, Latin extensions, digits, programming symbols, half-width punctuation, Greek / Cyrillic, **programming ligatures** (`calt`), stylistic sets / character variants |
-| **Plex Sans SC** (advance → 1100, centred) | Han, CJK punctuation / symbols, fullwidth forms, kana / bopomofo, and any codepoint Lilex lacks |
+| **Plex Sans SC** (emboldened per pins; advance → 1100, centred) | Han, CJK punctuation / symbols, fullwidth forms, kana / bopomofo, and any codepoint Lilex lacks |
 | **Nerd Fonts** (`--single-width-glyphs`) | PUA icon sets at **half-cell** (Powerline, FA, Material, …) |
 
 Not yet done (known limits):
 
 1. SC `locl` / full GSUB/GPOS merge (SC layout tables are not copied)
-2. x-height / CJK face optical size match (optical weight: follow-up)
-3. Per-glyph vertical centering for brackets / equals / arrows
-4. Italic (Latin-only italic planned; no CJK pseudo-oblique)
-5. Pure visual QA of every math / symbol beyond the EAW metric gate
+2. x-height / CJK face optical size match (stem weight is matched; overall face size may still differ)
+3. Italic (Latin-only italic planned; no CJK pseudo-oblique)
+4. Pure visual QA of every math / symbol beyond the EAW metric gate
+
+**Won’t do (not needed):**
+
+- Per-glyph vertical centering for coding brackets / operators (`()[]{}` `=` `+` arrows, …). Trial y-shifts (KIT-260) were only **sub-pixel** at normal coding sizes (~0.2–0.7 px at 16 px), so there is no perceptible gain for mutating dozens of outlines. Upstream placement is left as-is.
 
 ## Verify
 

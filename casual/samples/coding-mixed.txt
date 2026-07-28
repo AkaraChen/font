@@ -1,0 +1,12 @@
+// RecursiveYozai Dual · Mono Casual × Yozai · EN 500 / CJK 1000 · stroke-matched
+fn walk(path: &str) -> Result<(), Error> {
+  // day by day 走过的 path，观察 leaf 与 flower 的 rhythm
+  if x != y && a <= b || c >= d { log("path=%s ==> ok", path); }
+}
+// 两个英文字母严格对齐一个汉字：
+aa中bb文cc混dd排ee齐ff检gg查
+|a|b|中|c|d|文|e|f|混|g|h|排|
+这几天心里颇不宁静。今晚在 courtyard 里坐着乘凉，忽然想起 day by day 走过的荷塘，
+在这 full moon 的光里，总该另有一番样子吧。叶子出水很高，像亭亭的舞女的 skirt。
+层层的叶子中间，零星地点缀着些 white flowers，有袅娜地开着的，有羞涩地打着朵儿的；
+正如一粒粒的明珠，又如碧天里的 stars，又如刚出浴的美人。

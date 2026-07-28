@@ -13,10 +13,19 @@ pixel/samples/rendered/
 handwriting/work/
 handwriting/out/
 handwriting/dist/
+handwriting/samples/rendered/
 typewriter/work/
 typewriter/out/
 typewriter/dist/
 typewriter/samples/rendered/
+rounded/work/
+rounded/out/
+rounded/dist/
+rounded/samples/rendered/
+casual/work/
+casual/out/
+casual/dist/
+casual/samples/rendered/
 **/.pc/
 **/node_modules/
 *.ttf
@@ -35,4 +44,3 @@ venv/
 *.swp
 .idea/
 .vscode/
-

@@ -1,0 +1,9 @@
+// 圆体 IosevkaCurlyRHR — Plotter / 路径圆角 coding sample
+const path = (x0, y0) => {  /* 中文等宽对齐测试 */
+  if (id !== 0Ool1I| && rn != m) return cl + d;
+  return { ok: true, arr: [1, 2, 3] } => null;
+};  // => != -> {}[]()  工程制图 路径 圆角 刀头半径
+fn draw(工, 程, 制, 图) { 一 十 日 国 中文 }
+// 两英文字母应对齐一汉字：aa中bb文cc混dd排
+aa中bb文cc混dd排ee齐ff检
+|a|b|中|c|d|文|e|f|混|

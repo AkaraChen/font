@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
-# Shared helpers for sans/ build scripts.
+# Shared helpers for casual/ (RecursiveYozai Dual) build scripts.
 set -euo pipefail
 
-SANS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_ROOT="$(cd "${SANS_ROOT}/.." && pwd)"
+CASUAL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "${CASUAL_ROOT}/.." && pwd)"
 # shellcheck disable=SC1091
-source "${SANS_ROOT}/pins.env"
+source "${CASUAL_ROOT}/pins.env"
 
-WORK_DIR="${SANS_ROOT}/work"
+WORK_DIR="${CASUAL_ROOT}/work"
 DOWNLOADS_DIR="${WORK_DIR}/downloads"
 EXTRACT_DIR="${WORK_DIR}/src"
 STAGE_DIR="${WORK_DIR}/stage"
 VENV_DIR="${WORK_DIR}/venv"
-OUT_DIR="${SANS_ROOT}/out"
-# Stroke measuring / embolden tools are shared with serif/ — not duplicated here.
+OUT_DIR="${CASUAL_ROOT}/out"
+# Reuse stroke / embolden tools and merge helpers from sibling products.
 SERIF_TOOLS="${REPO_ROOT}/serif/tools"
+HANDWRITING_SCRIPTS="${REPO_ROOT}/handwriting/scripts"
 
 log() { printf '==> %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -36,22 +37,18 @@ sha256_of() {
 }
 
 verify_sha256() {
-  local file="$1" expected="$2"
-  local got
+  local file="$1" expected="$2" got
   got="$(sha256_of "${file}")"
   [[ "${got}" == "${expected}" ]] || die "sha256 mismatch for ${file}: expected ${expected}, got ${got}"
 }
 
-download_zip() {
+download_file() {
   local url="$1" dest="$2" sha="$3"
-  if [[ -f "${dest}" ]]; then
-    if [[ "$(sha256_of "${dest}")" == "${sha}" ]]; then
-      log "cached $(basename "${dest}")"
-      return 0
-    fi
-    log "stale cache for $(basename "${dest}"), re-downloading"
-    rm -f "${dest}"
+  if [[ -f "${dest}" ]] && [[ "$(sha256_of "${dest}")" == "${sha}" ]]; then
+    log "cached $(basename "${dest}")"
+    return 0
   fi
+  [[ -f "${dest}" ]] && log "stale cache for $(basename "${dest}"), re-downloading"
   need_cmd curl
   log "downloading ${url}"
   curl -fL --retry 3 --retry-delay 2 -o "${dest}.partial" "${url}"
@@ -66,13 +63,12 @@ ensure_python() {
   fi
   mkdir -p "${WORK_DIR}"
   log "creating venv at ${VENV_DIR}"
-  # Prefer uv (works without distro ensurepip); fall back to python -m venv.
-  # skia-pathops: CJK optical-weight embolden (shared serif/tools/embolden_cjk.py).
   if command -v uv >/dev/null 2>&1; then
     uv venv "${VENV_DIR}"
-    uv pip install --python "${VENV_DIR}/bin/python" -q 'fonttools>=4.50' brotli skia-pathops
-    uv pip install --python "${VENV_DIR}/bin/python" -q Pillow \
-      || log "Pillow not installed; sample render will be skipped"
+    uv pip install --python "${VENV_DIR}/bin/python" -q \
+      'fonttools>=4.50' brotli skia-pathops
+    uv pip install --python "${VENV_DIR}/bin/python" -q Pillow freetype-py numpy uharfbuzz \
+      || log "optional render deps not installed; sample render may be skipped"
   else
     need_cmd python3
     python3 -m venv "${VENV_DIR}"
@@ -80,8 +76,8 @@ ensure_python() {
     source "${VENV_DIR}/bin/activate"
     python -m pip install -q --upgrade pip
     python -m pip install -q 'fonttools>=4.50' brotli skia-pathops
-    python -m pip install -q Pillow \
-      || log "Pillow not installed; sample render will be skipped"
+    python -m pip install -q Pillow freetype-py numpy uharfbuzz \
+      || log "optional render deps not installed; sample render may be skipped"
   fi
   "${VENV_DIR}/bin/python" -c "import fontTools, pathops" \
     || die "fontTools + skia-pathops not importable in ${VENV_DIR}"

@@ -86,3 +86,27 @@ cd typewriter && ./scripts/build.sh
 CJK weights are stem-measured embolden of Zhuque Regular. Upstream Alegreya Latin inside Zhuque is dropped.
 
 Details: [`typewriter/README.md`](typewriter/README.md).
+
+## rounded/ （圆体）
+
+**Coding product: IosevkaCurlyRHR NFM / 圆体** — **Iosevka Curly** (ss20 Curly Style, sans — not NSlab)
+Latin + **Resource Han Rounded SC** CJK + **Nerd Font Mono**, dual-width **EN 500 / CJK 1000**.
+
+```bash
+cd rounded && ./scripts/build.sh
+# → out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf
+```
+
+Upstream pins: [`rounded/pins.env`](rounded/pins.env). Details: [`rounded/README.md`](rounded/README.md).
+
+## casual/
+
+**Coding product: RecursiveYozai Dual** — Recursive **Mono Casual** Latin + **Yozai 悠哉** CJK,
+strict **2:1** dual width (EN 500 / CJK 1000), measured stroke match (no Nerd in v0.1).
+
+```bash
+cd casual && ./scripts/build.sh
+# → out/RecursiveYozaiDual-{Regular,Bold}.ttf
+```
+
+Upstream pins: [`casual/pins.env`](casual/pins.env). Details: [`casual/README.md`](casual/README.md).
