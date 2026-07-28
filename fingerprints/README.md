@@ -4,33 +4,34 @@ One directory per family, holding the normalised regression baseline for that
 family's build products. Written by `just fingerprint <family>`, checked by
 `just verify <family>`. See [`../docs/build-toolchain.md`](../docs/build-toolchain.md).
 
-**Empty on purpose right now.** The first CI run bootstraps them — see below.
+**Adopted from run
+[30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683)**, the
+`x86_64-linux` build of the font-patcher 4.26.0 pin — seven families green, 22
+products. Every family is gated for real from here: drift fails the build
+instead of printing a warning.
 
 ## Baselines belong to CI, not to a laptop
 
-The build is **not** architecture-independent. The first CI run of this workflow
-proved it: all seven families built cleanly on `x86_64-linux`, and all seven
-products differed from baselines generated on `aarch64-darwin`.
+This used to be justified by a finding that has since been retired. Phase 0
+observed that all seven products differed between `x86_64-linux` and
+`aarch64-darwin` and concluded the build was not reproducible across platforms,
+citing `pixel`: 46661 glyphs on Linux against darwin's 46552.
 
-The one family that was diagnosed in detail, `pixel`, localises it:
+**That was measuring two patchers, not two platforms.** `NERD_PATCH_METHOD=auto`
+picked the `nerdfonts/patcher` container whenever docker was installed — always,
+on GitHub runners — while the same image is broken on `arm64` and fell back to
+the pinned local patcher on the maintainer's Mac. KIT-277 deleted the fork and
+the follow-up pinned the commit the container was built from; `pixel` on darwin
+now produces 46661 glyphs, with `glyphorder`, `cmap` and every advance matching
+the Linux product.
 
-| product | how it is built | darwin vs linux |
-| --- | --- | --- |
-| `FusionPixel12Mono-Regular.ttf` | fontTools only | **identical** |
-| `nerd/FusionPixel12NFM-Regular.ttf` | + `fontforge -script font-patcher` | **46552 vs 46661 glyphs** |
+What genuinely differs across platforms, measured on the same pin, is much
+smaller: `maxp.maxPoints` by two, and the outline digest that follows from it.
+Real, unexplained, and the current open question.
 
-Same pinned fontforge, same pinned `FontPatcher.zip`, same arguments, same input
-font — and Linux emits 109 more glyphs, with different `head.flags`,
-`lowestRecPPEM` and `maxp.maxPoints`. So the toolchain pin makes the build
-reproducible *on a platform*, not *across* platforms.
-
-`casual` and `handwriting` have no fontforge patch step at all and still
-differed, so fontforge is not the only source — `skia-pathops` (a compiled Skia)
-is the obvious suspect for the CJK embolden step, but that has **not** been
-confirmed, only inferred from which families failed.
-
-Committing a laptop's baselines would therefore make CI permanently red, and a
-permanently red gate is worse than no gate.
+The rule survives anyway, for a plainer reason: `x86_64-linux` is what ships
+releases, `PROVENANCE` records what produced a baseline, and one unexplained
+outline delta is enough to make a darwin-authored baseline turn CI red.
 
 ## Bootstrapping
 
