@@ -105,7 +105,8 @@
               // families.releases
               // families.steps
               // families.extras
-              // families.verifies;
+              // families.verifies
+              // families.cellVerifies;
           in
           familyPkgs
           // {

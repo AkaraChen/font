@@ -215,4 +215,35 @@ in
   # builds into it would make everyone stop running it. CI's build matrix builds
   # these; the release step depends on them.
   verifies = lib.mapAttrs' (family: fam: lib.nameValuePair "${family}-verify" fam.verify) built;
+
+  # `nix build .#sans-coding-tc-verify` → one matrix cell's gate (KIT-305).
+  #
+  # Multi-region / multi-profile families expose a per-cell verify so the CI
+  # matrix can fail one cell without realising its siblings. Single-cell
+  # families fall back to the family-wide verify under the cell name, so the
+  # workflow can always call `.#<family>-<profile>-<region>-verify`.
+  cellVerifies = lib.listToAttrs (
+    lib.concatLists (
+      lib.mapAttrsToList
+        (
+          family: fam:
+            let
+              cells = fam.cells or { };
+              explicit = fam.cellVerifies or { };
+              # Default: every cell reuses the family gate. Correct for the five
+              # single-cell families; multi-cell families override via
+              # `cellVerifies` so a cell job does not rebuild the whole matrix.
+              resolved =
+                if explicit != { } then
+                  explicit
+                else
+                  lib.mapAttrs (_: _: fam.verify) cells;
+            in
+            lib.mapAttrsToList
+              (name: drv: lib.nameValuePair "${family}-${name}-verify" drv)
+              resolved
+        )
+        built
+    )
+  );
 }

@@ -169,40 +169,47 @@ let
     cp ${file "sans/licenses"}/OFL-Lilex.txt ${file "sans/licenses"}/OFL-IBM-Plex.txt $out/
   '';
 
-  verify = pkgs.runCommand "sans-verify"
-    {
-      nativeBuildInputs = [ support.verifyEnv ];
-    }
-    ''
-      ${lib.concatMapStringsSep "\n" (region: ''
+  # One region at a time so the CI matrix can gate a cell without realising the
+  # other three (KIT-305). Family-wide `verify` is the join of these.
+  verifyRegion = region:
+    let products = cellOut region; in
+    pkgs.runCommand "sans-verify-${region}"
+      {
+        nativeBuildInputs = [ support.verifyEnv ];
+      }
+      ''
         echo "==> ${region}"
         fontkit verify-2to1 \
           --expect-half ${toString grid.en_adv} --check-nerd --check-eaw \
           ${gateSample region} \
-          ${out}/nerd/${(naming region).ps}-*.ttf
-        python3 ${file "sans/scripts/verify-features.py"} ${out}/nerd/${(naming region).ps}-*.ttf
-      '') regions}
+          ${products}/nerd/${(naming region).ps}-*.ttf
+        python3 ${file "sans/scripts/verify-features.py"} \
+          ${products}/nerd/${(naming region).ps}-*.ttf
 
-      # Informational, and deliberately still allowed to fail: it confirms Latin
-      # and CJK ended up at the same optical weight after the embolden, but it
-      # is a report, not a gate — 04-verify.sh ran it under `|| true` with a
-      # per-glyph `except: continue` inside.
-      #
-      # It is not hypothetical. `fontkit measure` raises on the Bold products:
-      # measure.py:111 assumes every `qCurveTo` argument is a point, and
-      # TrueType's all-off-curve contour passes a trailing `None` for the
-      # implied on-curve point. That is a pre-existing defect in the measuring
-      # code, not in the font and not in this phase — the old inline script
-      # swallowed it one glyph at a time. Worth its own issue.
-      for font in ${out}/nerd/*.ttf; do
-        echo "==> $(basename "$font")"
-        fontkit measure --font "$font" | tail -20 || true
-      done
+        # Informational, and deliberately still allowed to fail: it confirms
+        # Latin and CJK ended up at the same optical weight after the embolden,
+        # but it is a report, not a gate — 04-verify.sh ran it under `|| true`
+        # with a per-glyph `except: continue` inside.
+        #
+        # It is not hypothetical. `fontkit measure` raises on the Bold products:
+        # measure.py:111 assumes every `qCurveTo` argument is a point, and
+        # TrueType's all-off-curve contour passes a trailing `None` for the
+        # implied on-curve point. That is a pre-existing defect in the measuring
+        # code, not in the font and not in this phase — the old inline script
+        # swallowed it one glyph at a time. Worth its own issue.
+        for font in ${products}/nerd/*.ttf; do
+          echo "==> $(basename "$font")"
+          fontkit measure --font "$font" | tail -20 || true
+        done
 
-      # Every converted format against the TTF it was made from (KIT-283).
-      fontkit verify-formats ${out}
-      touch $out
-    '';
+        fontkit verify-formats ${products}
+        touch $out
+      '';
+
+  verify = pkgs.runCommand "sans-verify" { } ''
+    ${lib.concatMapStringsSep "\n" (region: "test -e ${verifyRegion region}") regions}
+    touch $out
+  '';
 
   readme = region: pkgs.writeText "sans-${region}-README.txt" (
     let names = naming region; in
@@ -254,6 +261,13 @@ in
   # `nix build .#sans-coding-tc` → one (profile, region) cell's products.
   cells = lib.listToAttrs (
     map (region: lib.nameValuePair "${profile}-${region}" (cellOut region)) regions
+  );
+
+  # `nix build .#sans-coding-tc-verify` — cell-scoped gate for the matrix job.
+  cellVerifies = lib.listToAttrs (
+    map
+      (region: lib.nameValuePair "${profile}-${region}" (verifyRegion region))
+      regions
   );
 
   steps = lib.listToAttrs (

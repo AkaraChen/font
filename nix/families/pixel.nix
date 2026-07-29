@@ -123,14 +123,15 @@ let
 
   # --- verify ---------------------------------------------------------------
   # A check, not a build step: it reads products and writes nothing, so it has
-  # no place in the granularity contract. `nix flake check` runs it; so does the
-  # packaging step's dependency on it.
-  verify = pkgs.runCommand "pixel-verify"
-    {
-      nativeBuildInputs = [ support.pythonEnv ];
-    }
-    ''
-      ${lib.concatMapStringsSep "\n" (region: ''
+  # no place in the granularity contract. Per-region so the CI matrix can gate
+  # one cell without realising the other three (KIT-305).
+  verifyRegion = region:
+    let products = cellOut region; in
+    pkgs.runCommand "pixel-verify-${region}"
+      {
+        nativeBuildInputs = [ support.pythonEnv ];
+      }
+      ''
         echo "==> ${region}"
         python3 ${file "pixel/scripts/verify.py"} \
           --half ${toString grid.en_adv} \
@@ -139,12 +140,14 @@ let
           --check-ligatures \
           --check-eaw \
           ${nerd region}/*.ttf
-      '') regions}
+        fontkit verify-formats ${products}
+        touch $out
+      '';
 
-      # Every converted format against the TTF it was made from (KIT-283).
-      fontkit verify-formats ${out}
-      touch $out
-    '';
+  verify = pkgs.runCommand "pixel-verify" { } ''
+    ${lib.concatMapStringsSep "\n" (region: "test -e ${verifyRegion region}") regions}
+    touch $out
+  '';
 
   readme = region: pkgs.writeText "pixel-${region}-README.txt" (
     let names = naming region; in
@@ -190,6 +193,12 @@ in
   # `nix build .#pixel-coding-ja`.
   cells = lib.listToAttrs (
     map (region: lib.nameValuePair "${profile}-${region}" (cellOut region)) regions
+  );
+
+  cellVerifies = lib.listToAttrs (
+    map
+      (region: lib.nameValuePair "${profile}-${region}" (verifyRegion region))
+      regions
   );
 
   # Attribute names are the contract's step names — nix/checks.nix asserts it,

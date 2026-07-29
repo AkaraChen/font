@@ -1,5 +1,5 @@
-# Build every family from source in the pinned Nix toolchain, then diff the
-# products against the committed fingerprint baselines.
+# Build every matrix cell from source in the pinned Nix toolchain, then diff
+# the products against the committed fingerprint baselines.
 #
 # Before this workflow existed the only CI in the repo was release-nfm.yml,
 # which is serif-only and does not build from source — it downloads the previous
@@ -19,11 +19,17 @@
 #                     700 MiB of pins)
 #       toolchain    (keyed on flake.lock + flake.nix)
 #       intermediates (latin-prepared + serif-sarasa; keyed on their real inputs)
-#   * the seven family jobs RESTORE all three and save nothing
+#   * the matrix cell jobs RESTORE all three and save nothing
 #
-# That last line is the whole 10 GB story. Seven family jobs each saving their
-# own multi-gigabyte store snapshot would blow the repo budget on a single push
+# That last line is the whole 10 GB story. Cell jobs each saving their own
+# multi-gigabyte store snapshot would blow the repo budget on a single push
 # and evict the layers that actually pay for themselves.
+#
+# Matrix axes (KIT-305): every (family, profile, region) cell that
+# `[[build.matrix]]` declares — 14 jobs today (sans × 4, pixel × 4,
+# handwriting × 2 profiles, and one each for the rest). Region-independent
+# work (latin-prepared, serif-sarasa) is warmed once by the intermediates
+# layer so fanning out region jobs does not recompute Latin N times.
 name: Build matrix
 
 on:
@@ -275,47 +281,71 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
           tools/cache-report.sh intermediates result-mid
 
-  build:
-    name: ${{ matrix.family }}
-    needs: [sources, toolchain, intermediates]
+  # Pure eval of `.#lib.matrix` — one row per (family, profile, region) cell
+  # that `[[build.matrix]]` declares. The build job's strategy.matrix is this
+  # list rather than a hand-maintained include table, so a new region in
+  # font.toml becomes a CI job without a workflow edit (KIT-305).
+  plan:
+    name: Plan matrix
     runs-on: ubuntu-latest
-    # serif runs the full upstream Sarasa toolchain (patched tree + npm build);
-    # it is by far the longest pole on a cold mid layer. With a warm
-    # intermediates hit the Sarasa minutes fall out of the critical path.
-    #
-    # Raised from 180 by KIT-282: sans went from two products to eight (four
-    # regions x two weights) and pixel from one to four, and each of those is a
-    # Nerd patch. The Latin side is still built once per weight for all four
-    # regions — that is nix/granularity.nix's whole point — so the growth is in
-    # `merged` and `nerd`, not in the source or Latin layers.
-    timeout-minutes: 300
+    timeout-minutes: 10
+    outputs:
+      cells: ${{ steps.gen.outputs.cells }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Emit cells from lib.matrix
+        id: gen
+        run: |
+          set -euo pipefail
+          wanted='${{ github.event.inputs.families }}'
+          cells=$(
+            nix eval --json .#lib.matrix \
+              | jq -c --arg wanted "$wanted" '
+                  [ .[]
+                    | select(
+                        ($wanted | length) == 0
+                        or (($wanted | split(" ")) | index(.family) != null)
+                      )
+                    | {family, profile, region, attr}
+                  ]
+                '
+          )
+          count=$(jq 'length' <<<"$cells")
+          echo "cells=$cells" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Matrix cells ($count)"
+            echo
+            echo "| family | profile | region | attr |"
+            echo "| --- | --- | --- | --- |"
+            jq -r '.[] | "| `\(.family)` | `\(.profile)` | `\(.region)` | `\(.attr)` |"' <<<"$cells"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: ${{ matrix.family }}/${{ matrix.profile }}/${{ matrix.region }}
+    needs: [sources, toolchain, intermediates, plan]
+    runs-on: ubuntu-latest
+    # Before the region axis was a matrix dimension, the critical path was the
+    # sans family job at ~14 m (four regions serial). After the split it is
+    # serif's Sarasa build (~10 m cold; lower with a warm intermediates hit).
+    # 60 m is still loose for a stuck job but far tighter than the old 300 m
+    # "no measured number yet" ceiling.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        family:
-          - casual
-          - handwriting
-          - pixel
-          - rounded
-          - sans
-          - serif
-          - typewriter
+        include: ${{ fromJson(needs.plan.outputs.cells) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Skip unselected family
-        id: gate
-        run: |
-          wanted='${{ github.event.inputs.families }}'
-          if [[ -n "$wanted" && " $wanted " != *" ${{ matrix.family }} "* ]]; then
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install Nix
-        if: steps.gate.outputs.run == 'true'
         uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
@@ -323,40 +353,35 @@ jobs:
             accept-flake-config = true
 
       - name: Layer keys
-        if: steps.gate.outputs.run == 'true'
         id: keys
         run: |
           echo "src=$(python3 tools/sources-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
           echo "mid=$(python3 tools/intermediates-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
 
-      # Restore-only. `save: false` is the single most important line in this
-      # file: with seven families, saving here would write seven near-identical
-      # multi-gigabyte snapshots and evict the whole repo budget every push.
+      # Restore-only. Cell jobs must never save: with 14 cells, each writing a
+      # multi-gigabyte store snapshot would exhaust the repository budget and
+      # evict the warmers that pay for themselves (KIT-275 / KIT-304 / KIT-305).
       #
       # No binary cache — cachix / attic were both considered and declined for
       # this repo (KIT-275). What is cached is the store itself, in three layers.
       - name: Restore cached layers
-        if: steps.gate.outputs.run == 'true'
         uses: nix-community/cache-nix-action/restore@v7
         with:
-          # This key is never written (save: false above is implied by using the
-          # restore-only action), so it always misses and always falls through to
-          # the three prefixes below — which is the intent: take every layer.
-          primary-key: nix-build-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ matrix.family }}-never-saved
+          # This key is never written, so it always misses and always falls
+          # through to the three prefixes below — which is the intent.
+          primary-key: nix-build-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ matrix.attr }}-never-saved
           restore-prefixes-all-matches: |
             nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.src }}
             nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
             nix-mid-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.mid }}
 
       - name: Realise devShell
-        if: steps.gate.outputs.run == 'true'
         run: |
           start=$SECONDS
           nix develop --command true
           echo "devShell realised in $(( SECONDS - start ))s" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Toolchain provenance
-        if: steps.gate.outputs.run == 'true'
         run: |
           nix develop --command bash -c '
             for c in curl git unzip zip 7z fontforge ttfautohint node npm \
@@ -366,66 +391,69 @@ jobs:
             python3 -c "import fontTools; print(\"fontTools\", fontTools.version)"
           '
 
-      # All seven are derivations since KIT-280, so `just build` is a `nix build`
-      # plus the copy into <family>/out that the fingerprint net reads.
-      # Per-step wall-clock is a
-      # property of the build graph now — `nix build -L` prints it per
-      # derivation and Nix skips the steps a change did not touch, which is
-      # what the timings job existed to inform.
-      - name: Build
-        if: steps.gate.outputs.run == 'true'
-        run: nix develop --command just build ${{ matrix.family }}
+      # One matrix cell: `just build sans coding tc` → .#sans-coding-tc into
+      # sans/out-coding-tc. The full-family form still exists for local use;
+      # CI never calls it, because that is the serial path KIT-305 retired.
+      - name: Build cell
+        run: |
+          start=$SECONDS
+          nix develop --command just build \
+            ${{ matrix.family }} ${{ matrix.profile }} ${{ matrix.region }}
+          echo "cell ${{ matrix.attr }} built in $(( SECONDS - start ))s" \
+            >> "$GITHUB_STEP_SUMMARY"
 
-      # The family's own gate (2:1 / EAW / Nerd cells / features). It is a
-      # separate step from the fingerprint check on purpose: this one says "the
-      # product is wrong", the next says "the product changed".
+      # Cell-scoped gate. Multi-region families expose
+      # .#<family>-<profile>-<region>-verify so this does not realise sibling
+      # cells; single-cell families alias the family-wide verify under that
+      # name (nix/families/default.nix).
       - name: Gate
-        if: steps.gate.outputs.run == 'true'
-        run: nix build --print-build-logs .#${{ matrix.family }}-verify
+        run: |
+          start=$SECONDS
+          nix build --print-build-logs .#${{ matrix.attr }}-verify
+          echo "gate ${{ matrix.attr }}-verify in $(( SECONDS - start ))s" \
+            >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fingerprint check
-        if: steps.gate.outputs.run == 'true'
         run: |
           set +e
-          nix develop --command python3 tools/fingerprint.py check ${{ matrix.family }}
+          products="${{ matrix.family }}/out-${{ matrix.profile }}-${{ matrix.region }}"
+          # --partial: only this cell's products are present; sibling cells
+          # live in other matrix jobs and must not be reported MISSING.
+          nix develop --command python3 tools/fingerprint.py check \
+            ${{ matrix.family }} \
+            --products-dir "$products" \
+            --partial
           rc=$?
           set -e
           # Always publish what this run actually produced, whatever the verdict.
-          # Products are 25-50 MB per family and awkward to pull; the fingerprints
-          # are a few hundred KB, so drift can be diagnosed — and a baseline
-          # adopted — straight from this artifact.
-          nix develop --command python3 tools/fingerprint.py write ${{ matrix.family }} \
-            --out fingerprints-current/${{ matrix.family }}
+          # Products are awkward to pull; the fingerprints are a few hundred KB,
+          # so drift can be diagnosed — and a baseline adopted — from the artifact.
+          nix develop --command python3 tools/fingerprint.py write \
+            ${{ matrix.family }} \
+            --products-dir "$products" \
+            --out fingerprints-current/${{ matrix.attr }}
           case "$rc" in
-            0) echo "fingerprints match the baseline" ;;
+            0) echo "fingerprints match the baseline (cell ${{ matrix.attr }})" ;;
             3)
-              # Baselines are authored by CI, not by a laptop: fontforge and
-              # skia-pathops do not produce identical output across platforms.
-              # The first run bootstraps them; they must then be committed.
-              #
-              # Also reached when a family gains a *new* product — a new weight
-              # or a new profile — that no baseline covers yet. Existing
-              # products that changed or disappeared still exit 1, so this
-              # cannot hide a regression in what already shipped.
-              echo "::warning title=Fingerprint baseline missing::${{ matrix.family }} has products with no committed baseline (see the step log for which). Download the fingerprints-${{ matrix.family }} artifact from this run and commit it under fingerprints/${{ matrix.family }}/."
+              echo "::warning title=Fingerprint baseline missing::${{ matrix.attr }} has products with no committed baseline (see the step log for which). Download the fingerprints-${{ matrix.attr }} artifact from this run and commit the matching entries under fingerprints/${{ matrix.family }}/."
               ;;
             *) exit "$rc" ;;
           esac
 
       - name: Upload fingerprints
-        if: steps.gate.outputs.run == 'true' && always()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fingerprints-${{ matrix.family }}
-          path: fingerprints-current/${{ matrix.family }}/
+          name: fingerprints-${{ matrix.attr }}
+          path: fingerprints-current/${{ matrix.attr }}/
           if-no-files-found: warn
 
       - name: Upload products
-        if: steps.gate.outputs.run == 'true' && always()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: products-${{ matrix.family }}
-          path: ${{ matrix.family }}/out/
+          name: products-${{ matrix.attr }}
+          path: ${{ matrix.family }}/out-${{ matrix.profile }}-${{ matrix.region }}/
           if-no-files-found: warn
           retention-days: 7
 

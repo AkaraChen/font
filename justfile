@@ -8,6 +8,8 @@
 #   just dev                    → enter the pinned toolchain shell
 #   just build sans             → nix build .#sans, materialised into sans/out
 #   just build sans coding tc   → nix build .#sans-coding-tc, one matrix cell
+#                                 (this is what CI builds — one job per cell,
+#                                 KIT-305; the bare form still builds every cell)
 #   just matrix                 → every cell every family declares
 #   just fingerprint sans       → (re)write sans' regression baseline
 #   just verify sans            → compare a fresh build against the baseline

@@ -191,10 +191,10 @@ digest is computed in a step rather than via `hashFiles` on a generated file.)
 
 ### Only the warmers save
 
-Three small jobs save: `sources`, `toolchain`, `intermediates`. The seven family
+Three small jobs save: `sources`, `toolchain`, `intermediates`. The matrix cell
 jobs restore all three and save nothing.
 
-This is the single most important line in the workflow. Seven family jobs each
+This is the single most important line in the workflow. Fourteen cell jobs each
 writing its own multi-gigabyte store snapshot would exhaust the repository
 budget on one push and evict the layers that pay for themselves.
 
@@ -225,9 +225,9 @@ manifests, the family nix files, prepare scripts, serif patches, flake pins) and
 deliberately **omits** `[naming]` and `[merge]` so a version stamp does not
 evict a multi-minute Sarasa build.
 
-On a hit, family jobs restore the store paths and `nix build` is a no-op for
-those steps. On a miss, the intermediates job pays once; the seven family jobs
-still do not write.
+On a hit, cell jobs restore the store paths and `nix build` is a no-op for
+those steps. On a miss, the intermediates job pays once; the cell jobs still
+do not write.
 
 **Steady-state budget estimate** (one entry per layer, GHA compressed sizes):
 
@@ -261,9 +261,26 @@ without crowding sources + toolchain + intermediates.
 Plex Sans masters (TC / JP / KR, ~14 MiB each hinted) for sans, and nothing at
 all for pixel — its four regional flavours are members of the archive it already
 pulls. The `gc-max-store-size-linux: 3G` cap on the source layer is unchanged.
-What the region axis *does* grow is the family jobs' build time
-(`merged` / `nerd`), which is why those jobs' timeout is high; they still save
-no cache.
+
+**Region / profile as matrix dimensions (KIT-305).** After Phase 7 the region
+axis lived *inside* a family job: sans serially built sc/tc/jp/kr and was the
+critical path at ~14.1 m. The CI matrix is now one job per
+`(family, profile, region)` cell (14 jobs from `.#lib.matrix`), so those regions
+run in parallel. That only stays free if the region-independent work is not
+recomputed per job — which is why the intermediates layer (KIT-304) has to land
+first: `latin-prepared` and `serif-sarasa` are warmed once, cell jobs restore
+them. Weight is deliberately *not* a matrix axis: same-region weights share
+Latin prep, and splitting them would amplify total CPU for almost no wall-clock
+gain.
+
+| path | before (family matrix) | after (cell matrix) |
+| --- | ---: | ---: |
+| critical path | sans ~14.1 m (4 regions serial) | serif ~10.2 m (Sarasa; lower with mid hit) |
+| cell jobs | 7 | 14 |
+| timeout | 300 m (no measured number) | 60 m |
+
+Cell jobs still save no cache; the wall-clock win is parallelism, not a new
+layer.
 
 **Prefix fallback on the source layer.** A partial source set from an older pin
 list is worse than a clean fetch: it gets carried forward, counted against the
