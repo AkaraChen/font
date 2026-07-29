@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/banner.jpg" alt="" width="100%">
+<img src="docs/assets/specimen.png" alt="Specimen sheet: the eight AKR products, each shown as Ag永安 with the same code sample — ligatures, 2:1 alignment and Nerd icons rendered from the released fonts" width="100%">
 
 # font
 
@@ -14,6 +14,8 @@ and a release is built by the same command you run locally.
 [![Fonts](https://img.shields.io/badge/fonts-SIL%20OFL%201.1-blue?style=flat-square)](docs/build-toolchain.md)
 [![Built with Nix](https://img.shields.io/badge/built%20with-nix-5277C3?style=flat-square&logo=nixos&logoColor=white)](flake.nix)
 [![Releases](https://img.shields.io/github/v/release/AkaraChen/font?style=flat-square)](https://github.com/AkaraChen/font/releases)
+
+<sub>The specimen above is rendered from the released `.ttf`s themselves — source: [`docs/assets/specimen.html`](docs/assets/specimen.html).</sub>
 
 </div>
 

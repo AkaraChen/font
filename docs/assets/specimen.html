@@ -1,0 +1,249 @@
+<!doctype html>
+<!--
+  Source of docs/assets/specimen.png.
+
+  It renders the real release products, so it needs the fonts next to it:
+
+      mkdir -p fonts
+      gh release download <tag> --pattern 'AKR*SC*.zip' --dir zips
+      for z in zips/*.zip; do unzip -o -j "$z" '*.ttf' -d fonts; done
+
+  Then screenshot it at 1600x1000, device scale factor 2.5:
+
+      agent-browser --allow-file-access open "file://$PWD/index.html"
+      agent-browser set viewport 1600 1000 2.5
+      agent-browser screenshot specimen.png
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: "Slab";   src: url("fonts/AKRSlabSCNFM-Regular.ttf");   font-weight: 400; }
+  @font-face { font-family: "Slab";   src: url("fonts/AKRSlabSCNFM-Bold.ttf");      font-weight: 700; }
+  @font-face { font-family: "Sans";   src: url("fonts/AKRSansSCNFM-Regular.ttf");   font-weight: 400; }
+  @font-face { font-family: "Sans";   src: url("fonts/AKRSansSCNFM-Bold.ttf");      font-weight: 700; }
+  @font-face { font-family: "Round";  src: url("fonts/AKRRoundSCNFM-Regular.ttf");  font-weight: 400; }
+  @font-face { font-family: "Round";  src: url("fonts/AKRRoundSCNFM-Bold.ttf");     font-weight: 700; }
+  @font-face { font-family: "Type";   src: url("fonts/AKRTypeSCNFM-Regular.ttf");   font-weight: 400; }
+  @font-face { font-family: "Type";   src: url("fonts/AKRTypeSCNFM-Bold.ttf");      font-weight: 700; }
+  @font-face { font-family: "Pixel";  src: url("fonts/AKRPixelSCNFM-Regular.ttf");  font-weight: 400; }
+  @font-face { font-family: "Hand";   src: url("fonts/AKRHandSCNFM-Regular.ttf");   font-weight: 400; }
+  @font-face { font-family: "Hand";   src: url("fonts/AKRHandSCNFM-Bold.ttf");      font-weight: 700; }
+  @font-face { font-family: "HandText"; src: url("fonts/AKRHandSCText-Light.ttf");  font-weight: 300; }
+  @font-face { font-family: "HandText"; src: url("fonts/AKRHandSCText-Regular.ttf");font-weight: 400; }
+  @font-face { font-family: "HandText"; src: url("fonts/AKRHandSCText-Bold.ttf");   font-weight: 700; }
+  @font-face { font-family: "Casual"; src: url("fonts/AKRCasualSCDual-Regular.ttf");font-weight: 400; }
+  @font-face { font-family: "Casual"; src: url("fonts/AKRCasualSCDual-Bold.ttf");   font-weight: 700; }
+
+  :root {
+    --paper:  #F2EEE6;
+    --card:   #FBF8F3;
+    --ink:    #16130F;
+    --muted:  #8C8378;
+    --line:   #E0D8C9;
+    --accent: #D9852B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1600px; height: 1000px; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 44px 52px 34px;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  /* faint design grid, echoing the repo banner */
+  body::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(to right, rgba(22,19,15,.045) 1px, transparent 1px) 52px 0/196px 100%,
+      linear-gradient(to bottom, rgba(22,19,15,.045) 1px, transparent 1px) 0 44px/100% 152px;
+  }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 20px; border-bottom: 1.5px solid var(--ink); z-index: 1; }
+  .brand { display: flex; align-items: baseline; gap: 16px; }
+  .brand h1 { font-family: "Slab"; font-weight: 700; font-size: 40px; letter-spacing: .02em; }
+  .brand .tag { font-size: 15px; color: var(--muted); letter-spacing: .01em; }
+  .brand .tag b { color: var(--ink); font-weight: 600; }
+  .meta { text-align: right; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+  .meta .rule { display: inline-block; width: 26px; height: 2px; background: var(--accent); vertical-align: middle; margin-right: 8px; }
+
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 18px; padding: 20px 0; z-index: 1; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 3px; padding: 18px 18px 16px; display: flex; flex-direction: column; position: relative; }
+  .card .name { font-size: 15px; font-weight: 650; letter-spacing: .005em; }
+  .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; letter-spacing: .01em; }
+  .card .badge { position: absolute; top: 16px; right: 16px; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); border: 1px solid rgba(217,133,43,.4); border-radius: 2px; padding: 2px 5px; }
+
+  .hero { margin: auto 0; font-size: 78px; line-height: 1.15; letter-spacing: 0; white-space: nowrap; }
+  .hero .cjk { margin-left: 4px; }
+
+  .sample { border-top: 1px solid var(--line); padding-top: 13px; margin-top: auto; font-size: 14px; line-height: 1.85; white-space: nowrap; }
+  .sample .dim { color: var(--muted); }
+  .sample .in { padding-left: 1.6em; }
+  .sample .acc { color: var(--accent); }
+  .icons { margin-top: 10px; font-size: 17px; letter-spacing: .22em; color: var(--ink); }
+  .icons.none { font-size: 12.5px; letter-spacing: 0; color: var(--muted); }
+
+  /* a 12px bitmap face: integral sizes only, and no smoothing */
+  .f-pixel { -webkit-font-smoothing: none; }
+  .card.pixel .hero { font-size: 72px; }
+  .card.pixel .sample { font-size: 12px; line-height: 2.15; }
+  .card.pixel .icons { font-size: 24px; }
+
+  .f-slab   { font-family: "Slab"; }
+  .f-sans   { font-family: "Sans"; }
+  .f-round  { font-family: "Round"; }
+  .f-type   { font-family: "Type"; }
+  .f-pixel  { font-family: "Pixel"; }
+  .f-hand   { font-family: "Hand"; }
+  .f-text   { font-family: "HandText"; }
+  .f-casual { font-family: "Casual"; }
+
+  footer { display: flex; align-items: center; justify-content: space-between; border-top: 1.5px solid var(--ink); padding-top: 14px; font-size: 13px; color: var(--muted); z-index: 1; }
+  footer .repo { color: var(--ink); font-family: "Sans"; font-weight: 700; font-size: 14px; }
+  footer .dots { display: flex; gap: 6px; align-items: center; }
+  footer .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+  footer .dot.on { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>AKR</h1>
+    <div class="tag">seven families, eight products — <b>CJK coding faces</b> built from source, Latin × CJK on a strict 2:1 grid</div>
+  </div>
+  <div class="meta">
+    <div><span class="rule"></span>Nerd Font Mono · hinted · ttf / woff2 / otf</div>
+    <div>SC · TC · HK · JP · KR from one build</div>
+  </div>
+</header>
+
+<div class="grid">
+
+  <div class="card">
+    <div class="name">AKR Slab SC NFM</div>
+    <div class="sub">MonoSlab × 霞鹜新致宋 Opt</div>
+    <div class="badge">2:1</div>
+    <div class="hero f-slab">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-slab">
+      <div>fn 排版() -&gt; 字体 {</div>
+      <div class="in">列宽 != 0 &amp;&amp; 半角 &lt;= 全角</div>
+      <div class="in dim">// 一个汉字 === 两个字母</div>
+      <div>}<span class="acc"> 0O1lI ≠≥→</span></div>
+    </div>
+    <div class="icons f-slab">&#xf09b; &#xe0a0; &#xf07b; &#xf013; &#xf121;</div>
+  </div>
+
+  <div class="card">
+    <div class="name">AKR Sans SC NFM</div>
+    <div class="sub">Lilex × IBM Plex Sans SC</div>
+    <div class="badge">550/1100</div>
+    <div class="hero f-sans">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-sans">
+      <div>fn 排版() -&gt; 字体 {</div>
+      <div class="in">列宽 != 0 &amp;&amp; 半角 &lt;= 全角</div>
+      <div class="in dim">// 一个汉字 === 两个字母</div>
+      <div>}<span class="acc"> 0O1lI ≠≥→</span></div>
+    </div>
+    <div class="icons f-sans">&#xf09b; &#xe0a0; &#xf07b; &#xf013; &#xf121;</div>
+  </div>
+
+  <div class="card">
+    <div class="name">AKR Round SC NFM</div>
+    <div class="sub">Iosevka Curly × Resource Han Rounded</div>
+    <div class="badge">500/1000</div>
+    <div class="hero f-round">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-round">
+      <div>fn 排版() -&gt; 字体 {</div>
+      <div class="in">列宽 != 0 &amp;&amp; 半角 &lt;= 全角</div>
+      <div class="in dim">// 一个汉字 === 两个字母</div>
+      <div>}<span class="acc"> 0O1lI ≠≥→</span></div>
+    </div>
+    <div class="icons f-round">&#xf09b; &#xe0a0; &#xf07b; &#xf013; &#xf121;</div>
+  </div>
+
+  <div class="card">
+    <div class="name">AKR Type SC NFM</div>
+    <div class="sub">Courier Prime × 朱雀仿宋</div>
+    <div class="badge">600/1200</div>
+    <div class="hero f-type">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-type">
+      <div>fn 排版() -&gt; 字体 {</div>
+      <div class="in">列宽 != 0 &amp;&amp; 半角 &lt;= 全角</div>
+      <div class="in dim">// 一个汉字 === 两个字母</div>
+      <div>}<span class="acc"> 0O1lI ≠≥→</span></div>
+    </div>
+    <div class="icons f-type">&#xf09b; &#xe0a0; &#xf07b; &#xf013; &#xf121;</div>
+  </div>
+
+  <div class="card pixel">
+    <div class="name">AKR Pixel SC NFM</div>
+    <div class="sub">Fusion Pixel 12px · pixelised calt</div>
+    <div class="badge">12px</div>
+    <div class="hero f-pixel">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-pixel">
+      <div>fn 排版() -&gt; 字体 {</div>
+      <div class="in">列宽 != 0 &amp;&amp; 半角 &lt;= 全角</div>
+      <div class="in dim">// 一个汉字 === 两个字母</div>
+      <div>}<span class="acc"> 0O1lI ≠≥→</span></div>
+    </div>
+    <div class="icons f-pixel">&#xf09b; &#xe0a0; &#xf07b; &#xf013; &#xf121;</div>
+  </div>
+
+  <div class="card">
+    <div class="name">AKR Hand SC NFM</div>
+    <div class="sub">Monaspace Radon × 霞鹜文楷 · 7.5° 斜切</div>
+    <div class="badge">500/1000</div>
+    <div class="hero f-hand">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-hand">
+      <div>fn 排版() -&gt; 字体 {</div>
+      <div class="in">列宽 != 0 &amp;&amp; 半角 &lt;= 全角</div>
+      <div class="in dim">// 一个汉字 === 两个字母</div>
+      <div>}<span class="acc"> 0O1lI ≠≥→</span></div>
+    </div>
+    <div class="icons f-hand">&#xf09b; &#xe0a0; &#xf07b; &#xf013; &#xf121;</div>
+  </div>
+
+  <div class="card">
+    <div class="name">AKR Hand SC Text</div>
+    <div class="sub">the reading face · Light / Regular / Bold</div>
+    <div class="badge">text</div>
+    <div class="hero f-text">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-text" style="white-space: normal;">
+      <div style="font-weight:300">排版是一门看不见的艺术 —— 字距、行高与</div>
+      <div>标点，都在读者察觉之前就已经决定了。</div>
+      <div style="font-weight:700">Light · Regular · Bold，三个字重。</div>
+    </div>
+    <div class="icons none">reading face · 全角 — … 保持原宽 · no icons</div>
+  </div>
+
+  <div class="card">
+    <div class="name">AKR Casual SC Dual</div>
+    <div class="sub">Recursive Mono Casual × 悠哉 Yozai</div>
+    <div class="badge">2:1</div>
+    <div class="hero f-casual">Ag<span class="cjk">永安</span></div>
+    <div class="sample f-casual">
+      <div>fn 排版() -&gt; 字体 {</div>
+      <div class="in">列宽 != 0 &amp;&amp; 半角 &lt;= 全角</div>
+      <div class="in dim">// 一个汉字 === 两个字母</div>
+      <div>}<span class="acc"> 0O1lI ≠≥→</span></div>
+    </div>
+    <div class="icons none">dual-width · no Nerd icons in v1</div>
+  </div>
+
+</div>
+
+<footer>
+  <div><span class="repo">github.com/AkaraChen/font</span> &nbsp;·&nbsp; every family a Nix derivation, gated and fingerprinted</div>
+  <div class="dots">
+    <span>specimen · Ag永安</span>
+    <span class="dot on"></span><span class="dot on"></span><span class="dot"></span>
+  </div>
+</footer>
+
+</body>
+</html>
