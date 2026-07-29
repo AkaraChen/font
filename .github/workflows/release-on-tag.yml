@@ -20,8 +20,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Same epoch as build-matrix.yml — both restore the same two cache layers.
-  CACHE_EPOCH: v1
+  # Same epoch as build-matrix.yml — both restore the same three cache layers
+  # (sources / toolchain / intermediates; KIT-304). Bump them together.
+  CACHE_EPOCH: v2
 
 jobs:
   prepare:
@@ -70,13 +71,22 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      # Restore-only: seven store snapshots would blow the 10 GB repo budget.
-      - uses: nix-community/cache-nix-action/restore@v7
+      # Restore-only: family jobs never save. Keys match build-matrix.yml so a
+      # warm matrix run pays for a subsequent release (docs/caching.md).
+      - name: Layer keys
+        id: keys
+        run: |
+          echo "src=$(python3 tools/sources-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
+          echo "mid=$(python3 tools/intermediates-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore cached layers
+        uses: nix-community/cache-nix-action/restore@v7
         with:
           primary-key: nix-reltag-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ matrix.family }}-never-saved
           restore-prefixes-all-matches: |
-            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/font.toml') }}
+            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.src }}
             nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
+            nix-mid-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.mid }}
 
       # The tag is the version. Stamped in before the build so the archive name
       # and the tag are the same string by construction.
