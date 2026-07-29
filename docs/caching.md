@@ -198,12 +198,12 @@ This is the single most important line in the workflow. Fourteen cell jobs each
 writing its own multi-gigabyte store snapshot would exhaust the repository
 budget on one push and evict the layers that pay for themselves.
 
-**The release workflows restore too, and also save nothing** (Phase 8, KIT-283).
-`release.yml` / `release-on-tag.yml` build from source, so they take the same
-three layers with the same keys and the same `CACHE_EPOCH` as
-`build-matrix.yml` — all three must be bumped together or a release silently
-misses. A cold release simply takes longer, which is the correct trade for the
-rarer event.
+**The release workflow restores too, and also saves nothing** (Phase 8,
+KIT-283; simplified to a single tag-driven flow). `release-on-tag.yml` builds
+from source, so it takes the same three layers with the same keys and the same
+`CACHE_EPOCH` as `build-matrix.yml` — both must be bumped together or a release
+silently misses. A cold release simply takes longer, which is the correct trade
+for the rarer event.
 
 ### Layer 3 — selective intermediates (KIT-304)
 
