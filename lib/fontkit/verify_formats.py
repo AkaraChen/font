@@ -37,6 +37,8 @@ from pathlib import Path
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 
+from fontkit.convert import InkOnlyPen
+
 # The bbox of a refitted contour is a maximum over its points, so it can sit up
 # to one fitting tolerance away in each direction plus the rounding the
 # charstring integers introduce.
@@ -72,11 +74,25 @@ def _cmap(font: TTFont) -> dict[int, str]:
 
 
 def _bounds(font: TTFont) -> dict[str, tuple | None]:
+    """Bounds of the *ink*, not of every stored coordinate.
+
+    TrueType allows a contour of a single point. It draws nothing, but it is a
+    coordinate, so it widens the glyph's bounding box — LXGW WenKai has one
+    (`uAF45`), 24 units below anything that renders. A charstring cannot express
+    such a contour, so `fontkit convert` drops it and says so; comparing raw
+    bounds would then read a deliberate, invisible drop as an outline that
+    moved by 24 units.
+
+    Measuring ink on both sides asks the question that was meant: did anything
+    that gets drawn move further than the fit is allowed? The glyph is drawn
+    rather than recorded and replayed, because for a composite whose `lsb`
+    differs from its `xMin` those two are not the same drawing.
+    """
     glyph_set = font.getGlyphSet()
     out = {}
     for name in font.getGlyphOrder():
         pen = BoundsPen(glyph_set)
-        glyph_set[name].draw(pen)
+        glyph_set[name].draw(InkOnlyPen(pen))
         out[name] = pen.bounds
     return out
 

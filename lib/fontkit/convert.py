@@ -43,7 +43,7 @@ from pathlib import Path
 
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.qu2cuPen import Qu2CuPen
-from fontTools.pens.recordingPen import DecomposingRecordingPen
+from fontTools.pens.recordingPen import DecomposingRecordingPen, replayRecording
 from fontTools.pens.t2CharStringPen import T2CharStringPen
 from fontTools.ttLib import TTFont
 
@@ -99,29 +99,102 @@ def rewrap(src: Path, dst: Path, fmt: str) -> None:
     print(f"  {src.name} → {dst.name} ({dst.stat().st_size} bytes, container re-wrap)")
 
 
+class InkOnlyPen:
+    """Pass every contour through except the ones that draw nothing.
+
+    TrueType permits a contour of a single point: a `moveTo` and a close, no
+    segments. It renders no ink, but it is a coordinate like any other to
+    anything that reads the glyph, so it sits inside the glyph's bounding box.
+    LXGW WenKai has exactly one — `uAF45`, a lone point 24 units below anything
+    that renders — and that is enough to matter twice over:
+
+      * a Type 2 charstring cannot express it, so the OTF simply will not have
+        it, and
+      * `fontkit verify-formats` compares bounding boxes, so without this the
+        deliberate, invisible drop reads as an outline that moved 24 units.
+
+    Both sides use this pen, which is the point: the conversion and the check
+    have to agree on what counts as drawn. `addComponent` is passed straight
+    through rather than decomposed here — the pen underneath decides — because a
+    recorded-and-replayed component is not equivalent to a drawn one when a
+    glyph's `lsb` differs from its `xMin`, and comparing one against the other
+    would reintroduce exactly the asymmetry this pen exists to remove.
+
+    `dropped` counts what it removed so a caller can report it. Nothing here is
+    silent.
+    """
+
+    def __init__(self, pen):
+        self.pen = pen
+        self.dropped = 0
+        self._contour: list = []
+
+    # --- buffered contour -------------------------------------------------
+    def moveTo(self, pt):
+        self._contour = [("moveTo", (pt,))]
+
+    def lineTo(self, pt):
+        self._contour.append(("lineTo", (pt,)))
+
+    def curveTo(self, *points):
+        self._contour.append(("curveTo", points))
+
+    def qCurveTo(self, *points):
+        self._contour.append(("qCurveTo", points))
+
+    def closePath(self):
+        self._flush(("closePath", ()))
+
+    def endPath(self):
+        self._flush(("endPath", ()))
+
+    def _flush(self, closer):
+        drawn = any(op != "moveTo" for op, _ in self._contour)
+        if drawn:
+            for operator, operands in self._contour + [closer]:
+                getattr(self.pen, operator)(*operands)
+        elif self._contour:
+            self.dropped += 1
+        self._contour = []
+
+    # --- passed through ---------------------------------------------------
+    def addComponent(self, glyphName, transformation):
+        self.pen.addComponent(glyphName, transformation)
+
+
 def _charstrings(font: TTFont, max_err: float) -> dict:
     """Every glyph, as a Type 2 charstring.
 
-    Composites are decomposed first rather than passed through as CFF `seac` or
-    left to the charstring pen: `Qu2CuPen` forwards components untouched, so a
-    composite that reached `T2CharStringPen` would be decomposed *there* and its
-    quadratics converted one-segment-per-curve by the base pen's exact
-    quad→cubic fallback. That is not wrong, but it is a second conversion path
-    with a different curve count, and "which of two conversions drew this glyph"
-    is not a question a fingerprint diff should have to answer.
+    Composites are decomposed first rather than passed through as CFF `seac`:
+    `Qu2CuPen` forwards components untouched, so a composite that reached
+    `T2CharStringPen` would be decomposed *there*, after the fitting pen rather
+    than before it. Two conversion paths for one font is not a question a
+    fingerprint diff should have to answer.
+
+    **`all_cubic` is off, and that is not a tuning choice.** With it on, qu2cu
+    refuses a TrueType *oncurve-less contour* — a contour of nothing but
+    off-curve points, with every on-curve point implied at the midpoints — with
+    `NotImplementedError`. That shape is not exotic here: LXGW WenKai uses it,
+    which is the same construction that makes `fontkit measure` raise on all-off
+    curve contours (see the note in nix/families/sans.nix). With it off, qu2cu
+    fits cubics where it can and passes the rest through as quadratics, which
+    `T2CharStringPen` — a `BasePen` — converts one-to-one and *exactly*. So the
+    flag buys a slightly lower curve count on some contours and costs the
+    ability to convert the font at all.
     """
     glyph_set = font.getGlyphSet()
     hmtx = font["hmtx"]
     charstrings = {}
+    inkless = 0
     for name in font.getGlyphOrder():
         recorder = DecomposingRecordingPen(glyph_set)
         glyph_set[name].draw(recorder)
         pen = T2CharStringPen(hmtx[name][0], None)
-        recorder.replay(
-            Qu2CuPen(pen, max_err, all_cubic=True, reverse_direction=True)
-        )
+        ink = InkOnlyPen(Qu2CuPen(pen, max_err, all_cubic=False, reverse_direction=True))
+        replayRecording(recorder.value, ink)
+        inkless += ink.dropped
         charstrings[name] = pen.getCharString()
-    return charstrings
+    return charstrings, inkless
 
 
 def _font_info(font: TTFont) -> dict:
@@ -177,7 +250,7 @@ def to_otf(src: Path, dst: Path, max_err: float, subroutinize: bool) -> None:
     try:
         if "glyf" not in font:
             raise SystemExit(f"error: {src.name} has no glyf table — not a TrueType product")
-        charstrings = _charstrings(font, max_err)
+        charstrings, inkless = _charstrings(font, max_err)
         ps_name, info = _font_info(font)
 
         for tag in TRUETYPE_ONLY + INVALIDATED:
@@ -203,6 +276,12 @@ def to_otf(src: Path, dst: Path, max_err: float, subroutinize: bool) -> None:
         f"  {src.name} → {dst.name} ({dst.stat().st_size} bytes, "
         f"qu2cu max-err={max_err}{', subroutinized' if subroutinize else ''})"
     )
+    if inkless:
+        # Not silent: a contour disappeared, even one that drew nothing.
+        print(
+            f"    dropped {inkless} ink-less contour(s) — single points, which "
+            f"TrueType allows and a charstring cannot express"
+        )
 
 
 def _subroutinize(font: TTFont) -> None:

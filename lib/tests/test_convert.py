@@ -34,6 +34,47 @@ def _curved():
     return pen.glyph()
 
 
+def _oncurve_less():
+    """A contour of nothing but off-curve points, on-curve points implied.
+
+    TrueType's compact spelling of a round shape, and what LXGW WenKai actually
+    ships — the same construction that makes `fontkit measure` raise (see
+    nix/families/sans.nix). `Qu2CuPen(all_cubic=True)` raises
+    `NotImplementedError` on it, which is how the first CI run of the OTF build
+    died. Every fixture in this suite was a rectangle or an on-curve-anchored
+    curve, so nothing caught it here first.
+    """
+    pen = TTGlyphPen(None)
+    pen.qCurveTo((100, 0), (500, 0), (500, 500), (100, 500), None)
+    pen.closePath()
+    return pen.glyph()
+
+
+def _with_stray_point():
+    """A square plus a one-point contour that draws nothing.
+
+    Built by hand because `TTGlyphPen` refuses to emit one — which is the point:
+    a font built by another tool can and does. LXGW WenKai's `uAF45` carries
+    exactly this, a lone point 24 units below anything that renders, and it is
+    inside the glyph's bounding box while being invisible in every rasteriser.
+    """
+    from array import array
+
+    from fontTools.ttLib.tables import ttProgram
+    from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphCoordinates
+
+    glyph = Glyph()
+    glyph.numberOfContours = 2
+    glyph.coordinates = GlyphCoordinates(
+        [(300, -124), (0, 0), (400, 0), (400, 400), (0, 400)]
+    )
+    glyph.endPtsOfContours = [0, 4]
+    glyph.flags = array("B", [1, 1, 1, 1, 1])
+    glyph.program = ttProgram.Program()
+    glyph.program.fromBytecode(b"")
+    return glyph
+
+
 def _boxed():
     pen = TTGlyphPen(None)
     pen.moveTo((0, 0))
@@ -47,10 +88,10 @@ def _boxed():
 @pytest.fixture
 def product(tmp_path):
     """A minimal but honest product: curves, a composite, a real name table."""
-    order = [".notdef", "A", "B", "Aacute"]
+    order = [".notdef", "A", "B", "Aacute", "O", "P"]
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(order)
-    fb.setupCharacterMap({0x41: "A", 0x42: "B", 0xC1: "Aacute"})
+    fb.setupCharacterMap({0x41: "A", 0x42: "B", 0xC1: "Aacute", 0x4F: "O", 0x50: "P"})
 
     curved = _curved()
     composite = TTGlyphPen({"A": curved})
@@ -61,6 +102,8 @@ def product(tmp_path):
             "A": curved,
             "B": _boxed(),
             "Aacute": composite.glyph(),
+            "O": _oncurve_less(),
+            "P": _with_stray_point(),
         }
     )
     fb.setupHorizontalMetrics({name: (500, 0) for name in order})
@@ -129,22 +172,26 @@ def test_otf_keeps_everything_a_format_change_must_not_move(product, tmp_path):
 
 
 def test_otf_outlines_stay_inside_the_qu2cu_tolerance(product, tmp_path):
-    """The conversion is lossy, and the tolerance is the whole contract."""
+    """The conversion is lossy, and the tolerance is the whole contract.
+
+    Measured on *ink* — `verify_formats._bounds`, the same measure the gate
+    uses. A raw bounding box also contains coordinates that draw nothing (see
+    `_with_stray_point`), and holding a curve fit responsible for a point no
+    rasteriser ever touches would be testing the wrong thing.
+    """
     convert.main(
         ["--format", "otf", "--max-err", "1.0", "--out-dir", str(tmp_path), str(product)]
     )
     source = TTFont(product)
     target = TTFont(tmp_path / "AKRTestSCNFM-Regular.otf")
     try:
-        src_set, dst_set = source.getGlyphSet(), target.getGlyphSet()
-        for name in source.getGlyphOrder():
-            before, after = BoundsPen(src_set), BoundsPen(dst_set)
-            src_set[name].draw(before)
-            dst_set[name].draw(after)
-            if before.bounds is None:
-                assert after.bounds is None
+        before, after = verify_formats._bounds(source), verify_formats._bounds(target)
+        for name, src_box in before.items():
+            dst_box = after[name]
+            if src_box is None:
+                assert dst_box is None, name
                 continue
-            drift = max(abs(a - b) for a, b in zip(before.bounds, after.bounds))
+            drift = max(abs(a - b) for a, b in zip(src_box, dst_box))
             assert drift <= 1.0 + verify_formats.BBOX_SLACK, name
     finally:
         source.close()
@@ -176,6 +223,63 @@ def test_the_composite_really_was_converted(product, tmp_path):
         assert any(op in program for op in ("rrcurveto", "hhcurveto", "hvcurveto", "vvcurveto"))
     finally:
         font.close()
+
+
+def test_an_oncurve_less_contour_converts(product, tmp_path):
+    """The regression the first CI run of this phase found.
+
+    A TrueType contour with no on-curve points at all is what
+    `Qu2CuPen(all_cubic=True)` refuses outright, and WenKai — the CJK donor of
+    the one family that ships an OTF — is full of them. The whole build died on
+    `NotImplementedError` after the merge had already run.
+
+    Asserted on the glyph rather than only on "the conversion did not raise", so
+    that a future change which silently drops the contour is a failure too.
+    """
+    convert.main(["--format", "otf", "--out-dir", str(tmp_path), str(product)])
+    source = TTFont(product)
+    target = TTFont(tmp_path / "AKRTestSCNFM-Regular.otf")
+    try:
+        before, after = BoundsPen(source.getGlyphSet()), BoundsPen(target.getGlyphSet())
+        source.getGlyphSet()["O"].draw(before)
+        target.getGlyphSet()["O"].draw(after)
+        assert after.bounds is not None
+        drift = max(abs(a - b) for a, b in zip(before.bounds, after.bounds))
+        assert drift <= 1.0 + verify_formats.BBOX_SLACK
+    finally:
+        source.close()
+        target.close()
+
+
+def test_a_contour_that_draws_nothing_is_dropped_and_counted(product, tmp_path, capsys):
+    """The second thing the first CI run of this phase would have hit.
+
+    A single-point contour is inside the TTF's bounding box and cannot exist in
+    a charstring, so the OTF's box is legitimately shallower. Both halves are
+    asserted: the conversion says out loud that it dropped something (no silent
+    truncation), and the gate — which measures ink on both sides — accepts the
+    result instead of reporting a 24-unit outline move.
+    """
+    convert.main(["--format", "otf", "--out-dir", str(tmp_path), str(product)])
+    assert "dropped 1 ink-less contour" in capsys.readouterr().out
+
+    source = TTFont(product)
+    target = TTFont(tmp_path / "AKRTestSCNFM-Regular.otf")
+    try:
+        raw = BoundsPen(source.getGlyphSet())
+        source.getGlyphSet()["P"].draw(raw)
+        # The stray point really is in the TTF's box…
+        assert raw.bounds[1] == -124
+        # …and really is not in the OTF's.
+        converted = BoundsPen(target.getGlyphSet())
+        target.getGlyphSet()["P"].draw(converted)
+        assert converted.bounds[1] == 0
+    finally:
+        source.close()
+        target.close()
+
+    # The gate compares ink, so this is not a failure.
+    assert verify_formats.main([str(tmp_path), str(product.parent)]) == 0
 
 
 def test_subroutinization_is_part_of_the_product(product, tmp_path):
