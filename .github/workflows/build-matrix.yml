@@ -154,6 +154,18 @@ jobs:
           # exactly what this layer is supposed to keep.
           nix develop --profile result-shell --command true
 
+      # Printed here as well as in each family job: this job runs even when a
+      # workflow_dispatch selects no families, and it is the one place the
+      # table is about the toolchain rather than about a build.
+      - name: Toolchain fingerprint
+        run: nix develop --command python3 tools/toolchain-fingerprint.py | tee toolchain-fingerprint.txt
+
+      - name: Upload toolchain fingerprint
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-fingerprint-${{ runner.os }}
+          path: toolchain-fingerprint.txt
+
       - name: Report layer size
         run: tools/cache-report.sh toolchain result-shell
 
@@ -239,6 +251,20 @@ jobs:
             done
             python3 -c "import fontTools; print(\"fontTools\", fontTools.version)"
           '
+
+      # The canonical platform's half of the table (KIT-297). `fontTools 4.60.1`
+      # on both sides was never enough to explain why a Mac build and this one
+      # disagree — this prints the things that actually decide it: whether the
+      # Cython accelerators are compiled, what the platform libm returns, and
+      # the digest of the two build steps that consume it.
+      #
+      # `just toolchain-fingerprint` prints the same table locally, so a
+      # maintainer can diff a laptop against this log. It costs about a second
+      # and is the first thing to read when a *new* cross-platform difference
+      # appears; the ones already known are written up in fingerprints/README.md.
+      - name: Toolchain fingerprint
+        if: steps.gate.outputs.run == 'true'
+        run: nix develop --command python3 tools/toolchain-fingerprint.py
 
       # All seven are derivations since KIT-280, so `just build` is a `nix build`
       # plus the copy into <family>/out that the fingerprint net reads.

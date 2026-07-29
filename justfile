@@ -155,6 +155,16 @@ verify-all:
 dump font:
     {{nix}} develop --command python3 tools/fingerprint.py dump {{font}}
 
+# The toolchain's own fingerprint — what a laptop and CI have to agree on.
+#
+# `just verify` failing off `x86_64-linux` is expected and explained
+# (fingerprints/README.md); this is the tool that explained it, and the one to
+# reach for when a *new* disagreement turns up. CI prints the same table in the
+# "Toolchain fingerprint" step of every family job, so diffing a local run
+# against a CI log names the thing that differs.
+toolchain-fingerprint:
+    @{{nix}} develop --command python3 tools/toolchain-fingerprint.py
+
 # Run the fontkit unit tests (seconds — no font build needed).
 test:
     {{nix}} develop --command env PYTHONPATH=lib python3 -m pytest lib/tests -q

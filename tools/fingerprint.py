@@ -40,6 +40,7 @@ import argparse
 import difflib
 import hashlib
 import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -342,6 +343,50 @@ def _dump_layout(font, tag, lines):
     feature_list = getattr(table, "FeatureList", None)
     features = feature_list.FeatureRecord if feature_list else []
 
+    lookups = getattr(table, "LookupList", None)
+    lookup_types = (
+        [lk.LookupType for lk in lookups.Lookup] if lookups else []
+    )
+
+    # A feature's identity is its tag *and* what it does. Sorting on the tag
+    # alone is not a total order — a font normally carries one `locl` per
+    # script — so ties used to be broken by the record's position in the
+    # FeatureList, which is not a property of the font: FontForge emits the
+    # same set of FeatureRecords in a different sequence on `x86_64-linux` and
+    # `aarch64-darwin`, with every LangSys FeatureIndex remapped to match
+    # (KIT-297). That is a permutation, not a difference, and it used to show
+    # up as two swapped `feature locl` lines in the diff.
+    #
+    # Including the lookup signature in the key makes the order a function of
+    # the font. Nothing is lost by it: which instance a LangSys selected is
+    # recorded on the `script` lines below, and recorded in *more* detail than
+    # before, so a genuine re-pointing still shows.
+    def _signature(record) -> str:
+        indices = list(record.Feature.LookupListIndex)
+        types = ",".join(
+            str(lookup_types[i]) for i in indices if i < len(lookup_types)
+        )
+        return f"{len(indices)}\t{types}"
+
+    # A short name for "which of the several `locl`s is this one". Inlining the
+    # whole signature on the script lines would say the same thing, but a
+    # `latn/dflt` line would run to two kilobytes and the baselines are meant to
+    # be read. The suffix is the rank of this feature's signature among the ones
+    # sharing its tag, so it is a function of the font rather than of the
+    # FeatureList order — and a tag carried by only one feature keeps its bare
+    # name, which is the overwhelmingly common case.
+    signatures: dict[str, list[str]] = {}
+    for record in features:
+        signatures.setdefault(record.FeatureTag, []).append(_signature(record))
+    ranked = {tag: sorted(set(sigs)) for tag, sigs in signatures.items()}
+
+    def _instance(record) -> str:
+        tag = record.FeatureTag
+        variants = ranked.get(tag, [])
+        if len(variants) < 2:
+            return tag
+        return f"{tag}#{variants.index(_signature(record)) + 1}"
+
     if script_list:
         for script in sorted(script_list.ScriptRecord, key=lambda s: s.ScriptTag):
             langs = [("dflt", script.Script.DefaultLangSys)] if script.Script.DefaultLangSys else []
@@ -350,8 +395,11 @@ def _dump_layout(font, tag, lines):
                 for r in getattr(script.Script, "LangSysRecord", [])
             ]
             for lang_tag, lang_sys in sorted(langs, key=lambda p: p[0]):
+                # `locl#2`, not the bare `locl` — a FeatureIndex is a position
+                # in a list whose order is not stable, so naming the tag alone
+                # cannot say which of two same-tag features this LangSys got.
                 tags = sorted(
-                    features[i].FeatureTag
+                    _instance(features[i])
                     for i in lang_sys.FeatureIndex
                     if i < len(features)
                 )
@@ -359,17 +407,9 @@ def _dump_layout(font, tag, lines):
                     f"script\t{script.ScriptTag}\t{lang_tag}\t" + ",".join(tags)
                 )
 
-    lookups = getattr(table, "LookupList", None)
-    lookup_types = (
-        [lk.LookupType for lk in lookups.Lookup] if lookups else []
-    )
-    for record in sorted(features, key=lambda r: r.FeatureTag):
-        indices = list(record.Feature.LookupListIndex)
-        types = ",".join(
-            str(lookup_types[i]) for i in indices if i < len(lookup_types)
-        )
+    for record in sorted(features, key=lambda r: (r.FeatureTag, _signature(r))):
         lines.append(
-            f"feature\t{record.FeatureTag}\t{len(indices)}\t{types}"
+            f"feature\t{_instance(record)}\t{_signature(record)}"
         )
     if lookups:
         lines.append(f"lookups\t{len(lookups.Lookup)}")
@@ -513,6 +553,47 @@ def write_family(repo_root: Path, family: str, out_dir: Path,
     return written
 
 
+CANONICAL_PLATFORM = ("Linux", "x86_64")
+
+# What a build off the canonical platform is *expected* to move, and why it is
+# not a regression. Measured in KIT-297 by running each step on both platforms
+# over the same inputs; see fingerprints/README.md for the numbers.
+#
+#   digest      FontForge redraws every icon it imports during the Nerd patch,
+#               and its scale/simplify pass is compiled C that rounds
+#               differently per architecture. 272 of 13797 glyphs moved in the
+#               measurement, all of them imported icons, none of them a glyph
+#               of the base font.
+#   maxPoints   the same thing, one level up: 156 of those 272 came out with a
+#               different number of points, and maxp records the largest.
+#   maxContours as above.
+PLATFORM_DRIFT_FIELDS = {"digest", "maxPoints", "maxContours"}
+
+
+def _platform_note(drifted_fields: set[str]) -> str | None:
+    """A sentence for the maintainer whose laptop is not `x86_64-linux`.
+
+    The point is not to excuse the failure — the baseline still belongs to CI
+    and the exit code is still 1. The point is that "CHANGED digest" on a Mac
+    used to read as *you broke something*, and for two years the honest answer
+    was nobody knows. Now it is known, bounded, and worth one line.
+    """
+    if (platform.system(), platform.machine()) == CANONICAL_PLATFORM:
+        return None
+    if not drifted_fields or not drifted_fields <= PLATFORM_DRIFT_FIELDS:
+        return None
+    return (
+        f"\nnote: this is {platform.system()}/{platform.machine()}, not "
+        f"{'/'.join(CANONICAL_PLATFORM)}, and every field that moved above "
+        f"({', '.join(sorted(drifted_fields))}) is one the Nerd patch is known "
+        "to move across architectures — FontForge redraws the icons it imports "
+        "and rounds them per host. Expected here; not evidence that you broke "
+        "anything. Judge a change by a CI run on the canonical platform, and "
+        "never adopt a baseline from this machine. Details and the measurement: "
+        "fingerprints/README.md."
+    )
+
+
 def check_family(repo_root: Path, family: str, baseline_dir: Path,
                  full: bool = False) -> int:
     if not (baseline_dir / "INDEX").exists():
@@ -531,6 +612,9 @@ def check_family(repo_root: Path, family: str, baseline_dir: Path,
 
         failed = False
         unbaselined = False
+        # Every field a known cross-platform source can move, and nothing else.
+        # See `_platform_note` for what "known" means here.
+        drifted_fields: set[str] = set()
         for name in sorted(baseline_files - current_files):
             print(f"MISSING  {name} — product disappeared from this build")
             failed = True
@@ -559,8 +643,14 @@ def check_family(repo_root: Path, family: str, baseline_dir: Path,
                 print("    " + line)
             if len(diff) > 200:
                 print(f"    … {len(diff) - 200} more diff lines suppressed")
+            for line in diff:
+                if line[:1] in "+-" and line[:3] not in ("+++", "---"):
+                    drifted_fields.add(line[1:].split("\t", 1)[0].strip())
 
         if failed:
+            note = _platform_note(drifted_fields)
+            if note:
+                print(note, file=sys.stderr)
             return 1
         if unbaselined:
             print(

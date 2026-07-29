@@ -121,6 +121,21 @@ Baselines live in `fingerprints/<family>/`, one `.fp` per product plus an
 `head.modified`; fontforge ignores it, which is why the net does not depend on
 byte reproducibility in the first place.
 
+### When a laptop and CI disagree
+
+`just toolchain-fingerprint` prints the table the two platforms have to agree
+on: whether fontTools' Cython accelerators are compiled, what the platform
+`libm` returns, and the digest of the two build steps that consume it. CI
+prints the same table in the *Toolchain fingerprint* step of the toolchain job
+and of every family job, so a local run diffs straight against a CI log.
+
+The differences that are already known — FontForge redrawing the icons it
+imports, and one ULP of `hypot` inside cu2qu — are measured and written up in
+[`../fingerprints/README.md`](../fingerprints/README.md). Read that before
+treating a `CHANGED digest` off `x86_64-linux` as a regression;
+`fingerprint.py check` will point at it too. Reach for the probe when something
+*not* on that list starts differing.
+
 ### Why they are committed as text
 
 They are build products, so the obvious move is to store them as binary and stop

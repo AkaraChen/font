@@ -13,7 +13,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from fontTools.pens.recordingPen import DecomposingRecordingPen
+from fontTools.pens.recordingPen import DecomposingRecordingPen, RecordingPen
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont
 import pathops
@@ -49,9 +49,47 @@ def embolden_path(path: pathops.Path, strength: float) -> pathops.Path:
     return result
 
 
+def _contours(recorded: list) -> list[list]:
+    """Split a recorded pen stream into one list of commands per contour."""
+    contours: list[list] = []
+    for command in recorded:
+        if command[0] == "moveTo" or not contours:
+            contours.append([])
+        contours[-1].append(command)
+    return contours
+
+
 def path_to_glyph(path: pathops.Path):
+    """Draw a resolved path into a glyph, with the contours in a fixed order.
+
+    The sort is the reason `just verify` can pass off the canonical platform
+    (KIT-297). skia-pathops' `OpBuilder.resolve` does not promise an emission
+    order for the contours it produces, and it does not deliver one either:
+    the same input, the same strength and the same pinned Skia give
+    `x86_64-linux` and `aarch64-darwin` byte-identical *contours* in a
+    different sequence. Measured on `LXGWWenKai-Medium` at strength 5, one
+    glyph in 3265 came out permuted — `uni2FF3`, 30 contours, numbers 12 and
+    13 swapped, every coordinate equal as a set.
+
+    Contour order carries no meaning in `glyf`: TrueType fills with the
+    non-zero winding rule, so a renderer sees the same shape whatever the
+    sequence. Only the digest sees it — which is exactly why sorting is a
+    determinism fix and not a change of design.
+
+    The key is the contour's own points, so it is a total order over anything
+    that can differ, and stable for genuinely identical contours. Sorting the
+    commands *within* a contour would rotate its start point and reverse its
+    direction, so that is never done: each contour's stream is replayed as it
+    came.
+    """
+    recorded = RecordingPen()
+    path.draw(recorded)
+    contours = _contours(recorded.value)
+    contours.sort(key=lambda commands: repr(commands))
     pen = TTGlyphPen(None)
-    path.draw(pen)
+    for commands in contours:
+        for operator, operands in commands:
+            getattr(pen, operator)(*operands)
     return pen.glyph()
 
 
