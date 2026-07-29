@@ -1,4 +1,10 @@
-"""Cache-key projections must ignore pure metadata bumps (KIT-304)."""
+"""Cache-key projections must ignore pure metadata bumps (KIT-304).
+
+The tools live under repo-level `tools/`. The fontkit package src (nix/fontkit.nix)
+only ships `lib/` + the seven `font.toml` fixtures, so these tests skip when the
+tools are not on disk — package checkPhase — and run under a full checkout
+(`nix develop --command pytest lib/tests`).
+"""
 
 from __future__ import annotations
 
@@ -11,6 +17,12 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / "tools"
+
+if not (TOOLS / "sources-cache-key.py").is_file():
+    pytest.skip(
+        "tools/ not in this tree (fontkit package src) — cache-key tests need a full checkout",
+        allow_module_level=True,
+    )
 
 
 def _load(name: str):
@@ -31,7 +43,7 @@ def _digest(body: str) -> str:
     return hashlib.sha256(body.encode()).hexdigest()
 
 
-def test_sources_key_stable_on_version_bump(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_sources_key_stable_on_version_bump(tmp_path: Path):
     # Minimal repo: one family + the fetcher files the projection hashes.
     fam = tmp_path / "demo"
     fam.mkdir()
@@ -92,8 +104,10 @@ sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 
 def test_intermediates_key_stable_on_version_bump():
-    # Against the real repo: renaming version in a copy would be heavy; instead
-    # assert the live projection omits naming and includes the sarasa pin.
+    # Against the real repo: assert the live projection omits naming and
+    # includes the sarasa pin. Needs flake.lock / nix/ — full checkout only.
+    if not (ROOT / "flake.lock").is_file():
+        pytest.skip("full repo tree required for intermediates key projection")
     body = intermediates_key.projection(ROOT)
     assert "naming.version" not in body
     assert "naming.house" not in body

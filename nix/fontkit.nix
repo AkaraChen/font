@@ -59,6 +59,10 @@ buildPythonPackage {
   nativeCheckInputs = [ pytestCheckHook ];
   # tests/ lives next to the package; font.toml fixtures are one directory up.
   pytestFlagsArray = [ "tests" ];
+  # test_cache_keys.py loads repo-level tools/sources-cache-key.py etc., which
+  # are not in this package's fileset (only lib/ + font.toml). Full-checkout
+  # `pytest lib/tests` still runs them; package checkPhase must not.
+  disabledTestPaths = [ "tests/test_cache_keys.py" ];
 
   pythonImportsCheck = [
     "fontkit"
