@@ -46,7 +46,7 @@ serve **reading**? The first kind is switched off for `text`; the second kind is
 | upstream hinting | dropped | kept |
 | line box | terminal-tight (gap 0) | typographic (gap 200, 1.30 em) |
 | **CJK↔Latin optical stroke match** | **yes** | **yes** |
-| formats | `ttf` | `ttf` `woff2` |
+| formats | `ttf` `woff2` | `ttf` `woff2` **`otf`** |
 
 Two of those are worth spelling out, because they are where a shared implementation would
 have been wrong:
@@ -284,8 +284,8 @@ rasterises glyph outlines with FreeType.
 ## Release package
 
 ```bash
-just release handwriting          # → dist/AKRHandSCNFM-0.1.0.zip
-nix build .#handwriting-text-release   # → dist/AKRHandSCText-0.1.0.zip
+just release handwriting coding sc   # → AKRHandSCNFM-0.1.0.zip
+just release handwriting text sc     # → AKRHandSCText-0.1.0.zip
 ```
 
 Two profiles are two archives. They have different family names, different weight sets and

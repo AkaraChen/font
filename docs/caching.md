@@ -182,6 +182,15 @@ This is the single most important line in the workflow. Seven family jobs each
 writing its own multi-gigabyte store snapshot would exhaust the repository
 budget on one push and evict the layers that pay for themselves.
 
+**The release workflow restores too, and also saves nothing** (Phase 8,
+KIT-283). `release.yml` builds the family from source, so it wants both layers
+and takes them with the same keys and the same `CACHE_EPOCH` as `build-matrix.yml`
+— the two must be bumped together or the release run silently misses. It does
+not write a layer of its own: a release is rare and a push is not, so the right
+thing for it to do is ride the layers a push already paid for rather than evict
+them to save one that will be seven days stale before the next release. A cold
+release simply takes longer, which is the correct trade for the rarer event.
+
 ### What is deliberately not cached
 
 **The products layer.** Phase 1 deferred this because the families built into

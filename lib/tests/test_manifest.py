@@ -83,8 +83,12 @@ def test_missing_artifact_sha256_fails_at_parse_time() -> None:
 @pytest.mark.parametrize(
     # `hk`, not `tc`: sans builds Simplified, Traditional, Japanese and Korean
     # since KIT-282, and Plex has no Hong Kong master to build a fifth from.
+    #
+    # `otf`, not `woff2`: every family ships WOFF2 since KIT-283, so it is a
+    # declared format now. `otf` is the one only handwriting's text profile
+    # declares.
     ("axis", "value"),
-    (("regions", "hk"), ("weights", "light"), ("formats", "woff2")),
+    (("regions", "hk"), ("weights", "light"), ("formats", "otf")),
 )
 def test_matrix_cannot_reference_undeclared_axis(axis: str, value: str) -> None:
     data = raw()

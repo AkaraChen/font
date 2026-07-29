@@ -155,7 +155,7 @@ python3 scripts/render-sample.py \
 ### Release package
 
 ```bash
-just release sans
+just release sans coding sc
 # → dist/AKRSansSCNFM-0.1.0.zip
 ```
 

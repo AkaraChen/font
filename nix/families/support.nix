@@ -141,6 +141,42 @@ let
   # changed, which is the cache key mistake nix/granularity.nix exists to stop.
   file = path: root + "/${path}";
 
+  # --- the format axis (KIT-283) --------------------------------------------
+  #
+  # `packaged` is the only step in the granularity contract with a `format`
+  # axis, and this is every family's use of it: hand over the TTF this cell
+  # built and the format its `[[build.matrix]]` row declared, get back a
+  # derivation holding exactly that one file.
+  #
+  # Per weight, not per cell. A derivation that converted three weights at once
+  # would have to name one of them, and `packaged-handwriting-text-sc-Light-otf`
+  # holding a Bold as well is the kind of graph nobody can bisect — the same
+  # reason `merged` is per weight rather than per family.
+  #
+  # WOFF2 costs almost nothing here (a Brotli re-wrap of tables that already
+  # exist) and OTF costs a qu2cu conversion of every glyph. That difference is
+  # real, and it is visible in exactly the right place: two different derivations
+  # with two different build times, rather than one step with a flag.
+  convert =
+    { family
+    , profile
+    , region
+    , weight
+    , format
+    , src
+    }:
+    step "packaged" { inherit family profile region weight format; } {
+      buildCommand = ''
+        mkdir -p $out
+        fontkit convert --format ${format} --out-dir $out ${src}/*.ttf
+      '';
+    };
+
+  # What a cell declares beyond the TTF the build already produced. `ttf` is not
+  # a conversion — it is what came out of `merged` / `nerd` — so a family that
+  # declares `formats = ["ttf"]` gets no extra derivations at all.
+  extraFormats = formats: lib.filter (f: f != "ttf") formats;
+
 in
 {
   inherit
@@ -155,6 +191,8 @@ in
     weightName
     namingFor
     cellsOf
+    convert
+    extraFormats
     ;
 
   inherit (pkgs) fontforge;

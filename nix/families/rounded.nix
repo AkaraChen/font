@@ -98,10 +98,30 @@ let
     '';
   };
 
+  # --- packaged -------------------------------------------------------------
+  # The formats this cell declares beyond the TTF the Nerd step produced
+  # (KIT-283). Each conversion is its own `packaged` derivation, per weight and
+  # per format, and lands beside the TTF it was made from — tools/fingerprint.py
+  # names a product by its path relative to `out`, so moving one would rename
+  # its baseline entry.
+  declaredFormats = (lib.head (support.cellsOf m)).formats;
+  formats = support.extraFormats declaredFormats;
+  converted = weight: format: support.convert {
+    inherit family profile region weight format;
+    src = nerd weight;
+  };
+  copyFormats = weight: dest:
+    lib.concatMapStringsSep "\n"
+      (format: "cp ${converted weight format}/*.${format} ${dest}")
+      formats;
+
   out = pkgs.runCommand "rounded-out" { } ''
     mkdir -p $out/nerd
     ${lib.concatMapStringsSep "\n" (w: "cp ${merged w}/*.ttf $out/") weights}
-    ${lib.concatMapStringsSep "\n" (w: "cp ${nerd w}/*.ttf $out/nerd/") weights}
+    ${lib.concatMapStringsSep "\n" (w: ''
+      cp ${nerd w}/*.ttf $out/nerd/
+      ${copyFormats w "$out/nerd/"}
+    '') weights}
     cp ${file "rounded/licenses"}/OFL-Iosevka.txt \
        ${file "rounded/licenses"}/OFL-Resource-Han-Rounded.txt $out/
   '';
@@ -113,6 +133,8 @@ let
     ''
       fontkit verify-2to1 \
         --expect-half ${toString grid.en_adv} --check-nerd --check-eaw ${out}/nerd/${ps}-*.ttf
+      # Every converted format against the TTF it was made from (KIT-283).
+      fontkit verify-formats ${out}
       touch $out
     '';
 
@@ -154,17 +176,24 @@ in
         { name = "cjk-prepared-${weight}"; value = cjkPrepared weight; }
         { name = "merged-${weight}"; value = merged weight; }
         { name = "nerd-${weight}"; value = nerd weight; }
-      ])
+      ]
+      ++ map
+        (format: { name = "packaged-${weight}-${format}"; value = converted weight format; })
+        formats)
       weights
   );
 
   release = {
     inherit family profile region readme verify;
+    formats = declaredFormats;
     weight = "Regular";
     stem = ps;
     fontDir = pkgs.runCommand "rounded-release-fonts" { } ''
       mkdir -p $out
-      ${lib.concatMapStringsSep "\n" (w: "cp ${nerd w}/*.ttf $out/") weights}
+      ${lib.concatMapStringsSep "\n" (w: ''
+        cp ${nerd w}/*.ttf $out/
+        ${copyFormats w "$out/"}
+      '') weights}
     '';
     licenseDir = file "rounded/licenses";
   };

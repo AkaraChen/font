@@ -135,13 +135,32 @@ let
     '';
   };
 
+  # --- packaged -------------------------------------------------------------
+  # The formats a cell declares beyond the TTF the Nerd step produced
+  # (KIT-283). Every region declares the same list — a format is a property of
+  # the scene, not of the script — but it is read per cell rather than assumed,
+  # because `[[build.matrix]]` is allowed to disagree with that.
+  declaredFormats = (lib.head cells).formats;
+  formats = support.extraFormats declaredFormats;
+  converted = region: weight: format: support.convert {
+    inherit family profile region weight format;
+    src = nerd region weight;
+  };
+  copyFormats = region: weight: dest:
+    lib.concatMapStringsSep "\n"
+      (format: "cp ${converted region weight format}/*.${format} ${dest}")
+      formats;
+
   # One region's products, in the layout `<family>/out` has always had. Product
   # stems carry the region (`AKRSansTCNFM-Bold.ttf`), so four of these unpack
   # into one directory without colliding.
   cellOut = region: pkgs.runCommand "sans-${profile}-${region}" { } ''
     mkdir -p $out/nerd
     ${lib.concatMapStringsSep "\n" (w: "cp ${merged region w}/*.ttf $out/") weights}
-    ${lib.concatMapStringsSep "\n" (w: "cp ${nerd region w}/*.ttf $out/nerd/") weights}
+    ${lib.concatMapStringsSep "\n" (w: ''
+      cp ${nerd region w}/*.ttf $out/nerd/
+      ${copyFormats region w "$out/nerd/"}
+    '') weights}
   '';
 
   out = pkgs.runCommand "sans-out" { } ''
@@ -179,6 +198,9 @@ let
         echo "==> $(basename "$font")"
         fontkit measure --font "$font" | tail -20 || true
       done
+
+      # Every converted format against the TTF it was made from (KIT-283).
+      fontkit verify-formats ${out}
       touch $out
     '';
 
@@ -211,12 +233,16 @@ let
 
   releaseFor = region: {
     inherit family profile region verify;
+    formats = declaredFormats;
     readme = readme region;
     weight = "Regular";
     stem = (naming region).ps;
     fontDir = pkgs.runCommand "sans-${region}-release-fonts" { } ''
       mkdir -p $out
-      ${lib.concatMapStringsSep "\n" (w: "cp ${nerd region w}/*.ttf $out/") weights}
+      ${lib.concatMapStringsSep "\n" (w: ''
+        cp ${nerd region w}/*.ttf $out/
+        ${copyFormats region w "$out/"}
+      '') weights}
     '';
     licenseDir = file "sans/licenses";
   };
@@ -239,7 +265,13 @@ in
           { name = "cjk-prepared${tag region}-${weight}"; value = cjkPrepared region weight; }
           { name = "merged${tag region}-${weight}"; value = merged region weight; }
           { name = "nerd${tag region}-${weight}"; value = nerd region weight; }
-        ])
+        ]
+        ++ map
+          (format: {
+            name = "packaged${tag region}-${weight}-${format}";
+            value = converted region weight format;
+          })
+          formats)
         weights)
       regions
   );

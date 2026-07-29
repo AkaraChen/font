@@ -79,7 +79,6 @@ let
           );
       # An archive ships every format its matrix entry declares, so the `format`
       # axis names them all rather than naming one and quietly shipping two.
-      # Six families declare only `ttf` and their derivation names do not move.
       formats = rel.formats or [ "ttf" ];
       globs = lib.concatMapStringsSep " " (f: "${rel.fontDir}/*.${f}") formats;
     in
@@ -145,26 +144,43 @@ in
     )
   );
 
-  # `nix build .#sans-release`           → the zip a GitHub Release ships.
-  # `nix build .#handwriting-text-release` → a second profile's zip.
+  # `nix build .#sans-coding-sc-release`      → the zip a GitHub Release ships.
+  # `nix build .#handwriting-text-sc-release` → a second profile's zip.
+  # `nix build .#sans-release`                → alias for the family's first cell.
   #
   # Two profiles are two products, so they are two archives: they have different
   # family names, different weight sets and different formats, and a reader
-  # downloading a reading face should not also get 4000 Nerd icons.
-  releases =
-    lib.mapAttrs'
-      (family: fam: lib.nameValuePair "${family}-release" (packaged family fam.release))
-      built
-    // lib.listToAttrs (
-      lib.concatLists (
-        lib.mapAttrsToList
-          (family: fam:
-            lib.mapAttrsToList
-              (name: rel: lib.nameValuePair "${family}-${name}-release" (packaged family rel))
-              (fam.extraReleases or { }))
-          built
-      )
-    );
+  # downloading a reading face should not also get 4000 Nerd icons. Four regions
+  # are four products for the same reason.
+  #
+  # Phase 8 (KIT-283) regularised the names. They used to be positional —
+  # `<family>-release` meant "the first region of the first profile",
+  # `<family>-<region>-release` meant the others, and `handwriting-text-release`
+  # meant a profile — so `.#pixel-jp-release` and `.#handwriting-text-release`
+  # named different axes with the same syntax and a generic release workflow
+  # could not construct either. Every archive is now
+  # `<family>-<profile>-<region>-release`, which is a matrix row spelled out, and
+  # `just matrix` prints exactly the rows that exist.
+  #
+  # `<family>-release` stays as an alias for the family's first cell, because it
+  # is what `just release <family>` and every existing note point at.
+  releases = lib.listToAttrs (
+    lib.concatLists (
+      lib.mapAttrsToList
+        (family: fam:
+          let cells = [ fam.release ] ++ lib.attrValues (fam.extraReleases or { }); in
+          map
+            (rel: lib.nameValuePair
+              "${family}-${rel.profile}-${rel.region}-release"
+              (packaged family rel))
+            cells
+          ++ [
+            (lib.nameValuePair "${family}-release"
+              (packaged family (lib.head cells)))
+          ])
+        built
+    )
+  );
 
   # `nix build .#sans-merged-Bold` → one step, for bisecting a fingerprint diff
   # or feeding a calibration run.

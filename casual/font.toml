@@ -5,14 +5,14 @@ family = "casual"
 profiles = ["coding"]
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [sources.recursive]
@@ -70,6 +70,10 @@ style = "Casual"
 variant = "Dual"
 rfn_note = "Recursive and Yozai are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 version = "0.1.0"
+
+# Pre-rename name; see docs/naming-migration.md.
+[naming.former]
+sc = "RecursiveYozai Dual"
 
 [merge]
 version = "0.1.0"

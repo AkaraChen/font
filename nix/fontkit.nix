@@ -14,6 +14,7 @@
 , pydantic
 , skia-pathops
 , brotli
+, cffsubr
 , pytestCheckHook
 }:
 
@@ -48,6 +49,11 @@ buildPythonPackage {
     # step: the narrow build interpreter (nix/families/support.nix) has to be
     # able to run it without reaching for the devShell's wider set.
     brotli
+    # …and the OTF conversion subroutinizes the CFF through AFDKO's `tx`, which
+    # is what cffsubr wraps. A hard dependency rather than a soft import: an
+    # un-subroutinized CFF is a different file with a different fingerprint, so
+    # "whether tx was on PATH" must not be an input to the build (KIT-283).
+    cffsubr
   ];
 
   nativeCheckInputs = [ pytestCheckHook ];
@@ -69,7 +75,9 @@ buildPythonPackage {
     "fontkit.rename_nerd_family"
     "fontkit.verify2to1"
     "fontkit.verify_text"
+    "fontkit.verify_formats"
     "fontkit.convert"
+    "fontkit.release_notes"
     "fontkit.embolden"
     "fontkit.measure"
     "fontkit.manifest"

@@ -91,6 +91,20 @@ let
     '';
   };
 
+  # --- packaged -------------------------------------------------------------
+  # The formats a cell declares beyond the TTF the Nerd step produced
+  # (KIT-283). pixel is single-weight, so this is one conversion per region.
+  declaredFormats = (lib.head (support.cellsOf m)).formats;
+  formats = support.extraFormats declaredFormats;
+  converted = region: format: support.convert {
+    inherit family profile region weight format;
+    src = nerd region;
+  };
+  copyFormats = region: dest:
+    lib.concatMapStringsSep "\n"
+      (format: "cp ${converted region format}/*.${format} ${dest}")
+      formats;
+
   # --- out tree -------------------------------------------------------------
   # The same layout the shell build left in pixel/out, because that is what the
   # fingerprint baselines are keyed on (tools/fingerprint.py walks it and names
@@ -99,6 +113,7 @@ let
     mkdir -p $out/nerd
     cp ${merged region}/*.ttf $out/
     cp ${nerd region}/*.ttf $out/nerd/
+    ${copyFormats region "$out/nerd/"}
   '';
 
   out = pkgs.runCommand "pixel-out" { } ''
@@ -125,6 +140,9 @@ let
           --check-eaw \
           ${nerd region}/*.ttf
       '') regions}
+
+      # Every converted format against the TTF it was made from (KIT-283).
+      fontkit verify-formats ${out}
       touch $out
     '';
 
@@ -154,9 +172,14 @@ let
 
   releaseFor = region: {
     inherit family profile region weight verify;
+    formats = declaredFormats;
     readme = readme region;
     stem = (naming region).ps;
-    fontDir = nerd region;
+    fontDir = pkgs.runCommand "pixel-${region}-release-fonts" { } ''
+      mkdir -p $out
+      cp ${nerd region}/*.ttf $out/
+      ${copyFormats region "$out/"}
+    '';
     licenseDir = file "pixel/licenses";
   };
 
@@ -177,7 +200,13 @@ in
         { name = "src-cjk${tag region}"; value = src region; }
         { name = "merged${tag region}"; value = merged region; }
         { name = "nerd${tag region}"; value = nerd region; }
-      ])
+      ]
+      ++ map
+        (format: {
+          name = "packaged${tag region}-${format}";
+          value = converted region format;
+        })
+        formats)
       regions
   );
 

@@ -1,7 +1,13 @@
 # Migrating to the AKR family names
 
-**This is a breaking change with no in-font compatibility alias.** Paste it into
-the release notes of the first tag that ships the renamed products.
+**This is a breaking change with no in-font compatibility alias.**
+
+Since Phase 8 (KIT-283) the release notes carry this automatically: each
+family's `[naming.former]` table records what that cell shipped as before the
+rename, and `fontkit release-notes` emits the migration section for a product
+that really had a predecessor — and a "this one is new" line for `TC` / `JP` /
+`KR`, which never existed under another name. The table below is the source it
+was transcribed from and the long-form explanation.
 
 Every family was renamed in one go (KIT-282). An editor, terminal or CSS rule
 configured with an old family name will not find the new font — it will silently

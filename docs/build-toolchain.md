@@ -19,7 +19,9 @@ just matrix           # every (family, profile, region) cell (Phase 7)
 just build sans       # nix build .#sans, materialised into sans/out
 just build sans coding tc   # one matrix cell, into sans/out-coding-tc
 just gate sans        # the family's own 2:1 / EAW / Nerd / feature gate
-just release sans     # the release zip (depends on the gate passing)
+just release sans     # the release zip for the family's first cell (gated)
+just release sans coding tc  # one cell's zip: .#sans-coding-tc-release
+just notes sans coding tc    # the release notes that archive ships with
 just verify sans      # diff the products against the committed fingerprints
 just fingerprint sans # rewrite the baseline (only when a change is intended)
 just steps sans       # the build steps this family has
@@ -464,9 +466,16 @@ merged.
 reason. It is not the same as a value nobody has built yet — `[[build.matrix]]`
 already says what is built. serif, typewriter and pixel declare that `light` is
 impossible (single CJK masters thickened with pathops; stroke embolden has no
-negative strength), and handwriting declares that `otf` is (the products are
-quadratic by construction). `nix/checks.nix` refuses a declaration without a
-reason, and refuses one that disowns a value the family also builds.
+negative strength), sans and pixel that `hk` is, and pixel that a `text` profile
+is. `nix/checks.nix` refuses a declaration without a reason, and refuses one
+that disowns a value the family also builds.
+
+handwriting used to declare `otf` here too. Phase 8 (KIT-283) removed that
+declaration and built the OTF instead — see
+[The format axis](#the-format-axis-phase-8-kit-283). The old entry was right
+about the mechanics and wrong about the conclusion, which is the one case where
+deleting an `unsupported` entry is correct rather than a loophole: the value
+moved into `[[build.matrix]]`, so it is now built rather than merely undeclared.
 
 ### The region axis, and why it is nearly free (Phase 7, KIT-282)
 
@@ -525,6 +534,92 @@ Two things the rename fixed at the same time:
 The 31-character Windows budget is therefore a property of the longest *product*
 name a cell can produce (family + `Light`), not of the family name, and is
 checked there.
+
+## The format axis (Phase 8, KIT-283)
+
+`packaged` is the only step in `nix/granularity.nix` with a `format` axis, and
+until this phase it had one value everywhere except handwriting's text profile.
+The defaults now are:
+
+| profile | formats | why |
+| --- | --- | --- |
+| `coding` | `ttf`, `woff2` | a terminal face is hinted and lives in an editor |
+| `text` | `ttf`, `woff2`, `otf` | a reading face also gets set in print and placed in design tools |
+
+Each family can override its own row in `[[build.matrix]]`; `just matrix` prints
+what every cell actually declares.
+
+**The two formats are not comparable operations, and the build says so by
+costing differently.**
+
+* **WOFF2 is a container.** `fontTools.ttLib.woff2` re-encodes the same `glyf`
+  table with Brotli. No re-rasterising, no re-hinting, no subsetting — the WOFF2
+  and its TTF are the same font. `fontkit verify-formats` proves it per product
+  rather than asserting it: every glyph's compiled `glyf` record, plus `hmtx`
+  and `cmap`, must be **byte-identical** to the source TTF's, and a family's
+  gate fails if one is not.
+* **OTF is a conversion.** OTF means CFF means cubic Béziers, and this pipeline
+  is quadratic end to end (TrueType CJK donors; `prepare_latin.py` runs cu2qu on
+  Monaspace's cubics precisely because one `glyf` cannot hold both). Going back
+  is `qu2cu`, and it costs three things: the outlines move (within
+  `--max-err`, 1 font unit), TrueType hinting is dropped (`fpgm` / `prep` /
+  `cvt ` / per-glyph instructions have nowhere to live in CFF), and contours
+  reverse. The CFF is then subroutinized through AFDKO's `tx` (`cffsubr`, a hard
+  dependency of `fontkit` — an un-subroutinized CFF is a different file with a
+  different fingerprint, so "was `tx` on PATH" must not be a build input).
+
+Which is why **the OTF carries its own fingerprint baseline**. `tools/fingerprint.py`
+already dumps CFF charstrings and already picks up `.otf` under `<family>/out`,
+so an OTF product simply appears as its own `.fp` entry — a new product with no
+baseline, which is the `NEW` / exit **3** path `fingerprints/README.md`
+describes. Diffing it against the TTF's baseline would be comparing two
+different curve representations and would go red for being correct.
+
+`.woff2` deliberately has no baseline: it is bytes-equal to the TTF by
+construction and gated as such, so a second baseline would be a second copy of
+the same fact.
+
+## Releases (Phase 8, KIT-283)
+
+`.github/workflows/release-nfm.yml` is gone. It was serif-only and — the part
+that mattered — it did not build anything: it downloaded the *previous tag's*
+TTFs, post-processed them and published the result, so a release was a function
+of the last release rather than of the repository.
+
+`.github/workflows/release.yml` replaces it for all seven families:
+
+```
+nix build .#<family>-<profile>-<region>-release
+```
+
+Every archive is named for its matrix row. `<family>-release` survives as an
+alias for the family's first cell; the old positional names
+(`<family>-<region>-release`, `handwriting-text-release`) are gone, because
+`.#pixel-jp-release` and `.#handwriting-text-release` named two different axes
+with the same syntax and a generic workflow could construct neither.
+
+Like every other font build, this one is Linux only
+([above](#fonts-are-built-on-linux-kit-297)): the workflow runs on
+`ubuntu-latest`, and `just release` off Linux refuses with the reason rather
+than producing an archive of a font that is not the one that ships. `just notes`
+is not restricted — it reads `font.toml` and writes markdown.
+
+Three properties are worth stating:
+
+* **The version lives in `font.toml`.** The workflow's `version` input is what
+  the run *expects*; the job fails if `[naming] version` disagrees. The version
+  is stamped into name ID 5 and into the archive name at build time, so an input
+  that could override it would let `-0.2.0.zip` contain fonts that say `0.1.0`.
+* **Release notes are generated** by `fontkit release-notes` from the same
+  manifest the build read: pins, grid, weights, formats, what each format
+  actually is, the source composition (after the rename this is where donor
+  attribution lives), and the rename migration note — emitted only for a cell
+  that really did ship under an old name, which `[naming.former]` records per
+  region.
+* **Filters do not truncate silently.** `weights` / `formats` narrow which loose
+  files are attached; when they narrow anything the `.zip` is *not* published
+  and the run says why, because a zip missing a weight installs as a family with
+  a hole in it.
 
 ### The coupling that stopped being possible
 
@@ -588,9 +683,11 @@ inside it would stop anyone running it.
 `.github/workflows/build-matrix.yml` runs the fontkit unit tests first — the
 shared steps are the one thing that can break all seven families at once, and a
 three-hour font build is not a feedback loop for that — then builds all seven
-families from source on every push and PR. Before this, `release-nfm.yml` was the only workflow: serif
-only, and it does not build from source — it downloads the previous tag's
-products and post-processes them. Six families had no automated verification.
+families from source on every push and PR. Before this, `release-nfm.yml` was
+the only workflow: serif only, and it did not build from source — it downloaded
+the previous tag's products and post-processed them. Six families had no
+automated verification. That workflow is deleted (Phase 8); `release.yml` builds
+what it publishes.
 
 Per-step wall-clock used to be collected by `tools/build-family.sh` into a TSV
 and summarised in a job. That job is gone: `nix build -L` prints per-derivation

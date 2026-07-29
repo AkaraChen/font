@@ -11,6 +11,8 @@
 #   just matrix                 → every cell every family declares
 #   just fingerprint sans       → (re)write sans' regression baseline
 #   just verify sans            → compare a fresh build against the baseline
+#   just release sans coding tc → build one cell's release archive
+#   just notes sans coding tc   → the release notes that archive ships with
 #   just test                   → fontkit unit tests (lib/tests), no font build
 
 set shell := ["bash", "-uc"]
@@ -143,10 +145,56 @@ steps family:
 gate family: (_linux-only "gate")
     {{nix}} build --no-link --print-build-logs .#{{family}}-verify
 
-# Build the release archive (gated: it depends on `gate`).
-release family: (_linux-only "release")
-    {{nix}} build --out-link result-{{family}}-release .#{{family}}-release
-    @ls -lL result-{{family}}-release/
+# Build a release archive (gated: it depends on `gate`).
+#
+# One archive per (profile, region) cell, named the way `just matrix` prints the
+# cell (KIT-283):
+#
+#   just release sans                 → .#sans-release, the first cell
+#   just release sans coding tc       → .#sans-coding-tc-release
+#   just release handwriting text sc  → the reading face's archive
+#
+# The zip's version comes from `[naming] version` in font.toml, not from a flag:
+# it is stamped into name ID 5 at build time, and a filename that could disagree
+# with the font's own idea of its version is a bug waiting to be filed.
+#
+# Linux-only for the same reason `build` is (KIT-297): an archive is the product,
+# and a darwin-built product is not the one that ships.
+release family profile="" region="": (_linux-only "release")
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -n "{{profile}}" || -n "{{region}}" ]]; then
+      if [[ -z "{{profile}}" || -z "{{region}}" ]]; then
+        echo "just release <family> [<profile> <region>] — pass both or neither" >&2
+        exit 2
+      fi
+      attr="{{family}}-{{profile}}-{{region}}-release"
+    else
+      attr="{{family}}-release"
+    fi
+    {{nix}} build --out-link result-{{family}}-release ".#$attr"
+    ls -lL result-{{family}}-release/
+
+# Render one cell's release notes from font.toml — pins, grid, weights, formats,
+# source composition and the rename migration note. This is what the Release
+# workflow publishes; run it locally to read the notes before tagging.
+#
+# Deliberately *not* Linux-only: it reads font.toml and writes markdown. Nothing
+# it produces is a shipped byte, so it belongs with `just test` / `dump` / `fmt`
+# on the list of things a Mac can still do (KIT-297).
+notes family profile="coding" region="sc" version="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    version="{{version}}"
+    if [[ -z "$version" ]]; then
+      version=$({{nix}} develop --command python3 -c "
+    import tomllib
+    with open('{{family}}/font.toml','rb') as fh:
+        print(tomllib.load(fh)['naming'].get('version','0.1.0'))")
+    fi
+    {{nix}} develop --command fontkit release-notes \
+      --manifest {{family}}/font.toml --profile {{profile}} \
+      --region {{region}} --version "$version"
 
 # Build every family, sequentially. Keeps going so one failure does not hide the rest.
 build-all: (_linux-only "build-all")

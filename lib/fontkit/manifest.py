@@ -109,6 +109,7 @@ class NamingOverride(StrictModel):
     variant: str | None = None
     base_variant: str | None = None
     product_name_zh: str | None = None
+    former: dict[Region, str] | None = None
 
 
 class Naming(StrictModel):
@@ -135,6 +136,17 @@ class Naming(StrictModel):
     # `[naming.text]` — the coding profile is the base and has no override.
     text: NamingOverride | None = None
 
+    # `[naming.former]` — the name this cell's product shipped under before the
+    # AKR rename (KIT-282), keyed by region.
+    #
+    # Keyed rather than a single string because the rename is not a property of
+    # the family: only `sc` had ever shipped, so `AKR Sans TC NFM` has no
+    # predecessor and its release notes must not invent one. A region that is
+    # absent here is a product that is genuinely new, which is a different
+    # sentence from "renamed" and the reader needs the right one
+    # (fontkit.release_notes).
+    former: dict[Region, str] = Field(default_factory=dict)
+
 
 class ResolvedNaming(StrictModel):
     """One (profile, region) cell's names, composed from the segments.
@@ -152,6 +164,12 @@ class ResolvedNaming(StrictModel):
     base_variant: str | None = None
     version: str = "0.1.0"
     product_name_zh: str | None = None
+    former: dict[Region, str] = Field(default_factory=dict)
+
+    @property
+    def former_family(self) -> str | None:
+        """What this exact product was called before the rename, if it existed."""
+        return self.former.get(self.region)
 
     @property
     def family(self) -> str:

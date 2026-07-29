@@ -288,7 +288,7 @@ in
               (r:
                 let n = families.support.namingFor m entry.profile r;
                 in map (w: productName n.family w) entry.weights
-                ++ lib.optional (n.base_family != null) n.base_family)
+                  ++ lib.optional (n.base_family != null) n.base_family)
               entry.regions)
             m.build.matrix)
         sources.families;
@@ -363,6 +363,72 @@ in
       region = "sc";
       weight = "Light";
     })) "src-latin accepted a region axis — five regions would fetch five copies";
+
+  # --- Phase 8 (KIT-283) ----------------------------------------------------
+
+  # Every product is a TTF first. WOFF2 is a re-wrap of one and OTF is a curve
+  # conversion of one, so a cell that declared `formats = ["woff2"]` would be
+  # asking to ship a container with nothing to put in it.
+  every-cell-declares-ttf = ok "every-cell-declares-ttf"
+    (
+      lib.all
+        (f: lib.all (entry: lib.elem "ttf" (entry.formats or [ ]))
+          sources.manifests.${f}.data.build.matrix)
+        sources.families
+    ) "a [[build.matrix]] cell declares a derived format without the TTF it derives from";
+
+  # A declared format is a built format. The `packaged` step is the only one
+  # with a `format` axis, so the count of a family's packaged steps must be
+  # exactly (cells x weights x formats-beyond-ttf) — no cell may declare a
+  # format that nothing produces, and no step may exist for a format no cell
+  # asked for.
+  #
+  # Counted rather than name-matched on purpose: families spell the axis part of
+  # a step name differently (`packaged-Bold-woff2` vs
+  # `packaged-tc-Bold-woff2` vs `packaged-text-Light-otf`) because the axes that
+  # vary differ, and a check that pinned the spelling would be testing the
+  # spelling.
+  declared-formats-are-built-formats = ok "declared-formats-are-built-formats"
+    (
+      lib.all
+        (f:
+          let
+            m = sources.manifests.${f}.data;
+            expected = lib.foldl'
+              (total: entry:
+                total
+                + (lib.length entry.regions
+                * lib.length entry.weights
+                * lib.length (lib.filter (fmt: fmt != "ttf") (entry.formats or [ ]))))
+              0
+              m.build.matrix;
+            actual = lib.length (
+              lib.filter (lib.hasPrefix "packaged")
+                (lib.attrNames families.byFamily.${f}.steps)
+            );
+          in
+          expected == actual)
+        sources.families
+    ) "a family's `packaged` steps do not match the formats its matrix declares";
+
+  # Completion criterion: any (profile, region) cell can be released on its own.
+  # The release attribute names are the matrix row, so this is the check that
+  # keeps `just matrix` and `.github/workflows/release.yml` agreeing about what
+  # exists — the workflow builds `.#<family>-<profile>-<region>-release` for
+  # every row it is asked for, and a missing attribute would be a release that
+  # fails halfway through rather than one that was never offered.
+  every-matrix-cell-has-a-release = ok "every-matrix-cell-has-a-release"
+    (
+      let
+        rows = lib.concatMap
+          (f: lib.concatMap
+            (entry: map (r: "${f}-${entry.profile}-${r}-release") entry.regions)
+            sources.manifests.${f}.data.build.matrix)
+          sources.families;
+        missing = lib.filter (name: !(families.releases ? ${name})) rows;
+      in
+      missing == [ ]
+    ) "a [[build.matrix]] cell has no <family>-<profile>-<region>-release attribute";
 
   manifest-source-url = ok "manifest-source-url"
     (

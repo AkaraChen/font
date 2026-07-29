@@ -8,14 +8,14 @@ profiles = ["coding"]
 # same phase as sans (KIT-282).
 regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
 regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 # Fusion Pixel's flavours are zh_hans / zh_hant / ja / ko. There is no Hong Kong
@@ -65,6 +65,10 @@ style = "Pixel"
 variant = "NFM"
 base_variant = "Dual"
 rfn_note = "Fusion Pixel is a reserved font name; this product does not carry it in its family name. Donors are credited in name IDs 5 and 10."
+
+# Pre-rename name. Only SC ever shipped; TC / JP / KR are new products.
+[naming.former]
+sc = "FusionPixel12 NFM"
 
 [metrics.coding]
 hhea_ascent = 1000

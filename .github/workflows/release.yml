@@ -1,0 +1,271 @@
+# Publish a family's products, built from source.
+#
+# Replaces release-nfm.yml (KIT-283), which was serif-only and — the part that
+# mattered — did not build anything. It downloaded the *previous tag's* TTFs,
+# post-processed them, and published the result as a new version, so a release
+# was a function of the last release rather than of the repository. Six of the
+# seven families had no release automation at all.
+#
+# This one is generic and starts from source:
+#
+#   nix build .#<family>-<profile>-<region>-release
+#
+# which is a derivation that depends on the family's gate, so a red gate is a
+# missing archive rather than an archive nobody checked. Everything the run
+# needs to know — which cells exist, which weights and formats each one ships,
+# what the release notes say — comes out of `<family>/font.toml`.
+#
+# **The version lives in font.toml.** The `version` input is what the run
+# *expects* to publish, and the job fails if `[naming] version` disagrees. That
+# is deliberate: the version is stamped into name ID 5 of every product and into
+# the archive name at build time, so a workflow input that could override it
+# would let a file called `-0.2.0.zip` contain fonts that say 0.1.0. Bump
+# font.toml in a commit, then release that commit.
+#
+# **Filters do not silently truncate.** `weights` / `formats` narrow which loose
+# font files get attached. When they narrow anything, the `.zip` is deliberately
+# *not* published and the summary says why: the archive is the whole product,
+# and a zip missing a weight would install as a family with a hole in it.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      family:
+        description: "Family to release"
+        required: true
+        type: choice
+        options:
+          - casual
+          - handwriting
+          - pixel
+          - rounded
+          - sans
+          - serif
+          - typewriter
+      version:
+        description: "Version to publish, without v — must match [naming] version in font.toml"
+        required: true
+        type: string
+      profiles:
+        description: "Space-separated profile subset (default: every profile the matrix declares)"
+        required: false
+        type: string
+      regions:
+        description: "Space-separated region subset (default: every region)"
+        required: false
+        type: string
+      weights:
+        description: "Space-separated weight subset for the loose assets (default: all; narrowing one suppresses the zip)"
+        required: false
+        type: string
+      formats:
+        description: "Space-separated format subset for the loose assets (default: all; narrowing one suppresses the zip)"
+        required: false
+        type: string
+      draft:
+        description: "Publish as a draft"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.family }}
+  cancel-in-progress: false
+
+env:
+  # Same epoch as build-matrix.yml: the two workflows restore the same two cache
+  # layers, and bumping one without the other would silently halve the hit rate.
+  CACHE_EPOCH: v1
+
+jobs:
+  release:
+    name: ${{ inputs.family }} v${{ inputs.version }}
+    runs-on: ubuntu-latest
+    # A release builds the family from source, including serif's upstream Sarasa
+    # toolchain. Same ceiling as the build matrix.
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      # Restore-only, exactly like the family jobs in build-matrix.yml: this run
+      # saves nothing. Seven families' worth of store snapshots already sit at
+      # the edge of the 10 GB repository budget (docs/caching.md), and a release
+      # is rare — it should ride the layers a push already paid for, not evict
+      # them. A cold release just takes longer.
+      - name: Restore cached layers
+        uses: nix-community/cache-nix-action/restore@v7
+        with:
+          primary-key: nix-release-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ inputs.family }}-never-saved
+          restore-prefixes-all-matches: |
+            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/font.toml') }}
+            nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
+
+      # The same table the toolchain job prints (KIT-297), recorded here because
+      # this is the run whose bytes people install. If a nixpkgs bump ever flips
+      # fontTools' Cython accelerators from `py` to `so`, the outlines move, and
+      # the release that shipped them should carry the evidence of which
+      # toolchain drew them rather than leaving it to be reconstructed.
+      - name: Toolchain fingerprint
+        run: nix develop --command python3 tools/toolchain-fingerprint.py | tee toolchain-fingerprint.txt
+
+      - name: Check the version against font.toml
+        run: |
+          set -euo pipefail
+          declared=$(nix develop --command python3 -c "
+          import tomllib, sys
+          with open('${{ inputs.family }}/font.toml', 'rb') as fh:
+              print(tomllib.load(fh)['naming'].get('version', '0.1.0'))
+          ")
+          want="${{ inputs.version }}"
+          want="${want#v}"
+          if [[ "$declared" != "$want" ]]; then
+            echo "::error title=Version mismatch::${{ inputs.family }}/font.toml declares [naming] version = \"$declared\", this run asks for \"$want\". The version is stamped into name ID 5 and into the archive name at build time, so it cannot be overridden here — bump font.toml in a commit and release that commit."
+            exit 1
+          fi
+          echo "version $declared" >> "$GITHUB_STEP_SUMMARY"
+
+      # Which (profile, region) cells this run covers. `.#lib.matrix` is the
+      # same flattened reading of `[[build.matrix]]` that `just matrix` prints,
+      # so "what can be released" and "what can be built" cannot drift apart.
+      - name: Resolve cells
+        id: cells
+        run: |
+          set -euo pipefail
+          nix eval --json .#lib.matrix > matrix.json
+          jq --arg family "${{ inputs.family }}" \
+             --arg profiles "${{ inputs.profiles }}" \
+             --arg regions "${{ inputs.regions }}" '
+            ($profiles | split(" ") | map(select(length > 0))) as $p |
+            ($regions  | split(" ") | map(select(length > 0))) as $r |
+            [ .[]
+              | select(.family == $family)
+              | select($p == [] or (.profile as $x | $p | index($x)))
+              | select($r == [] or (.region  as $x | $r | index($x)))
+            ]' matrix.json > cells.json
+          count=$(jq length cells.json)
+          if [[ "$count" == "0" ]]; then
+            echo "::error title=No cells::${{ inputs.family }} declares no matrix cell matching profiles='${{ inputs.profiles }}' regions='${{ inputs.regions }}'. Run 'just matrix' to see what exists."
+            exit 1
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Cells"
+            echo
+            echo "| profile | region | weights | formats |"
+            echo "| --- | --- | --- | --- |"
+            jq -r '.[] | "| \(.profile) | \(.region) | \(.weights | join(", ")) | \(.formats | join(", ")) |"' cells.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # One `nix build` per cell. Each archive derivation depends on the
+      # family's gate (nix/families/default.nix), so this step is also the gate
+      # run — there is no separate "did anyone check it" question.
+      - name: Build the archives
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets staging
+          want_weights="${{ inputs.weights }}"
+          want_formats="${{ inputs.formats }}"
+          filtered=false
+          [[ -n "$want_weights" || -n "$want_formats" ]] && filtered=true
+
+          while read -r profile region; do
+            attr="${{ inputs.family }}-${profile}-${region}-release"
+            echo "::group::nix build .#${attr}"
+            out=$(nix build --no-link --print-out-paths --print-build-logs ".#${attr}")
+            echo "::endgroup::"
+
+            cell="staging/${profile}-${region}"
+            mkdir -p "$cell"
+            unzip -q -o "$out"/*.zip -d "$cell"
+
+            if [[ "$filtered" == "false" ]]; then
+              cp "$out"/*.zip release-assets/
+            fi
+
+            # Loose font files, filtered. The stem is `<PSName>-<Weight>`, which
+            # is the one place the weight of a built product is written down.
+            for font in "$cell"/*; do
+              base=$(basename "$font")
+              ext="${base##*.}"
+              case "$ext" in ttf|otf|woff2|woff) ;; *) continue ;; esac
+              weight="${base%.*}"; weight="${weight##*-}"
+              if [[ -n "$want_weights" ]]; then
+                grep -qiw -- "$weight" <<<"$want_weights" || continue
+              fi
+              if [[ -n "$want_formats" ]]; then
+                grep -qiw -- "$ext" <<<"$want_formats" || continue
+              fi
+              cp "$font" release-assets/
+            done
+          done < <(jq -r '.[] | "\(.profile) \(.region)"' cells.json)
+
+          if [[ "$filtered" == "true" ]]; then
+            echo "::warning title=Archive suppressed::weights='${{ inputs.weights }}' formats='${{ inputs.formats }}' narrow the selection, so only the matching loose files are published. The .zip is the whole product and is not published for a partial selection — re-run with both filters empty to publish it."
+            {
+              echo
+              echo "**No \`.zip\` in this release**: the run filtered weights/formats, and a partial"
+              echo "archive would install as a family with a hole in it. Loose files only."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          ls -lh release-assets/
+
+      # Generated from the same font.toml the build read — pins, grid, weights,
+      # formats, source composition and the rename migration note. See
+      # lib/fontkit/release_notes.py for why none of it is written by hand.
+      - name: Render release notes
+        run: |
+          set -euo pipefail
+          : > notes.md
+          while read -r profile region; do
+            nix develop --command fontkit release-notes \
+              --manifest "${{ inputs.family }}/font.toml" \
+              --profile "$profile" \
+              --region "$region" \
+              --version "${{ inputs.version }}" >> notes.md
+            printf '\n---\n\n' >> notes.md
+          done < <(jq -r '.[] | "\(.profile) \(.region)"' cells.json)
+          {
+            echo "Built from \`${GITHUB_SHA}\` with the pinned toolchain "
+            echo "(\`nix build .#${{ inputs.family }}-<profile>-<region>-release\`)."
+          } >> notes.md
+          cat notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.family }}-v${{ inputs.version }}"
+          # Per family, not repo-wide: seven families ship independently and a
+          # single `v0.2.0` tag could only ever mean one of them. The pre-rename
+          # `vX.Y.Z` tags are serif's and are left alone.
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            draft=$(gh release view "$TAG" --repo "${{ github.repository }}" --json isDraft -q .isDraft)
+            if [[ "$draft" == "true" ]]; then
+              gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag
+            else
+              echo "::error title=Already published::$TAG exists and is not a draft. Bump [naming] version in ${{ inputs.family }}/font.toml."
+              exit 1
+            fi
+          fi
+
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "${{ inputs.family }} v${{ inputs.version }}" \
+            --notes-file notes.md \
+            ${{ inputs.draft && '--draft' || '' }} \
+            release-assets/*
+
+          gh release view "$TAG" --repo "${{ github.repository }}"

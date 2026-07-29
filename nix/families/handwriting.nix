@@ -150,15 +150,15 @@ let
     '';
   };
 
-  # The `format` axis, finally carrying more than one value. WOFF2 is a re-wrap
-  # of the same tables, not a second build — see lib/fontkit/convert.py.
+  # The `format` axis, and the only cell in the repo that uses all three values.
+  # WOFF2 is a re-wrap of the same tables; OTF is a qu2cu curve conversion and a
+  # genuinely different set of outlines — see lib/fontkit/convert.py, and
+  # `[[build.matrix]]` in font.toml for why the text profile gets one and the
+  # coding profile does not.
   packagedFormat = profile: weight: format:
-    step "packaged" { inherit family profile region weight format; } {
-      buildCommand = ''
-        mkdir -p $out
-        fontkit convert --format ${format} --out-dir $out \
-          ${merged profile weight}/${ps profile}-${weight}.ttf
-      '';
+    support.convert {
+      inherit family profile region weight format;
+      src = merged profile weight;
     };
 
   productsOf = profile:
@@ -201,6 +201,11 @@ let
       for font in ${out}/*.ttf; do
         fontkit measure --font "$font" | tail -20 || true
       done
+
+      # WOFF2 must be byte-identical to its TTF and the OTF must stay inside the
+      # qu2cu tolerance it was built with (KIT-283). This family is the one that
+      # ships all three formats, so it is the one where this gate has teeth.
+      fontkit verify-formats ${out}
       touch $out
     '';
 
@@ -223,6 +228,8 @@ let
         Nerd icons:   from the upstream Monaspace Radon NF build, one cell each
         Ligatures:    Radon liga + calt (on by default), plus ss01–ss10 / cv** opt-in
         Weights:      Regular, Bold
+        Formats:      TTF and WOFF2 (no OTF: a coding face is hinted, and the
+                      CFF conversion drops TrueType hinting)
       '' else ''
           Text     = reading face, not a terminal face
 
@@ -233,7 +240,9 @@ let
 
         Ligatures:    Radon liga only; ss01–ss10 / cv** stay opt-in
         Weights:      Light, Regular, Bold
-        Formats:      TTF and WOFF2 (no OTF — see build.unsupported in font.toml)
+        Formats:      TTF (install this one), WOFF2 (the same outlines, for the
+                      web), OTF (CFF outlines converted with qu2cu — same
+                      design, refit curves, no TrueType hinting)
       ''
     ) + ''
 
