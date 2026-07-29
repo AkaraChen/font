@@ -5,37 +5,43 @@ family = "handwriting"
 profiles = ["coding", "text"]
 regions = ["sc"]
 weights = ["light", "regular", "bold"]
-formats = ["ttf", "woff2"]
+formats = ["ttf", "woff2", "otf"]
 slopes = ["upright"]
 
 # The terminal face. No Light: a Light coding face is a legitimate product but
 # nobody has calibrated one, and the matrix is what is built, not what is
 # possible.
+#
+# No OTF either, and that is a product decision rather than an impossibility:
+# a terminal face is hinted and lives in editors, and the CFF conversion drops
+# TrueType hinting (KIT-283). Shipping an unhinted variant of a coding font
+# would be offering the reader a worse file in a nicer-sounding format.
 [[build.matrix]]
 profile = "coding"
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 # The reading face — the first `text` profile in the repo. LXGW WenKai is a
 # 楷体 designed for prose to begin with, which is why handwriting goes first.
+#
+# This is the one cell in the repo that ships OTF. KIT-281 declared `otf`
+# impossible here; KIT-283 reversed that, and the reversal is worth stating
+# plainly rather than deleting quietly. The old reasoning was right about the
+# mechanics — these products are quadratic (cu2qu from Monaspace, TrueType CJK),
+# so an OTF is a real qu2cu conversion of every imported Han glyph and not a
+# re-wrap — and wrong about the conclusion: a *reading* face is the one product
+# that gets set in print and placed in design tools, which is where CFF is what
+# the world asks for. So the conversion is done deliberately, with a declared
+# tolerance, and the OTF carries its own fingerprint baseline instead of being
+# diffed against the TTF's. See lib/fontkit/convert.py.
 [[build.matrix]]
 profile = "text"
 regions = ["sc"]
 weights = ["light", "regular", "bold"]
-formats = ["ttf", "woff2"]
+formats = ["ttf", "woff2", "otf"]
 slopes = ["upright"]
-
-# Declared rather than silently absent. A real OTF is CFF and these products are
-# quadratic by construction — the CJK donor is TrueType and prepare_latin.py
-# converts Monaspace's cubics with cu2qu because one font cannot hold both
-# outline formats. Re-converting 45k Han glyphs back to cubics would ship a
-# worse font under the name of a better format.
-[[build.unsupported]]
-axis = "formats"
-values = ["otf"]
-reason = "products are quadratic (cu2qu from the Latin donor, TrueType CJK); a CFF OTF would need a second lossy curve conversion of every imported Han glyph"
 
 [sources.monaspace]
 role = "latin"
@@ -113,12 +119,20 @@ style = "Hand"
 variant = "NFM"
 rfn_note = "Radon and LXGW WenKai are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 
+# Pre-rename names, per profile: the two faces were renamed separately because
+# they are two products. See docs/naming-migration.md.
+[naming.former]
+sc = "RadonWenKai NFM"
+
 # A separate family, not a style of the coding one. Installed side by side they
 # have to be two entries in a font menu: the NFM face claims the terminal grid
 # and carries 4000 Nerd icons, the Text face does neither, and a host that
 # thought they were one family would pick either of them for "Bold".
 [naming.text]
 variant = "Text"
+
+[naming.text.former]
+sc = "RadonWenKai Text"
 
 [merge]
 version = "1.000"

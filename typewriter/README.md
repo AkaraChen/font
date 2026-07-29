@@ -108,7 +108,7 @@ python3 scripts/render-sample.py \
 ### Release package
 
 ```bash
-just release typewriter
+just release typewriter coding sc
 # → dist/AKRTypeSCNFM-0.1.0.zip
 ```
 

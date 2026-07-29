@@ -5,14 +5,14 @@ family = "typewriter"
 profiles = ["coding"]
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 # Neither donor has one. Courier Prime ships exactly Regular / Bold / Italic /
@@ -64,6 +64,10 @@ style = "Type"
 variant = "NFM"
 base_variant = "Dual"
 rfn_note = "Courier Prime and Zhuque Fangsong are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
+
+# Pre-rename name; see docs/naming-migration.md.
+[naming.former]
+sc = "CourierPrimeZhuque NFM"
 
 [merge]
 version = "1.000"

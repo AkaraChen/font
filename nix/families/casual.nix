@@ -117,9 +117,30 @@ let
     '';
   };
 
+  # --- packaged -------------------------------------------------------------
+  # casual's merge output *is* its product — there is no Nerd patch — so the
+  # format conversions hang off `merged` directly.
+  declaredFormats = (lib.head (support.cellsOf m)).formats;
+  formats = support.extraFormats declaredFormats;
+  converted = weight: format: support.convert {
+    inherit family profile region weight format;
+    src = merged weight;
+  };
+
+  # Each product's other formats land beside it rather than in a `web/`
+  # subdirectory: tools/fingerprint.py names a product by its path relative to
+  # `out`, and moving a file would rename its baseline entry.
+  copyFormats = weight: dest:
+    lib.concatMapStringsSep "\n"
+      (format: "cp ${converted weight format}/*.${format} ${dest}")
+      formats;
+
   out = pkgs.runCommand "casual-out" { } ''
     mkdir -p $out
-    ${lib.concatMapStringsSep "\n" (w: "cp ${merged w}/*.ttf $out/") weights}
+    ${lib.concatMapStringsSep "\n" (w: ''
+      cp ${merged w}/*.ttf $out/
+      ${copyFormats w "$out/"}
+    '') weights}
     cp ${file "casual/licenses"}/OFL-Recursive.txt ${file "casual/licenses"}/OFL-Yozai.txt $out/
   '';
 
@@ -137,6 +158,8 @@ let
     }
     ''
       fontkit verify-2to1 --profile dense --expect-half ${toString grid.en_adv} ${out}/${ps}-*.ttf
+      # Every converted format against the TTF it was made from (KIT-283).
+      fontkit verify-formats ${out}
       touch $out
     '';
 
@@ -172,12 +195,16 @@ in
         { name = "latin-prepared-${weight}"; value = latinPrepared weight; }
         { name = "cjk-prepared-${weight}"; value = cjkPrepared weight; }
         { name = "merged-${weight}"; value = merged weight; }
-      ])
+      ]
+      ++ map
+        (format: { name = "packaged-${weight}-${format}"; value = converted weight format; })
+        formats)
       weights
   );
 
   release = {
     inherit family profile region readme verify;
+    formats = declaredFormats;
     weight = "Regular";
     stem = naming.stem;
     fontDir = out;

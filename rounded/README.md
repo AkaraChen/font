@@ -126,7 +126,7 @@ python3 scripts/render-sample.py \
 ### Release package
 
 ```bash
-just release rounded
+just release rounded coding sc
 # → dist/AKRRoundSCNFM-0.1.0.zip
 ```
 

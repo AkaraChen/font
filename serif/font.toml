@@ -5,14 +5,14 @@ family = "serif"
 profiles = ["coding"]
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 # Not "nobody has built it yet" — it cannot be built from these pins. Neo
@@ -66,6 +66,14 @@ style = "Slab"
 variant = "NFM"
 base_variant = "Dual"
 rfn_note = "Sarasa, Iosevka and LXGW are reserved font names; this product carries none of them in its family name. Donors are credited in name IDs 5 and 10."
+
+# Every tag published before the rename shipped this product as
+# `SarasaNZSSlab NFM` (KIT-282). Only `sc` has ever shipped, so only `sc` has a
+# predecessor: `fontkit release-notes` writes a migration section for a renamed
+# product and a "this one is new" line for a product that never had another
+# name, and it needs the manifest to tell the two apart.
+[naming.former]
+sc = "SarasaNZSSlab NFM"
 
 [calibration.regular]
 source_weight = "regular"

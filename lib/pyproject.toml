@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 # Deliberately unpinned here: the pin lives in flake.nix, which is the single
 # place this repo declares a toolchain. Listing versions in both would let them
 # disagree.
-dependencies = ["fonttools", "pydantic>=2,<3", "skia-pathops", "brotli"]
+dependencies = ["fonttools", "pydantic>=2,<3", "skia-pathops", "brotli", "cffsubr"]
 
 # The per-step derivations call `fontkit <step>`; nothing puts lib/ on
 # PYTHONPATH for them. See lib/fontkit/cli.py.

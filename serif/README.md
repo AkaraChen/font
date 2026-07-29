@@ -190,7 +190,7 @@ matters: it saves via fontTools, which recomputes `head`, so run
 ## Release package
 
 ```bash
-just release serif
+just release serif coding sc
 # → result-serif-release/AKRSlabSCNFM-0.1.0.zip  (Nerd TTFs only)
 ```
 

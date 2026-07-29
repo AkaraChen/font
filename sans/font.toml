@@ -8,14 +8,14 @@ profiles = ["coding"]
 # [[build.unsupported]] below.
 regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
 regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 # Not an oversight. IBM Plex Sans ships SC / TC / JP / KR and no HK master, and
@@ -109,6 +109,12 @@ style = "Sans"
 variant = "NFM"
 base_variant = "Dual"
 rfn_note = "Lilex and Plex are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
+
+# What this product was called before the rename. Only SC ever shipped —
+# TC / JP / KR are new products with no predecessor, so they are absent here
+# rather than listed with the SC name (fontkit.release_notes).
+[naming.former]
+sc = "LilexSansSC NFM"
 
 [merge]
 version = "1.000"

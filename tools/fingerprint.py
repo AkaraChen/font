@@ -57,6 +57,15 @@ FAMILIES = [
     "typewriter",
 ]
 
+# `.woff2` is deliberately absent, and it is not an oversight (KIT-283): a WOFF2
+# is a Brotli re-wrap of its TTF's tables, and `fontkit verify-formats` gates
+# that its `glyf` records are byte-identical to the TTF's on every build. A
+# baseline for it would be a second copy of the TTF's baseline that goes red at
+# exactly the same moments.
+#
+# `.otf` is present for the mirror-image reason. An OTF is a qu2cu conversion to
+# CFF — different curves, no TrueType hinting — so it is its own product and
+# needs its own baseline. `_dump_outlines` reads CFF charstrings for it.
 FONT_SUFFIXES = (".ttf", ".otf", ".ttc")
 
 

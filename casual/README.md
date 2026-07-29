@@ -122,7 +122,7 @@ and merge uses [`fontkit.merge`](../lib/fontkit/merge.py), configured by `[merge
 ```bash
 cd casual
 just build casual                 # full pipeline + 2:1 gate
-just release casual # → dist/AKRCasualSCDual-0.1.0.zip
+just release casual coding sc # → dist/AKRCasualSCDual-0.1.0.zip
 ./scripts/render-sample.sh         # refresh samples/rendered/
 ./scripts/calibrate-stroke.sh      # re-measure embolden strengths
 ```

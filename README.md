@@ -12,7 +12,8 @@ just matrix               # every (family, profile, region) cell there is to bui
 just build sans           # nix build .#sans, materialised into sans/out
 just build sans coding tc # nix build .#sans-coding-tc, one cell of the matrix
 just gate sans            # run the family's 2:1 / EAW / Nerd / feature gate
-just release sans         # build the release zip (depends on the gate)
+just release sans coding tc  # build one cell's release zip (depends on the gate)
+just notes sans coding tc    # the release notes that zip ships with
 just verify sans          # diff the products against the committed fingerprint baseline
 just --list               # everything else
 ```
@@ -79,19 +80,40 @@ Radon, Lilex, Plex, Recursive, LXGW, Sarasa, Courier Prime, Zhuque, Fusion Pixel
 Attribution moved to where it belongs: name ID 5 (version string), name ID 10
 (description), each family's README, and the release notes.
 
+## Formats
+
+Every product ships as a **TTF**, and that is the file to install. The others
+are derived from it and are not interchangeable with it:
+
+| format | what it is | who wants it |
+| --- | --- | --- |
+| `.ttf` | the product: TrueType outlines, hinting intact | everyone — editors, terminals, desktop |
+| `.woff2` | the **same outlines**, Brotli-compressed container. Byte-identical `glyf` data, gated as such on every build | `@font-face` on the web |
+| `.otf` | PostScript/CFF outlines, converted with qu2cu: curves refit within 1 font unit, **TrueType hinting dropped**, contours reversed | print / design tools that want CFF |
+
+Which cells ship which is `[[build.matrix]]` in each `font.toml` — `just matrix`
+prints it. The defaults are `coding = ttf + woff2` and `text = ttf + woff2 +
+otf`: a coding face is hinted and lives in an editor, so an unhinted CFF version
+of it would be a worse file in a nicer-sounding format, while a reading face
+also gets set in print.
+
+The OTF carries **its own fingerprint baseline** for the same reason it is a
+separate product rather than a repackaging. See
+[`docs/build-toolchain.md`](docs/build-toolchain.md#the-format-axis-phase-8-kit-283).
+
 ## serif/
 
 **Coding product: AKR Slab SC NFM** — MonoSlab Latin + 霞鹜新致宋 Opt CJK, **Nerd Font Mono**, 2:1 dual-width SC.
 
 ```bash
 just build serif
-# → out/nerd/AKRSlabSCNFM-{Regular,Bold}.ttf
+# → out/nerd/AKRSlabSCNFM-{Regular,Bold}.{ttf,woff2}
 ```
 
 Package for a GitHub Release:
 
 ```bash
-just release serif
+just release serif coding sc
 # → result-serif-release/AKRSlabSCNFM-0.1.0.zip
 ```
 
@@ -105,14 +127,14 @@ Name recipe (same style as `AKR Slab SC NFM`): **Lilex** + **SansSC** + **NFM**.
 
 ```bash
 just build sans
-# → out/nerd/AKRSansSCNFM-{Regular,Bold}.ttf
+# → out/nerd/AKRSansSCNFM-{Regular,Bold}.{ttf,woff2}
 ```
 
 Package for a GitHub Release:
 
 ```bash
-just release sans
-# → result-*-release/AKRSansSCNFM-0.1.0.zip
+just release sans coding sc      # …or coding tc / jp / kr
+# → result-sans-release/AKRSansSCNFM-0.1.0.zip
 ```
 
 Upstream pins live in [`sans/font.toml`](sans/font.toml).
@@ -125,7 +147,7 @@ Details: [`sans/README.md`](sans/README.md).
 
 ```bash
 just build pixel
-# → out/nerd/AKRPixelSCNFM-Regular.ttf
+# → out/nerd/AKRPixelSCNFM-Regular.{ttf,woff2}
 ```
 
 Details: [`pixel/README.md`](pixel/README.md).
@@ -143,8 +165,8 @@ keep WenKai's full width, and a typographic line box. The first `text` profile i
 
 ```bash
 just build handwriting
-# → out/AKRHandSCNFM-{Regular,Bold}.ttf
-#   out/AKRHandSCText-{Light,Regular,Bold}.{ttf,woff2}
+# → out/AKRHandSCNFM-{Regular,Bold}.{ttf,woff2}
+#   out/AKRHandSCText-{Light,Regular,Bold}.{ttf,woff2,otf}
 ```
 
 Monaspace parks its ligatures in `ss01`–`ss10`; the coding build folds them into default `calt`

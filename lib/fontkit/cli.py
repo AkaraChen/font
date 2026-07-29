@@ -34,8 +34,10 @@ STEPS = {
     "convert": "convert",
     "verify-2to1": "verify2to1",
     "verify-text": "verify_text",
+    "verify-formats": "verify_formats",
     "measure": "measure",
     "manifest": "manifest",
+    "release-notes": "release_notes",
     "package": "package",
 }
 

@@ -5,14 +5,14 @@ family = "rounded"
 profiles = ["coding"]
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
 regions = ["sc"]
 weights = ["regular", "bold"]
-formats = ["ttf"]
+formats = ["ttf", "woff2"]
 slopes = ["upright"]
 
 [sources.iosevka]
@@ -54,6 +54,10 @@ variant = "NFM"
 base_variant = "Dual"
 rfn_note = "Iosevka and Source Han are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 product_name_zh = "圆体"
+
+# Pre-rename name; see docs/naming-migration.md.
+[naming.former]
+sc = "IosevkaCurlyRHR NFM"
 
 [merge]
 version = "1.000"

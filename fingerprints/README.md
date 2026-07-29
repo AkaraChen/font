@@ -83,6 +83,22 @@ regression, which is the only thing that would make this a loophole:
 Phase 6's own completion criterion — *"coding 版指纹不变"* — is checked by the
 first row, not weakened by the third.
 
+### A family that gains a new *format* (Phase 8, KIT-283)
+
+Same mechanism, and worth spelling out because the three formats are not
+equivalent:
+
+| format | baseline | why |
+| --- | --- | --- |
+| `.ttf` | yes | the product |
+| `.otf` | **its own**, separate from the TTF's | CFF charstrings are a different curve representation; qu2cu refits every outline within a tolerance. Diffing it against the TTF baseline would go red for being correct |
+| `.woff2` | none | byte-identical `glyf` to its TTF by construction, and `fontkit verify-formats` gates exactly that. A baseline would be a second copy of the TTF's |
+
+`tools/fingerprint.py` already reads CFF (`_dump_outlines` branches on `glyf` vs
+`CFF `) and already walks `.otf`, so handwriting's three text OTFs appear as
+`NEW` on the first run that builds them and are adopted from CI like any other
+new product.
+
 ## Open question
 
 Which platform is *correct* is not settled. Linux produces the more complete
