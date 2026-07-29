@@ -114,6 +114,7 @@ latin_uniform_scale = 0.9
 
 # Was `RadonWenKai NFM` (KIT-282) — the rename the old rfn_note kept asking for.
 [naming]
+version = "1.0.0-beta.1"
 house = "AKR"
 style = "Hand"
 variant = "NFM"

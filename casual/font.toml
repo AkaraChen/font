@@ -69,7 +69,7 @@ house = "AKR"
 style = "Casual"
 variant = "Dual"
 rfn_note = "Recursive and Yozai are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
-version = "0.1.0"
+version = "1.0.0-beta.1"
 
 # Pre-rename name; see docs/naming-migration.md.
 [naming.former]
