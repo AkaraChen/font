@@ -61,17 +61,14 @@ latin_src_adv = 600
 latin_src_upm = 1000
 latin_uniform_scale = 0.833333333
 
+# Was `RecursiveYozai Dual` (KIT-282). The variant token stays `Dual` rather
+# than becoming `NFM`: casual is the one coding family with no Nerd patch step,
+# so `NFM` would name icons the product does not carry.
 [naming]
-family = "RecursiveYozai Dual"
-ps = "RecursiveYozaiDual"
-stem = "RecursiveYozaiDual"
-house = "RecursiveYozai"
-style = "Dual"
-region = "SC"
-variant = "coding"
-id16 = "RecursiveYozai Dual"
-id17 = "{weight}"
-rfn_note = "Recursive and Yozai reserve upstream names; review before public OFL redistribution."
+house = "AKR"
+style = "Casual"
+variant = "Dual"
+rfn_note = "Recursive and Yozai are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 version = "0.1.0"
 
 [merge]

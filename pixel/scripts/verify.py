@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify FusionPixel12 product: 2:1 advances, calt ligatures, optional Nerd PUA."""
+"""Verify AKR Pixel SC product: 2:1 advances, calt ligatures, optional Nerd PUA."""
 from __future__ import annotations
 
 import argparse

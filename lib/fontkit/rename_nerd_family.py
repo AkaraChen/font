@@ -17,10 +17,21 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont
 
+from fontkit import naming
+
 
 def style_from_name_table(font: TTFont) -> str:
+    """The *typographic* subfamily — name ID 17 first, ID 2 only as a fallback.
+
+    Order matters, and it used to be the other way round. Since the merge does
+    the RIBBI split, a Light product carries `ID2 = "Regular"` and
+    `ID17 = "Light"`; reading ID 2 first would rename `AKRSansSCNFM-Light` to
+    the Regular face and produce two products that claim to be the same font.
+    ID 2 is still the fallback because a Nerd-patched donor that never went
+    through the merge may only have that one.
+    """
     name = font["name"]
-    for nid in (2, 17):
+    for nid in (17, 2):
         rec = name.getName(nid, 3, 1, 0x409) or name.getName(nid, 1, 0, 0)
         if rec:
             return rec.toUnicode().strip()
@@ -28,13 +39,20 @@ def style_from_name_table(font: TTFont) -> str:
 
 
 def apply_names(font: TTFont, family: str, family_ps: str, style: str) -> None:
-    full = f"{family} {style}".strip()
+    """Restamp the family, keeping IDs 1/2 legacy and IDs 16/17 typographic.
+
+    The same split `fontkit.merge.rename_family` writes, for the same reason:
+    the patcher rewrites the name table and would otherwise put `Light` back
+    into name ID 2, where Windows does not understand it.
+    """
+    legacy_family = naming.legacy_family(family, style)
+    _, legacy_style = naming.ribbi_split(style)
     ps = re.sub(r"[^A-Za-z0-9]", "", family_ps + style)
     name = font["name"]
     for nid, value in {
-        1: family,
-        2: style,
-        4: full,
+        1: legacy_family,
+        2: legacy_style,
+        4: naming.full_name(family, style),
         6: ps,
         16: family,
         17: style,
@@ -46,8 +64,8 @@ def apply_names(font: TTFont, family: str, family_ps: str, style: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("fonts", nargs="+", type=Path)
-    ap.add_argument("--family", required=True, help="e.g. 'LilexSansSC NFM'")
-    ap.add_argument("--family-ps", required=True, help="e.g. 'LilexSansSCNFM'")
+    ap.add_argument("--family", required=True, help="e.g. 'AKR Sans SC NFM'")
+    ap.add_argument("--family-ps", required=True, help="e.g. 'AKRSansSCNFM'")
     ap.add_argument(
         "--rename-file",
         action="store_true",

@@ -19,7 +19,10 @@
 let
   inherit (support) step file profile region patcher;
   m = manifest.data;
-  inherit (m) grid naming;
+  inherit (m) grid;
+  # One cell, composed rather than read: `[naming]` holds segments now, and the
+  # region is a build axis (KIT-282).
+  naming = support.namingFor m profile region;
 
   family = "rounded";
   weights = map support.weightName m.build.weights;
@@ -140,6 +143,8 @@ let
 in
 {
   inherit out verify;
+
+  cells."${profile}-${region}" = out;
 
   steps = lib.listToAttrs (
     lib.concatMap

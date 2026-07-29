@@ -5,11 +5,13 @@
 # is `nix build .#sans` plus the copy into sans/out that the fingerprint net
 # reads.
 #
-#   just dev                → enter the pinned toolchain shell
-#   just build sans         → nix build .#sans, materialised into sans/out
-#   just fingerprint sans   → (re)write sans' regression baseline
-#   just verify sans        → compare a fresh build against the baseline
-#   just test               → fontkit unit tests (lib/tests), no font build
+#   just dev                    → enter the pinned toolchain shell
+#   just build sans             → nix build .#sans, materialised into sans/out
+#   just build sans coding tc   → nix build .#sans-coding-tc, one matrix cell
+#   just matrix                 → every cell every family declares
+#   just fingerprint sans       → (re)write sans' regression baseline
+#   just verify sans            → compare a fresh build against the baseline
+#   just test                   → fontkit unit tests (lib/tests), no font build
 
 set shell := ["bash", "-uc"]
 
@@ -26,9 +28,15 @@ _default:
 dev:
     {{nix}} develop
 
-# List the families this repo builds.
+# Every cell every family declares, read out of `[[build.matrix]]`.
+#
+# Not a hand-maintained list: the completion criterion for the region axis
+# (KIT-282) is that this and `[[build.matrix]]` agree, and the only way to keep
+# two lists agreeing is to have one. `just build <family> <profile> <region>`
+# takes any line of this.
 matrix:
-    @for f in {{families}}; do echo "$f"; done
+    @{{nix}} eval --json .#lib.matrix | jq -r \
+      '.[] | "\(.family) \(.profile) \(.region)  weights=\(.weights | join(",")) formats=\(.formats | join(","))"'
 
 # Realise every pinned upstream input (nix/sources). The build steps depend on
 # these directly; this is for looking at them.
@@ -57,14 +65,34 @@ cache-report layer +results:
 # The copy exists because tools/fingerprint.py walks <family>/out and names each
 # product by its path relative to it — pointing it at a store path instead would
 # work, but then a baseline would depend on where the store happens to be.
-build family:
+#
+# With a profile and a region it builds one cell of `[[build.matrix]]` instead:
+#
+#   just build sans             → .#sans            every cell, into sans/out
+#   just build sans coding tc   → .#sans-coding-tc  one cell, into sans/out-coding-tc
+#
+# The one-cell form writes to its own directory on purpose. `<family>/out` is
+# what the fingerprint baseline is keyed on, and a partial build landing there
+# would make `just verify` report every other region as MISSING.
+build family profile="" region="":
     #!/usr/bin/env bash
     set -euo pipefail
-    out="$({{nix}} build --no-link --print-out-paths --print-build-logs .#{{family}})"
-    rm -rf {{family}}/out
-    cp -R "$out" {{family}}/out
-    chmod -R u+w {{family}}/out
-    ls -lhR {{family}}/out
+    if [[ -n "{{profile}}" || -n "{{region}}" ]]; then
+      if [[ -z "{{profile}}" || -z "{{region}}" ]]; then
+        echo "just build <family> [<profile> <region>] — pass both or neither" >&2
+        exit 2
+      fi
+      attr="{{family}}-{{profile}}-{{region}}"
+      dest="{{family}}/out-{{profile}}-{{region}}"
+    else
+      attr="{{family}}"
+      dest="{{family}}/out"
+    fi
+    out="$({{nix}} build --no-link --print-out-paths --print-build-logs ".#$attr")"
+    rm -rf "$dest"
+    cp -R "$out" "$dest"
+    chmod -R u+w "$dest"
+    ls -lhR "$dest"
 
 # Build one step in isolation — for bisecting a fingerprint diff, or feeding a
 # calibration run. `just steps <family>` lists what a family has.

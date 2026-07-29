@@ -4,11 +4,28 @@ One directory per family, holding the normalised regression baseline for that
 family's build products. Written by `just fingerprint <family>`, checked by
 `just verify <family>`. See [`../docs/build-toolchain.md`](../docs/build-toolchain.md).
 
-**Adopted from run
-[30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683)**, the
-`x86_64-linux` build of the font-patcher 4.26.0 pin — seven families green, 22
-products. Every family is gated for real from here: drift fails the build
-instead of printing a warning.
+## Current baselines — AKR rename (KIT-282)
+
+Re-adopted from run
+[30420407248](https://github.com/AkaraChen/font/actions/runs/30420407248)
+(`x86_64-linux`, PR #41). **43** product fingerprints across seven families.
+
+The previous 22 baselines (from
+[30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683)) went
+stale at once: Phase 7 renamed every family (`LilexSansSC NFM` → `AKR Sans SC
+NFM`, and six more), which moves the name table, which is *in* the fingerprint.
+
+**This was the sanctioned direction of the rule below, not an exception to it.**
+The product changed *by design* — a deliberate, maintainer-approved breaking
+rename — so the baselines were re-taken from a green CI run on the canonical
+platform, exactly as bootstrapping prescribes. The new set is not a renamed copy
+of the old:
+
+* **sans and pixel gained the region axis** (four regions each instead of one)
+* **Phase 6's products were never baselined** (handwriting's three `text` faces
+  and Light) — adopted with the rest
+* **Intermediates were renamed** (`SarasaMonoSlabNeoZhiSongSC-Opt` →
+  `AKRSlabSCDual`)
 
 ## Baselines belong to CI, not to a laptop
 

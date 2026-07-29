@@ -1,4 +1,4 @@
-# FusionPixel12 — hand-drawn programming ligatures
+# AKR Pixel SC — hand-drawn programming ligatures
 #
 # Every glyph below is drawn by hand on the same pixel grid Fusion Pixel 12px
 # uses. Nothing here is traced, scaled or rasterized from another font.

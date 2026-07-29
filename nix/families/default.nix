@@ -121,8 +121,29 @@ in
   # The raw per-family modules, for nix/checks.nix.
   byFamily = built;
 
-  # `nix build .#sans` → the products, in the out/ layout.
+  # `nix build .#sans` → every cell the family's matrix declares, in the out/
+  # layout the fingerprint net reads.
   outputs = lib.mapAttrs (_: fam: fam.out) built;
+
+  # `nix build .#sans-coding-tc` → one (profile, region) cell of that matrix.
+  #
+  # The name is the axis values in the granularity contract's order, so it reads
+  # the same way a step name does. `just build sans coding tc` is this plus a
+  # copy into `sans/out-coding-tc` — deliberately not `sans/out`, which is what
+  # the fingerprint baseline is keyed on. It exists because a region is exactly
+  # the thing you want to build on its own: the whole point of the axis is that
+  # the other three do not have to be rebuilt to look at one.
+  cells = lib.listToAttrs (
+    lib.concatLists (
+      lib.mapAttrsToList
+        (
+          family: fam:
+            lib.mapAttrsToList (name: drv: lib.nameValuePair "${family}-${name}" drv)
+              (fam.cells or { })
+        )
+        built
+    )
+  );
 
   # `nix build .#sans-release`           → the zip a GitHub Release ships.
   # `nix build .#handwriting-text-release` → a second profile's zip.

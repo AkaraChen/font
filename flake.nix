@@ -14,6 +14,7 @@
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
 
       granularity = import ./nix/granularity.nix { inherit (nixpkgs) lib; };
+      matrix = import ./nix/matrix.nix { inherit (nixpkgs) lib; root = ./.; };
       sourcesFor = pkgs: import ./nix/sources { inherit pkgs; root = ./.; };
       fontkitFor = pkgs: pkgs.python3.pkgs.callPackage ./nix/fontkit.nix { };
 
@@ -32,7 +33,11 @@
       # flake output because Phase 3 builds against it from outside this file,
       # and because `nix eval .#granularity.steps` is how you answer "what makes
       # this step rebuild?" without reading Nix.
-      lib = { inherit granularity; };
+      # `matrix` joins it: one row per (family, profile, region) cell, read
+      # straight out of `[[build.matrix]]`, which is what `just matrix` prints
+      # and what `just build <family> <profile> <region>` consumes. Both are
+      # system-independent because both read only font.toml.
+      lib = { inherit granularity matrix; };
 
       packages = forAllSystems (pkgs:
         let
@@ -65,10 +70,12 @@
                 (nixpkgs.lib.mapAttrsToList (name: path: { inherit name path; }) drvs)))
           sources.perFamily
 
-        # `nix build .#sans`         → the products, in the out/ layout
-        # `nix build .#sans-release` → the release zip
+        # `nix build .#sans`            → the products, in the out/ layout
+        # `nix build .#sans-coding-tc`  → one (profile, region) cell of them
+        # `nix build .#sans-release`    → the release zip
         # `nix build .#sans-merged-Bold` → one step, for bisecting a diff
         // families.outputs
+        // families.cells
         // families.releases
         // families.steps
         // families.extras

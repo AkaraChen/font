@@ -5,6 +5,11 @@
 #   version: e.g. 0.1.5 (no leading v)
 #   base_tag: existing product tag to post-process (default v0.1.4)
 #   expand_ligatures: fold dlig into calt (KIT-240)
+# NOTE: this workflow post-processes the TTFs of an *already published* tag, and
+# every published tag predates the AKR rename (KIT-282). The `SarasaNZSSlabNFM`
+# names below are therefore correct for what it operates on and must not be
+# renamed with the rest of the repo — the assets it downloads really are called
+# that. Rewriting the release flow around the derivations is KIT-283.
 name: Release NFM
 
 on:

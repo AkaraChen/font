@@ -1,4 +1,4 @@
-// 圆体 IosevkaCurlyRHR — Plotter / 路径圆角 coding sample
+// 圆体 AKR Round SC — Plotter / 路径圆角 coding sample
 const path = (x0, y0) => {  /* 中文等宽对齐测试 */
   if (id !== 0Ool1I| && rn != m) return cl + d;
   return { ok: true, arr: [1, 2, 3] } => null;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render 荷塘月色 mixed CJK/EN coding sample for CourierPrimeZhuque."""
+"""Render 荷塘月色 mixed CJK/EN coding sample for AKR Type SC."""
 
 from __future__ import annotations
 
@@ -119,10 +119,10 @@ def main() -> int:
     ap.add_argument(
         "--font",
         type=Path,
-        default=root / "out" / "nerd" / "CourierPrimeZhuqueNFM-Regular.ttf",
+        default=root / "out" / "nerd" / "AKRTypeSCNFM-Regular.ttf",
     )
     ap.add_argument("--out-dir", type=Path, default=root / "samples" / "rendered")
-    ap.add_argument("--title", default="CourierPrimeZhuque NFM · EN 600 / CJK 1200")
+    ap.add_argument("--title", default="AKR Type SC NFM · EN 600 / CJK 1200")
     ap.add_argument("--body-file", type=Path, default=None)
     ap.add_argument("--size", type=int, default=15)
     args = ap.parse_args()

@@ -1,4 +1,4 @@
-# casual — RecursiveYozai Dual
+# casual — AKR Casual SC Dual
 
 Casual coding dual-width face: **Recursive Mono Casual** Latin + **Yozai 悠哉** CJK,
 strict **2:1** grid, **measured stroke match** (no Nerd patch in v0.1).
@@ -12,11 +12,11 @@ strict **2:1** grid, **measured stroke match** (no Nerd patch in v0.1).
 | Grid | EN cell / CJK cell | **500 / 1000** (UPM 1000) |
 | Weight match | measured vertical stems | Regular: Yozai Regular **+ s=10** · Bold: Medium **+ s=20** |
 | Slant | — | **0°** (Recursive Casual is upright) |
-| Product | Regular + Bold | `out/RecursiveYozaiDual-{Regular,Bold}.ttf` |
+| Product | Regular + Bold | `out/AKRCasualSCDual-{Regular,Bold}.ttf` |
 
 ```bash
 just build casual
-# → out/RecursiveYozaiDual-{Regular,Bold}.ttf
+# → out/AKRCasualSCDual-{Regular,Bold}.ttf
 ```
 
 ## Why this pairing
@@ -67,17 +67,24 @@ Unlike Radon (measured ~7.5° lean), Recursive Casual statics are upright —
 
 ## Name recipe
 
+`AKR <Style> <Region> <Variant>` — see the naming section of the root
+[`README.md`](../README.md).
+
 | Token | Meaning |
 | --- | --- |
-| **Recursive** | Recursive Mono Casual Latin |
-| **Yozai** | 悠哉 CJK |
-| **Dual** | 2:1 dual-width product |
+| **AKR** | this repository's house name |
+| **Casual** | Recursive Mono Casual Latin × 悠哉 Yozai CJK |
+| **SC** | Simplified Chinese CJK master |
+| **Dual** | 2:1 dual-width coding face. Not `NFM`: casual is the one coding family with **no** Nerd patch step, and naming icons it does not carry would be a lie. |
 
-- Family (name ID 1): `RecursiveYozai Dual` (19 chars, Windows ≤ 31)
-- PostScript / file stem: `RecursiveYozaiDual`
-- Not an official ArrowType or LXGW face. OFL reserved names may include
-  **Recursive** and **Y.Oz / YOz** — this family is a **project product label**;
-  rename before any public OFL redistribution (same policy as RadonWenKai / YuanTi).
+- Family (name ID 1): `AKR Casual SC Dual` (18 chars, Windows ≤ 31)
+- PostScript / file stem: `AKRCasualSCDual`
+- Not an official ArrowType or LXGW face. Was `RecursiveYozai Dual` before KIT-282.
+
+The family name carries no upstream reserved name — the OFL does not allow a
+derivative to keep its donors' reserved names. Donors are credited in name ID 5
+(version string) and name ID 10 (description). See
+[`../docs/naming-migration.md`](../docs/naming-migration.md).
 
 ## Layout
 
@@ -115,7 +122,7 @@ and merge uses [`fontkit.merge`](../lib/fontkit/merge.py), configured by `[merge
 ```bash
 cd casual
 just build casual                 # full pipeline + 2:1 gate
-just release casual # → dist/RecursiveYozaiDual-0.1.0.zip
+just release casual # → dist/AKRCasualSCDual-0.1.0.zip
 ./scripts/render-sample.sh         # refresh samples/rendered/
 ./scripts/calibrate-stroke.sh      # re-measure embolden strengths
 ```

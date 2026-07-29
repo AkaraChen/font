@@ -51,7 +51,7 @@ import argparse
 import sys
 import unicodedata
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as _replace_dataclass
 from pathlib import Path
 from typing import Iterable
 
@@ -432,11 +432,27 @@ def main(argv: list[str] | None = None) -> int:
         help="require every advance to match the codepoint's East_Asian_Width",
     )
     ap.add_argument(
+        "--cjk-sample",
+        default=None,
+        help="replace the profile's fixed CJK sample with these characters. "
+        "The default sample is Simplified (测试宽对编释 …) and is the right "
+        "question for an SC product and the wrong one for any other: IBM Plex "
+        "Sans TC has no 测, and Plex Sans KR has no Han at all. Narrowing the "
+        "gate to what every region happens to share would be the other way to "
+        "make it pass, and it would stop gating what the SC product must draw.",
+    )
+    ap.add_argument(
         "--allow-missing-cjk",
         action="store_true",
         help="do not fail if the fixed CJK samples are absent",
     )
     args = ap.parse_args(argv)
+
+    profile = PROFILES[args.profile]
+    if args.cjk_sample:
+        profile = _replace_dataclass(
+            profile, cjk_fixed=tuple(ord(c) for c in args.cjk_sample)
+        )
 
     worst = 0
     for font_path in args.fonts:
@@ -445,7 +461,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         rc, report = verify_font(
             font_path,
-            profile=PROFILES[args.profile],
+            profile=profile,
             epsilon=args.epsilon,
             expect_half=args.expect_half,
             check_nerd=args.check_nerd,

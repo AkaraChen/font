@@ -56,6 +56,7 @@ from fontTools.ttLib.scaleUpem import scale_upem
 from fontTools.ttLib.tables import ttProgram
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
 
+from fontkit import naming
 from fontkit.manifest import Manifest, load_manifest, naming_for
 
 # TrueType cannot address more glyphs than this, and a Latin base plus a full
@@ -272,12 +273,19 @@ def spec_from_manifest(
     weight: str,
     *,
     profile: str = "coding",
+    region: str = "sc",
     slope: str = "upright",
 ) -> MergeSpec:
-    """Resolve one (weight, profile, slope) cell of the build matrix.
+    """Resolve one (weight, profile, region, slope) cell of the build matrix.
 
     ``weight`` is the product subfamily ("Regular", "Bold", "Light"); the
     calibration entry it needs is its own, never Regular's.
+
+    ``region`` reaches only the name table. Everything the merge does with
+    outlines — the grid, the cell policy, the optical matching — is identical
+    across regions by construction; that is what lets `latin-prepared` have no
+    region axis (nix/granularity.nix). The donors differ, and the donors are
+    the step's inputs, not its parameters.
     """
     merge = manifest.merge
     if merge is None:
@@ -299,20 +307,31 @@ def spec_from_manifest(
     if rules is None:
         raise SystemExit(f"error: unknown profile {profile!r}")
 
-    naming = naming_for(manifest, profile)
+    names = naming_for(manifest, profile, region)
     override = getattr(merge, profile, None) if profile != "coding" else None
     sources_note = (override.sources_note if override else None) or merge.sources_note
+    # "Did the CJK side actually arrive" is a question you have to ask in the
+    # script the region is about: IBM Plex Sans KR ships no Hanja, so the
+    # Simplified sample 中文荷塘月色 fails on a correct Korean build.
+    regional = merge.regions.get(region)
+    required_sample = (
+        regional.required_sample if regional else None
+    ) or merge.required_sample
     # The merge writes the intermediate face where a family has one (the "Dual"
     # products that are later Nerd-patched into the shipped family), and the
     # product face where it does not.
-    base = naming.base_family or naming.family
-    family = base if not naming.suffix else f"{base} {naming.suffix}"
 
     return MergeSpec(
-        family=family,
-        family_ps=naming.base_ps or naming.ps,
+        family=names.base_family or names.family,
+        family_ps=names.base_ps or names.ps,
         version=merge.version,
-        sources_note=sources_note.format(slant=f"{calibration.slant_deg:g}"),
+        # `{slant}` comes from the calibration, `{region}` from the axis. A
+        # family whose donor differs by region says so in name ID 5, so a
+        # product's provenance can be read out of the font rather than
+        # reconstructed from the file it came in.
+        sources_note=sources_note.format(
+            slant=f"{calibration.slant_deg:g}", region=region.upper()
+        ),
         en_adv=manifest.grid.en_adv,
         cjk_adv=manifest.grid.cjk_adv,
         metrics={
@@ -340,7 +359,7 @@ def spec_from_manifest(
         placement=rules.placement or merge.placement,
         declares_fixed_grid=rules.declares_fixed_grid,
         glyph_prefix=merge.glyph_prefix,
-        required_sample=merge.required_sample,
+        required_sample=required_sample,
         latin_subset=merge.latin_subset,
         latin_src_adv=manifest.grid.latin_src_adv,
         latin_target_upm=manifest.grid.latin_target_upm,
@@ -701,9 +720,37 @@ def rebuild_cmap(font: TTFont, mapping: dict[int, str]) -> None:
 
 
 def rename_family(font: TTFont, subfamily: str, spec: MergeSpec) -> None:
+    """Write the name table for one product, RIBBI split included.
+
+    Name IDs 16/17 carry the real grouping: family `AKR Sans SC NFM`, subfamily
+    `Light` / `Regular` / `Bold`. IDs 1/2 are the legacy pair and cannot say the
+    same thing — Windows' name ID 2 recognises only Regular / Italic / Bold /
+    Bold Italic, so `ID2 = "Light"` is not a grouping any consumer understands.
+    A reader that only has ID 1/2 (the GDI path, some installers) would either
+    mis-group the Light or drop it.
+
+    So a non-RIBBI weight moves into ID 1 and ID 2 falls back:
+
+        ID 1   AKR Sans SC NFM Light   AKR Sans SC NFM   AKR Sans SC NFM
+        ID 2   Regular                 Regular           Bold
+        ID 16  AKR Sans SC NFM         …                 …
+        ID 17  Light                   Regular           Bold
+
+    ID 1 is the one with the 31-character budget, which is why the budget is
+    checked against the *weighted* name (`Manifest.every_product_name_fits…`)
+    rather than against the family.
+    """
     name = font["name"]
-    full = spec.family if subfamily == "Regular" else f"{spec.family} {subfamily}"
+    legacy_family = naming.legacy_family(spec.family, subfamily)
+    _, legacy_subfamily = naming.ribbi_split(subfamily)
+    full = naming.full_name(spec.family, subfamily)
     postscript = f"{spec.family_ps}-{subfamily.replace(' ', '')}"
+
+    if len(legacy_family) > naming.WINDOWS_FAMILY_LIMIT:
+        raise SystemExit(
+            f"error: name ID 1 {legacy_family!r} is {len(legacy_family)} characters, "
+            f"over the {naming.WINDOWS_FAMILY_LIMIT}-character Windows budget"
+        )
 
     # Keep copyright / trademark / manufacturer / designer / license URLs
     keep_ids = {0, 7, 8, 9, 10, 11, 13, 14}
@@ -716,8 +763,10 @@ def rename_family(font: TTFont, subfamily: str, spec: MergeSpec) -> None:
         except Exception:
             pass
 
-    add(1, spec.family)
-    add(2, subfamily)
+    add(1, legacy_family)
+    add(2, legacy_subfamily)
+    # Unique ID: keyed on the typographic pair, which is the one that is
+    # actually unique — two products share `ID1: ID2` as soon as a Light exists.
     add(3, f"{spec.family}: {subfamily}")
     add(4, full)
     add(6, postscript)
@@ -1216,6 +1265,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--cjk-bold", type=Path)
     ap.add_argument("--out-dir", type=Path, required=True)
     ap.add_argument("--profile", default="coding", choices=tuple(PROFILE_RULES))
+    # Only the name table depends on it, but it has to be passed: a build that
+    # merged the Japanese donor and stamped "SC" on it would be undiagnosable
+    # from the product alone.
+    ap.add_argument("--region", default="sc", help="build region, e.g. tc")
     ap.add_argument("--slope", default="upright", choices=("upright", "italic"))
     args = ap.parse_args(argv)
 
@@ -1230,7 +1283,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: missing input {latin} / {cjk}", file=sys.stderr)
             return 1
         spec = spec_from_manifest(
-            manifest, subfamily, profile=args.profile, slope=args.slope
+            manifest,
+            subfamily,
+            profile=args.profile,
+            region=args.region,
+            slope=args.slope,
         )
         merge_pair(
             latin,

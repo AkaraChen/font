@@ -46,7 +46,7 @@ def write_zip(dest: Path, members: list[tuple[str, Path]]) -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("fonts", nargs="+", type=Path, help="product fonts to ship")
-    ap.add_argument("--stem", required=True, help="archive stem, e.g. 'LilexSansSCNFM'")
+    ap.add_argument("--stem", required=True, help="archive stem, e.g. 'AKRSansSCNFM'")
     ap.add_argument("--version", required=True, help="release version, e.g. '0.1.0'")
     ap.add_argument("--out", required=True, type=Path, help="directory to write the zip into")
     ap.add_argument("--readme", type=Path, help="rendered README.txt to include")

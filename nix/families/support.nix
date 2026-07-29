@@ -54,23 +54,54 @@ let
   # is why those two are in the checkout.
   patcher = sources.fontPatcher;
 
-  # The default scene and master. Six of the seven families build only this one,
-  # and say so by taking these names; handwriting reads `[[build.matrix]]`
-  # instead because Phase 6 (KIT-281) gave it a second profile. Phase 7 adds the
-  # other regions the same way.
+  # The default scene and master. Five of the seven families build only this
+  # cell and say so by taking these names; handwriting reads `[[build.matrix]]`
+  # because Phase 6 (KIT-281) gave it a second profile, and sans / pixel read it
+  # because Phase 7 (KIT-282) gave them the other regions.
   profile = "coding";
   region = "sc";
 
-  # `[naming]` with `[naming.<profile>]` layered over it — the same resolution
-  # `fontkit.manifest.naming_for` does, because both sides read the same TOML and
-  # a product's file name (Nix) and its name table (Python) must not disagree
-  # about what family it belongs to.
+  # Every (profile, region) cell a family's matrix declares, as a flat list.
+  # One reading of `[[build.matrix]]` for all seven modules, so "what does this
+  # family build" has one answer rather than seven spellings of it.
+  cellsOf =
+    m:
+    lib.concatMap
+      (entry: map
+        (region: {
+          inherit (entry) profile;
+          inherit region;
+          weights = map weightName entry.weights;
+          formats = entry.formats or [ "ttf" ];
+        })
+        entry.regions)
+      m.build.matrix;
+
+  # `[naming]` segments composed into one cell's names — the same arithmetic
+  # `fontkit.manifest.naming_for` does, because both sides read the same TOML
+  # and a product's file name (Nix) and its name table (Python) must not
+  # disagree about what family it belongs to.
+  #
+  # Composed rather than looked up: `AKR Sans SC NFM` and `AKR Sans JP NFM` are
+  # the same three segments and one axis value, and writing both out is how the
+  # two eventually stop matching.
   namingFor =
-    m: profile:
+    m: profile: region:
     let
-      override = m.naming.${profile} or { };
+      n = (builtins.removeAttrs m.naming [ "coding" "text" ]) // (m.naming.${profile} or { });
+      compose = variant: lib.concatStringsSep " " [ n.house n.style (lib.toUpper region) variant ];
+      strip = lib.replaceStrings [ " " ] [ "" ];
+      family = compose n.variant;
+      baseFamily = if (n.base_variant or null) == null then null else compose n.base_variant;
     in
-    (builtins.removeAttrs m.naming [ "coding" "text" ]) // override;
+    n // {
+      inherit family region;
+      ps = strip family;
+      stem = strip family;
+      id16 = family;
+      base_family = baseFamily;
+      base_ps = if baseFamily == null then null else strip baseFamily;
+    };
 
   # granularity.mkStep, plus the defaults a font build step always wants.
   #
@@ -123,6 +154,7 @@ in
     emboldenOrCopy
     weightName
     namingFor
+    cellsOf
     ;
 
   inherit (pkgs) fontforge;

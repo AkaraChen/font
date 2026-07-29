@@ -2,7 +2,7 @@
 """Render coding sample text with a TTF at common editor sizes (px ≈ pt on 96dpi).
 
 Usage:
-  python render-coding-sample.py --font out/SarasaMonoSlabNeoZhiSongSC-Opt-Regular.ttf
+  python render-coding-sample.py --font out/AKRSlabSCDual-Regular.ttf
   python render-coding-sample.py --font out/nerd/....ttf --sizes 12,14,16
 
 Requires: pillow, fontTools (font path only; Pillow draws the text).

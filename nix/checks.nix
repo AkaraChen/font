@@ -201,16 +201,123 @@ in
 
   # Two profiles must not ship under one family name: a host would treat them as
   # two styles of one family and pick either of them for Bold.
+  #
+  # Asserted on the *composed* name rather than on "is there a [naming.<profile>]
+  # table", because with segment-based naming (KIT-282) a table that overrode
+  # only `product_name_zh` would satisfy the older spelling and still collide.
   second-profile-is-renamed = ok "second-profile-is-renamed"
     (
       lib.all
         (f:
-          let m = sources.manifests.${f}.data;
-          in lib.all
-            (p: m.naming ? ${p} && m.naming.${p} ? family)
-            (lib.filter (p: p != "coding") m.build.profiles))
+          let
+            m = sources.manifests.${f}.data;
+            names = map (p: (families.support.namingFor m p "sc").family) m.build.profiles;
+          in
+          lib.length (lib.unique names) == lib.length names)
         sources.families
-    ) "a family builds a non-coding profile without a [naming.<profile>] rename";
+    ) "two of a family's profiles compose to the same family name";
+
+  # --- Phase 7 (KIT-282) ----------------------------------------------------
+
+  # The rename's whole point: no upstream reserved font name survives in a
+  # product's family name. `pins.env` warned about this in five places and the
+  # rfn_note fields asked for it; this is the check that keeps it true.
+  #
+  # Matched case-insensitively against the composed name for every cell — an
+  # `AKR Sans SC NFM` that someone later respelled `AKR Lilex SC NFM` is the
+  # exact regression being prevented.
+  no-upstream-reserved-name-in-a-family-name =
+    let
+      reserved = [
+        "iosevka"
+        "monaspace"
+        "radon"
+        "lilex"
+        "plex"
+        "lxgw"
+        "wenkai"
+        "sarasa"
+        "recursive"
+        "yozai"
+        "courier"
+        "zhuque"
+        "fusion"
+        "resourcehan"
+        "neozhisong"
+      ];
+      composed = lib.concatMap
+        (f:
+          let
+            m = sources.manifests.${f}.data;
+            regions = m.build.regions;
+          in
+          lib.concatMap
+            (p: lib.concatMap
+              (r:
+                let n = families.support.namingFor m p r;
+                in [ n.family ] ++ lib.optional (n.base_family != null) n.base_family)
+              regions)
+            m.build.profiles)
+        sources.families;
+      offending = lib.filter
+        (name: lib.any (word: lib.hasInfix word (lib.toLower (lib.replaceStrings [ " " ] [ "" ] name))) reserved)
+        composed;
+    in
+    ok "no-upstream-reserved-name-in-a-family-name" (offending == [ ])
+      "a composed family name still carries an upstream reserved name: ${
+        lib.concatStringsSep ", " offending
+      }";
+
+  # Name ID 1 carries the weight for anything outside RIBBI, so the 31-character
+  # Windows budget is a property of the longest *product* name a matrix cell can
+  # produce — family plus `Light` — not of the family name.
+  every-product-name-fits-the-windows-budget =
+    let
+      # The same split fontkit.naming.ribbi_split does: Regular and Bold stay in
+      # name ID 2, anything else moves into name ID 1.
+      productName = family: weight:
+        if lib.elem weight [ "regular" "bold" ] then
+          family
+        else
+          "${family} ${lib.toUpper (builtins.substring 0 1 weight)}${builtins.substring 1 (-1) weight}";
+      names = lib.concatMap
+        (f:
+          let m = sources.manifests.${f}.data;
+          in lib.concatMap
+            (entry: lib.concatMap
+              (r:
+                let n = families.support.namingFor m entry.profile r;
+                in map (w: productName n.family w) entry.weights
+                ++ lib.optional (n.base_family != null) n.base_family)
+              entry.regions)
+            m.build.matrix)
+        sources.families;
+      over = lib.filter (name: lib.stringLength name > 31) names;
+    in
+    ok "every-product-name-fits-the-windows-budget" (over == [ ])
+      "name ID 1 over the 31-character Windows budget: ${lib.concatStringsSep ", " over}";
+
+  # The region axis is only free if the Latin side really is shared, and sans is
+  # the family that has to prove it: four regions, two weights, and *two*
+  # `src-latin` derivations rather than eight.
+  #
+  # `latin-prepared-rejects-region` above says the contract forbids widening the
+  # key; this says the family did not find some other way to fan out — a
+  # per-region `srcLatin` that simply ignores its region argument would pass the
+  # contract check and fail this one.
+  sans-builds-one-latin-for-four-regions = ok "sans-builds-one-latin-for-four-regions"
+    (
+      let
+        steps = families.byFamily.sans.steps;
+        regions = sources.manifests.sans.data.build.regions;
+        weights = sources.manifests.sans.data.build.weights;
+        latin = lib.filter (lib.hasPrefix "src-latin-") (lib.attrNames steps);
+        paths = lib.unique (map (name: steps.${name}.drvPath) latin);
+      in
+      lib.length regions == 4
+      && lib.length latin == lib.length weights
+      && lib.length paths == lib.length weights
+    ) "sans fans its Latin build out per region, or stopped declaring four regions";
 
   # "不支持的显式声明，不是静默缺失" — an axis value a family cannot produce is
   # declared with a reason, and a declared value is never also disowned.
@@ -262,7 +369,7 @@ in
       let
         manifest = sources.manifests.sans.data;
         commit = manifest.sources.plex.commit;
-        url = manifest.sources.plex.artifacts.regular.url;
+        url = manifest.sources.plex.artifacts.sc_regular.url;
       in
       lib.hasInfix commit url && !(lib.hasInfix "$" url)
     ) "font.toml source URL does not contain its pinned commit";

@@ -44,19 +44,15 @@ latin_src_adv = 500
 latin_src_upm = 1000
 latin_target_upm = 1000
 
+# Was `IosevkaCurlyRHR NFM` (KIT-282). Resource Han Rounded ships CN/TW/HK/JP/KR
+# masters, so this family can take the full region axis — but the pins here are
+# CN only and adding the other four is a pin change, not a naming change.
 [naming]
-family = "IosevkaCurlyRHR NFM"
-ps = "IosevkaCurlyRHRNFM"
-stem = "IosevkaCurlyRHRNFM"
-house = "IosevkaCurlyRHR"
-style = "NFM"
-region = "SC"
-variant = "coding"
-id16 = "IosevkaCurlyRHR NFM"
-id17 = "{weight}"
-rfn_note = "Iosevka and Source Han may reserve upstream names; review before public OFL redistribution."
-base_family = "IosevkaCurlyRHR Dual"
-base_ps = "IosevkaCurlyRHRDual"
+house = "AKR"
+style = "Round"
+variant = "NFM"
+base_variant = "Dual"
+rfn_note = "Iosevka and Source Han are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 product_name_zh = "圆体"
 
 [merge]

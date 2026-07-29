@@ -17,6 +17,8 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
+from fontkit import naming
+
 Weight = Literal["light", "regular", "medium", "bold"]
 Format = Literal["ttf", "otf", "woff2"]
 Slope = Literal["upright", "italic"]
@@ -97,54 +99,94 @@ class NamingOverride(StrictModel):
     carries no Nerd icons and does not claim the terminal grid, so shipping it
     under the coding family name would put two incompatible faces in one family
     menu. Only the fields that actually differ are listed; everything else —
-    copyright, the RFN note, the version — is inherited.
+    the house, the style token, the RFN note, the version — is inherited.
+
+    In practice a profile overrides exactly one segment: `variant`. `Text` is
+    what makes `AKR Hand SC Text` a different family from `AKR Hand SC NFM`.
     """
 
-    family: str | None = None
-    ps: str | None = None
-    stem: str | None = None
     style: str | None = None
     variant: str | None = None
-    id16: str | None = None
-    id17: str | None = None
-    base_family: str | None = None
-    base_ps: str | None = None
-    suffix: str | None = None
+    base_variant: str | None = None
     product_name_zh: str | None = None
-
-    @field_validator("family", "base_family", "id16")
-    @classmethod
-    def windows_family_name_limit(cls, value: str | None) -> str | None:
-        if value is not None and len(value) > 31:
-            raise ValueError("Windows family names must be at most 31 characters")
-        return value
 
 
 class Naming(StrictModel):
-    family: str
-    ps: str
-    stem: str
+    """The *segments* a product name is built from — never the finished string.
+
+    `AKR Sans SC NFM` is `house` + `style` + the build's region + `variant`.
+    Writing it out would mean one literal per region per profile per family;
+    with five regions and two profiles that is ten strings a family, each one a
+    place for `AKR Sans JP NFM` to be spelled `AKR Sans Jp NFM` exactly once.
+    `naming_for(manifest, profile, region)` composes them instead.
+
+    `base_variant` is the pre-Nerd intermediate a family ships alongside its
+    product (`Dual`). Families whose merge output *is* the product — handwriting,
+    serif, casual — leave it unset.
+    """
+
     house: str
     style: str
-    region: str
     variant: str
-    id16: str
-    id17: str
     rfn_note: str
-    base_family: str | None = None
-    base_ps: str | None = None
-    suffix: str = ""
+    base_variant: str | None = None
     version: str = "0.1.0"
     product_name_zh: str | None = None
     # `[naming.text]` — the coding profile is the base and has no override.
     text: NamingOverride | None = None
 
-    @field_validator("family", "base_family", "id16")
-    @classmethod
-    def windows_family_name_limit(cls, value: str | None) -> str | None:
-        if value is not None and len(value) > 31:
-            raise ValueError("Windows family names must be at most 31 characters")
-        return value
+
+class ResolvedNaming(StrictModel):
+    """One (profile, region) cell's names, composed from the segments.
+
+    Everything downstream — the merge engine's name table, the Nix file stems,
+    the README — reads this rather than `[naming]`, so a product's file name and
+    its name ID 1 cannot disagree about which family it belongs to.
+    """
+
+    house: str
+    style: str
+    region: str
+    variant: str
+    rfn_note: str
+    base_variant: str | None = None
+    version: str = "0.1.0"
+    product_name_zh: str | None = None
+
+    @property
+    def family(self) -> str:
+        """Name ID 16, and name ID 1 for the RIBBI weights."""
+        return naming.compose(self.house, self.style, self.region, self.variant)
+
+    @property
+    def ps(self) -> str:
+        return naming.postscript(self.family)
+
+    @property
+    def stem(self) -> str:
+        """The product file stem. Same string as `ps`, deliberately: a file
+        called `AKRSansSCNFM-Bold.ttf` and a PostScript name of
+        `AKRSansSCNFM-Bold` is one fact, not two."""
+        return self.ps
+
+    @property
+    def id16(self) -> str:
+        return self.family
+
+    @property
+    def base_family(self) -> str | None:
+        if self.base_variant is None:
+            return None
+        return naming.compose(self.house, self.style, self.region, self.base_variant)
+
+    @property
+    def base_ps(self) -> str | None:
+        base = self.base_family
+        return None if base is None else naming.postscript(base)
+
+    def product_family(self, weight: str) -> str:
+        """Name ID 1 for one product — the family plus a non-RIBBI weight."""
+        return naming.legacy_family(self.family, weight)
 
 
 class VerticalMetrics(StrictModel):
@@ -201,6 +243,9 @@ class Merge(StrictModel):
     # `[merge.text]` — the coding profile is the base and has no override.
     text: MergeOverride | None = None
 
+    # `[merge.regions.<code>]` — what one region changes. See MergeRegionOverride.
+    regions: dict[Region, MergeRegionOverride] = Field(default_factory=dict)
+
     @field_validator("glyph_prefix")
     @classmethod
     def prefix_cannot_collide_with_a_real_glyph_name(cls, value: str) -> str:
@@ -232,6 +277,24 @@ class MergeOverride(StrictModel):
     """
 
     sources_note: str | None = None
+
+
+class MergeRegionOverride(StrictModel):
+    """What one region changes about the merge.
+
+    Only `required_sample`, and only because "did the CJK side actually come
+    across" is a question you have to ask in the script the region is about.
+    IBM Plex Sans KR ships **no Hanja at all** — 12183 codepoints, essentially
+    Hangul and punctuation — so the Simplified smoke test 中文荷塘月色 fails on a
+    correct Korean build. Loosening the check to "some glyphs arrived" would
+    trade a real gate for a green one; naming the right sample keeps the gate.
+
+    Nothing else belongs here. The grid, the cell policy and the optical
+    matching are identical across regions by construction — that is what lets
+    `latin-prepared` have no region axis (nix/granularity.nix).
+    """
+
+    required_sample: str | None = None
 
 
 class Nerd(StrictModel):
@@ -372,34 +435,67 @@ class Manifest(StrictModel):
         A `text` face has no Nerd icons and does not claim the terminal grid.
         Installed alongside the coding face under the same name, a host would
         treat them as two styles of one family and pick either for "Bold".
+
+        With segment-based naming the check is on the *composed* name rather
+        than on "did you remember to write a family string": an override that
+        set only `product_name_zh` would have satisfied the old spelling.
         """
+        seen: dict[str, str] = {}
         for profile in self.build.profiles:
-            if profile == "coding":
-                continue
-            override = getattr(self.naming, profile, None)
-            if override is None or not override.family:
+            family = naming_for(self, profile, "sc").family
+            if family in seen:
                 raise ValueError(
-                    f"profile {profile!r} is built but [naming.{profile}] does not "
-                    "rename the family — it would collide with the coding face"
+                    f"profiles {seen[family]!r} and {profile!r} both compose to "
+                    f"{family!r} — [naming.{profile}] must change a segment "
+                    "(normally `variant`) or the two faces collide in a font menu"
                 )
+            seen[family] = profile
+        return self
+
+    @model_validator(mode="after")
+    def every_product_name_fits_the_windows_family_budget(self) -> Self:
+        """Name ID 1 carries the weight for anything outside RIBBI.
+
+        So the 31-character budget is not a property of the family name — it is
+        a property of the longest *product* name the matrix can produce, which
+        is the family plus `Light`. Checked across every (profile, region,
+        weight) cell rather than on one literal, because that is what the build
+        actually emits.
+        """
+        for entry in self.build.matrix:
+            resolved = {
+                region: naming_for(self, entry.profile, region) for region in entry.regions
+            }
+            for region, names in resolved.items():
+                candidates = [names.family] + [
+                    names.product_family(weight.capitalize()) for weight in entry.weights
+                ]
+                if names.base_family:
+                    candidates.append(names.base_family)
+                for candidate in candidates:
+                    if len(candidate) > naming.WINDOWS_FAMILY_LIMIT:
+                        raise ValueError(
+                            f"{candidate!r} is {len(candidate)} characters — Windows "
+                            f"family names must be at most {naming.WINDOWS_FAMILY_LIMIT} "
+                            f"(profile {entry.profile!r}, region {region!r})"
+                        )
         return self
 
 
-def naming_for(manifest: Manifest, profile: str) -> Naming:
-    """The naming one profile ships under.
+def naming_for(manifest: Manifest, profile: str, region: str) -> ResolvedNaming:
+    """The names one (profile, region) cell ships under.
 
     `coding` is the base table; any other profile layers `[naming.<profile>]`
-    over it, so the fields that are genuinely shared (copyright, the reserved
-    font name note, the version) are stated once.
+    over it, so the segments that are genuinely shared (the house, the style
+    token, the reserved font name note, the version) are stated once.
     """
     base = manifest.naming
     override = getattr(base, profile, None) if profile != "coding" else None
-    if override is None:
-        return base
-    merged = base.model_dump()
-    merged.pop(profile, None)
-    merged.update({k: v for k, v in override.model_dump().items() if v is not None})
-    return Naming.model_validate(merged)
+    segments = base.model_dump(exclude={"text"})
+    if override is not None:
+        segments.update({k: v for k, v in override.model_dump().items() if v is not None})
+    segments["region"] = region
+    return ResolvedNaming.model_validate(segments)
 
 
 def load_manifest(path: str | Path) -> Manifest:
@@ -430,22 +526,27 @@ def legacy_environment(manifest: Manifest) -> dict[str, str]:
             return str(int(value))
         return str(value)
 
+    # The diagnostics are hand-run against one cell at a time, and the cell they
+    # have always meant is the default one. `REGION` is exported alongside the
+    # names so a script that prints a font's provenance says which build it got.
+    names = naming_for(manifest, "coding", manifest.build.regions[0])
+
     env: dict[str, object] = {
         "EN_ADV": manifest.grid.en_adv,
         "CJK_ADV": manifest.grid.cjk_adv,
         "UPM": manifest.grid.upm,
-        "FAMILY_NAME": manifest.naming.family,
-        "FAMILY_PS": manifest.naming.ps,
-        "PRODUCT_STEM": manifest.naming.stem,
-        "FAMILY_SUFFIX": manifest.naming.suffix,
-        "PRODUCT_VERSION": manifest.naming.version,
+        "REGION": names.region,
+        "FAMILY_NAME": names.family,
+        "FAMILY_PS": names.ps,
+        "PRODUCT_STEM": names.stem,
+        "PRODUCT_VERSION": names.version,
     }
-    if manifest.naming.base_family is not None:
-        env["BASE_FAMILY_NAME"] = manifest.naming.base_family
-    if manifest.naming.base_ps is not None:
-        env["BASE_FAMILY_PS"] = manifest.naming.base_ps
-    if manifest.naming.product_name_zh is not None:
-        env["PRODUCT_NAME_ZH"] = manifest.naming.product_name_zh
+    if names.base_family is not None:
+        env["BASE_FAMILY_NAME"] = names.base_family
+    if names.base_ps is not None:
+        env["BASE_FAMILY_PS"] = names.base_ps
+    if names.product_name_zh is not None:
+        env["PRODUCT_NAME_ZH"] = names.product_name_zh
 
     grid_names = {
         "latin_src_adv": "LATIN_SRC_ADV",

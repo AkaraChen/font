@@ -20,7 +20,10 @@
 let
   inherit (support) step file profile region;
   m = manifest.data;
-  inherit (m) grid naming;
+  inherit (m) grid;
+  # One cell, composed rather than read: `[naming]` holds segments now, and the
+  # region is a build axis (KIT-282).
+  naming = support.namingFor m profile region;
   recursive = m.sources.recursive;
   yozai = m.sources.yozai;
 
@@ -157,6 +160,9 @@ let
 in
 {
   inherit out verify;
+
+  # `nix build .#casual-coding-sc`. One entry because casual declares one cell.
+  cells."${profile}-${region}" = out;
 
   steps = lib.listToAttrs (
     lib.concatMap

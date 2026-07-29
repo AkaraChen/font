@@ -34,7 +34,10 @@
 let
   inherit (support) step file profile region patcher;
   m = manifest.data;
-  inherit (m) grid naming;
+  inherit (m) grid;
+  # One cell, composed rather than read: `[naming]` holds segments now, and the
+  # region is a build axis (KIT-282).
+  naming = support.namingFor m profile region;
 
   family = "serif";
   weights = map support.weightName m.build.weights;
@@ -46,7 +49,10 @@ let
   # renames the *family*, not the file stem, so the verda build still writes
   # SarasaMonoSlabSC-<weight>.ttf.
   upstreamStem = "SarasaMonoSlabSC";
-  intermediateStem = "SarasaMonoSlabNeoZhiSongSC-Opt";
+  # Was `SarasaMonoSlabNeoZhiSongSC-Opt` — three upstream reserved names in one
+  # file stem, on a face that ships in `serif/out/`. KIT-282 gave serif a
+  # `base_variant` so the intermediate is named the way every other family's is.
+  intermediateStem = naming.base_ps;
 
   emboldenFor = weight: toString m.calibration.${lib.toLower weight}.embolden;
 
@@ -177,8 +183,23 @@ let
   merged = weight: step "merged" { inherit family profile region weight; } {
     buildCommand = ''
       mkdir -p $out
-      cp ${sarasaBuild}/${upstreamStem}-${weight}.ttf \
-        $out/${intermediateStem}-${weight}.ttf
+      # Into the build directory first, not straight into $out: a file copied
+      # out of the store keeps the store's read-only mode, and the rename below
+      # writes it in place.
+      install -m 644 ${sarasaBuild}/${upstreamStem}-${weight}.ttf \
+        ./${intermediateStem}-${weight}.ttf
+
+      # The file stem is ours from the copy above; the *name table* is still
+      # upstream's `Sarasa MonoSlab SC`, because config.json is what renames a
+      # verda build and it renames it to a Sarasa name. Restamping here is what
+      # makes the two agree — and it is the same RIBBI-aware step every other
+      # family's Nerd pass runs, not a second naming implementation.
+      fontkit rename-nerd-family \
+        --family ${lib.escapeShellArg naming.base_family} \
+        --family-ps ${naming.base_ps} \
+        ./${intermediateStem}-${weight}.ttf
+
+      cp ./${intermediateStem}-${weight}.ttf $out/
     '';
   };
 
@@ -218,6 +239,7 @@ let
         --donor ${donorFor weight} \
         --protect-ambiguous \
         --widen-shared skip \
+        --narrow-shared skip \
         --expand-ligatures \
         ${merged weight}/*.ttf
     '';
@@ -266,6 +288,8 @@ let
 in
 {
   inherit out verify;
+
+  cells."${profile}-${region}" = out;
 
   steps = lib.listToAttrs (
     [ { name = "src-cjk-Regular"; value = srcCjk; } ]

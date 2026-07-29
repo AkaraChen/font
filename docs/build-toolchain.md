@@ -15,7 +15,9 @@ deleted the shell orchestration — see
 
 ```bash
 just dev              # enter the pinned toolchain shell
+just matrix           # every (family, profile, region) cell (Phase 7)
 just build sans       # nix build .#sans, materialised into sans/out
+just build sans coding tc   # one matrix cell, into sans/out-coding-tc
 just gate sans        # the family's own 2:1 / EAW / Nerd / feature gate
 just release sans     # the release zip (depends on the gate passing)
 just verify sans      # diff the products against the committed fingerprints
@@ -445,6 +447,64 @@ impossible (single CJK masters thickened with pathops; stroke embolden has no
 negative strength), and handwriting declares that `otf` is (the products are
 quadratic by construction). `nix/checks.nix` refuses a declaration without a
 reason, and refuses one that disowns a value the family also builds.
+
+### The region axis, and why it is nearly free (Phase 7, KIT-282)
+
+`[[build.matrix]]` has always had a `regions` list; sans and pixel are the first
+families to put more than one value in it. sans builds `sc tc jp kr` from four
+IBM Plex Sans masters at one pinned commit; pixel builds the same four from four
+members of one archive it already downloaded.
+
+The cost is four `merged` and four `nerd` derivations, and **not** four Latin
+builds. That is `nix/granularity.nix`'s ★ claim collecting:
+
+```
+src-latin-sans-coding-Bold        ← one derivation, four regions ask for it
+cjk-prepared-sans-tc-Bold         ← per region, because the master is
+merged-sans-coding-tc-Bold
+nerd-sans-tc-Bold
+```
+
+`latin-prepared` and `src-latin` have no `region` axis and `mkStep` raises if
+one is passed, so the sharing cannot be lost by accident — `nix/checks.nix`
+asserts both directions.
+
+`.#sans-coding-tc` builds one cell. `just build sans coding tc` is that plus a
+copy into `sans/out-coding-tc`, deliberately **not** `sans/out`: the fingerprint
+baseline is keyed on `out/`, and a one-cell build landing there would report
+every other region as `MISSING`.
+
+`just matrix` prints the flattened matrix, read out of the same `font.toml`
+tables — see `nix/matrix.nix`. It is not a second list to keep in sync.
+
+### Naming: segments, not strings (Phase 7, KIT-282)
+
+Products are `AKR <Style> <Region> <Variant> [<Weight>]`. `[naming]` holds the
+segments — `house`, `style`, `variant`, optionally `base_variant` — and the
+region comes from the axis, so one table covers five regions. `naming_for(manifest,
+profile, region)` (Python) and `support.namingFor m profile region` (Nix) compose
+the same string on both sides, which is what stops a product's file name and its
+name ID 1 from disagreeing.
+
+Two things the rename fixed at the same time:
+
+* **No upstream reserved name in name ID 1.** `LilexSansSC NFM`,
+  `SarasaNZSSlab NFM` and the other five carried Lilex / Plex / Sarasa / Iosevka
+  / Monaspace / Radon / LXGW / Recursive / Yozai / Courier Prime / Zhuque /
+  Fusion Pixel in the family name, which the OFL's Reserved Font Name clause does
+  not allow in a derivative. Attribution lives in name ID 5, name ID 10 and the
+  READMEs. `nix/checks.nix` and `lib/tests/test_manifest.py` both assert it.
+* **The RIBBI split.** Windows' name ID 2 understands only `Regular` / `Italic` /
+  `Bold` / `Bold Italic`, so a `Light` moves into name ID 1 and ID 2 falls back
+  to `Regular`; IDs 16/17 carry the real grouping. `fontkit.naming.ribbi_split`
+  is the one implementation, and both `merge.rename_family` and
+  `rename_nerd_family.apply_names` call it — the latter also had to start
+  reading name ID **17** before name ID 2, or the Nerd pass would rename a Light
+  product into a second Regular.
+
+The 31-character Windows budget is therefore a property of the longest *product*
+name a cell can produce (family + `Light`), not of the family name, and is
+checked there.
 
 ### The coupling that stopped being possible
 

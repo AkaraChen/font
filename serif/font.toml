@@ -57,17 +57,15 @@ en_adv = 500
 cjk_adv = 1000
 upm = 1000
 
+# Was `SarasaNZSSlab NFM` (KIT-282). `base_variant` is new here: serif's
+# intermediate used to ship under upstream's own `SarasaMonoSlabNeoZhiSongSC-Opt`
+# stem, which is three reserved names in one file name.
 [naming]
-family = "SarasaNZSSlab NFM"
-ps = "SarasaNZSSlabNFM"
-stem = "SarasaNZSSlabNFM"
-house = "SarasaNZSSlab"
-style = "NFM"
-region = "SC"
-variant = "coding"
-id16 = "SarasaNZSSlab NFM"
-id17 = "{weight}"
-rfn_note = "Review Sarasa and LXGW reserved names before public OFL redistribution."
+house = "AKR"
+style = "Slab"
+variant = "NFM"
+base_variant = "Dual"
+rfn_note = "Sarasa, Iosevka and LXGW are reserved font names; this product carries none of them in its family name. Donors are credited in name IDs 5 and 10."
 
 [calibration.regular]
 source_weight = "regular"
