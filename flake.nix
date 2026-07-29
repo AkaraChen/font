@@ -10,8 +10,26 @@
 
   outputs = { self, nixpkgs }:
     let
+      # Two lists, because a Mac is a fine machine to *work* on and not a
+      # machine this project builds fonts on (KIT-297).
+      #
+      # The devShell, fontkit and its tests are offered everywhere: `just test`,
+      # `just dump`, `just fmt` and the diagnostics under tools/ all run on a
+      # laptop and none of them produce a shipped byte.
+      #
+      # Font products are Linux only. The reason is measured rather than
+      # asserted: `font-patcher` redraws every icon it imports through
+      # FontForge's compiled outline code, and on the same pins that code
+      # rounds differently per architecture — 272 of 13797 glyphs, 156 of them
+      # with a different point count. So a Mac build is a *different font*, and
+      # the only thing it can do is waste three hours and then fail
+      # `just verify` for a reason that is nobody's bug. See
+      # fingerprints/README.md.
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      buildSystems = [ "x86_64-linux" "aarch64-linux" ];
+
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+      isBuildSystem = pkgs: builtins.elem pkgs.stdenv.hostPlatform.system buildSystems;
 
       granularity = import ./nix/granularity.nix { inherit (nixpkgs) lib; };
       matrix = import ./nix/matrix.nix { inherit (nixpkgs) lib; root = ./.; };
@@ -74,12 +92,19 @@
         # `nix build .#sans-coding-tc`  → one (profile, region) cell of them
         # `nix build .#sans-release`    → the release zip
         # `nix build .#sans-merged-Bold` → one step, for bisecting a diff
-        // families.outputs
-        // families.cells
-        // families.releases
-        // families.steps
-        // families.extras
-        // families.verifies);
+        #
+        # Absent on darwin (see `buildSystems`). `nix build .#sans` there fails
+        # with "attribute 'sans' missing" rather than after three hours — and
+        # `just build` says the same thing in a sentence.
+        //
+        nixpkgs.lib.optionalAttrs (isBuildSystem pkgs) (
+          families.outputs
+          // families.cells
+          // families.releases
+          // families.steps
+          // families.extras
+          // families.verifies
+        ));
 
       # `just check` (nix flake check) builds fontkit, which runs its pytest
       # suite — the only automated gate on the shared build steps that does not

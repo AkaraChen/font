@@ -40,6 +40,7 @@ import argparse
 import difflib
 import hashlib
 import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -615,6 +616,26 @@ def main() -> int:
     default_dir = repo_root / "fingerprints" / args.family
 
     if args.command == "write":
+        # The one irreversible thing this tool does. A baseline authored off
+        # Linux would enshrine that machine's FontForge rounding as the truth
+        # and turn CI red for everyone else — the failure the "baselines belong
+        # to CI" rule exists to prevent, and the one it could never actually
+        # stop, because writing one was a single command away.
+        #
+        # `--out` is exempt: CI passes it to publish the current run's
+        # fingerprints as an artifact, and pointing it somewhere that is not
+        # `fingerprints/<family>/` is by definition not adopting a baseline.
+        # That is also the escape hatch for looking at what a Mac would produce.
+        if args.out is None and platform.system() != "Linux":
+            print(
+                f"error: refusing to write fingerprints/{args.family} on "
+                f"{platform.system()}/{platform.machine()}. Baselines are "
+                "authored on x86_64-linux and adopted from a CI run — see "
+                "fingerprints/README.md (Bootstrapping). To inspect what this "
+                "machine produces without adopting it, pass --out somewhere else.",
+                file=sys.stderr,
+            )
+            return 2
         out_dir = Path(args.out) if args.out else default_dir
         written = write_family(repo_root, args.family, out_dir, full=args.full)
         print(f"wrote {len(written)} fingerprint(s) to {out_dir}")
