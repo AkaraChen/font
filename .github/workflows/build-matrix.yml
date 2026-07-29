@@ -154,6 +154,26 @@ jobs:
           # exactly what this layer is supposed to keep.
           nix develop --profile result-shell --command true
 
+      # KIT-297. `fontTools 4.60.1` in the provenance line was never enough to
+      # explain why two machines disagreed — this prints the things that
+      # actually decide it: whether the Cython accelerators are compiled, what
+      # the platform libm returns, and the digest of the two build steps that
+      # consume it.
+      #
+      # It stays useful now that fonts are Linux-only, because the thing it
+      # guards against is CI's *own* toolchain moving under a nixpkgs bump: an
+      # accelerator flipping from `py` to `so` would change outlines and this is
+      # the only place it would be visible before the fingerprints went red.
+      # `just toolchain-fingerprint` prints the same table anywhere.
+      - name: Toolchain fingerprint
+        run: nix develop --command python3 tools/toolchain-fingerprint.py | tee toolchain-fingerprint.txt
+
+      - name: Upload toolchain fingerprint
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-fingerprint-${{ runner.os }}
+          path: toolchain-fingerprint.txt
+
       - name: Report layer size
         run: tools/cache-report.sh toolchain result-shell
 

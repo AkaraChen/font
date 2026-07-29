@@ -112,6 +112,14 @@ jobs:
             nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/font.toml') }}
             nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
 
+      # The same table the toolchain job prints (KIT-297), recorded here because
+      # this is the run whose bytes people install. If a nixpkgs bump ever flips
+      # fontTools' Cython accelerators from `py` to `so`, the outlines move, and
+      # the release that shipped them should carry the evidence of which
+      # toolchain drew them rather than leaving it to be reconstructed.
+      - name: Toolchain fingerprint
+        run: nix develop --command python3 tools/toolchain-fingerprint.py | tee toolchain-fingerprint.txt
+
       - name: Check the version against font.toml
         run: |
           set -euo pipefail
