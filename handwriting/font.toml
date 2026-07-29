@@ -106,29 +106,19 @@ latin_src_upm = 2000
 latin_narrow_adv = 1111
 latin_uniform_scale = 0.9
 
+# Was `RadonWenKai NFM` (KIT-282) — the rename the old rfn_note kept asking for.
 [naming]
-family = "RadonWenKai NFM"
-ps = "RadonWenKaiNFM"
-stem = "RadonWenKaiNFM"
-house = "RadonWenKai"
-style = "NFM"
-region = "SC"
-variant = "coding"
-id16 = "RadonWenKai NFM"
-id17 = "{weight}"
-rfn_note = "Monaspace reserves Radon and LXGW reserves upstream names; rename before public OFL redistribution."
+house = "AKR"
+style = "Hand"
+variant = "NFM"
+rfn_note = "Radon and LXGW WenKai are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 
 # A separate family, not a style of the coding one. Installed side by side they
 # have to be two entries in a font menu: the NFM face claims the terminal grid
 # and carries 4000 Nerd icons, the Text face does neither, and a host that
 # thought they were one family would pick either of them for "Bold".
 [naming.text]
-family = "RadonWenKai Text"
-ps = "RadonWenKaiText"
-stem = "RadonWenKaiText"
-style = "Text"
-variant = "text"
-id16 = "RadonWenKai Text"
+variant = "Text"
 
 [merge]
 version = "1.000"

@@ -3,17 +3,29 @@ family = "sans"
 
 [build]
 profiles = ["coding"]
-regions = ["sc"]
+# Every region IBM ships a Plex Sans master for. `hk` is absent because Plex
+# has no Hong Kong master, not because nobody got round to it — see
+# [[build.unsupported]] below.
+regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular", "bold"]
 formats = ["ttf"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
-regions = ["sc"]
+regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular", "bold"]
 formats = ["ttf"]
 slopes = ["upright"]
+
+# Not an oversight. IBM Plex Sans ships SC / TC / JP / KR and no HK master, and
+# a Hong Kong build is not a relabelled Traditional one: HK has its own
+# 香港增補字符集 forms. Substituting TC would ship a font whose name claims
+# a variant it does not draw.
+[[build.unsupported]]
+axis = "regions"
+values = ["hk"]
+reason = "IBM Plex Sans has no HK master, and HKSCS forms differ from TC — relabelling the TC master would claim a variant the outlines do not draw"
 
 [sources.lilex]
 role = "latin"
@@ -25,22 +37,56 @@ file = "Lilex.zip"
 url = "https://github.com/mishamyrt/Lilex/releases/download/2.700/Lilex.zip"
 sha256 = "34310edb4ba749f772d42b88e3eec4a6318527e75ceeaa96cfc556ee35366fbc"
 
+# One pinned commit, four regional masters. The artifact keys are
+# `<region>_<weight>` because that is exactly the pair the build matrix asks
+# for; the Latin side has no such key, which is the point of the region axis —
+# `latin-prepared` is byte-identical for all four (nix/granularity.nix).
 [sources.plex]
 role = "cjk"
 repository = "https://github.com/IBM/plex"
 version = "@ibm/plex-sans-sc@1.1.0"
 commit = "222657a016f31e6d913ede88520de7dec84dc81b"
-regions = ["sc"]
+regions = ["sc", "tc", "jp", "kr"]
 
-[sources.plex.artifacts.regular]
+[sources.plex.artifacts.sc_regular]
 file = "IBMPlexSansSC-Regular.ttf"
 url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Regular.ttf"
 sha256 = "012e587c5a78d25f456057614b880fc7450b748c352573d8052245df2a71158a"
 
-[sources.plex.artifacts.bold]
+[sources.plex.artifacts.sc_bold]
 file = "IBMPlexSansSC-Bold.ttf"
 url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Bold.ttf"
 sha256 = "3e94ef1df394eae336cc1bc98f2160b58e2cab186f47d820e4c808aef1f4e28f"
+
+[sources.plex.artifacts.tc_regular]
+file = "IBMPlexSansTC-Regular.ttf"
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-tc/fonts/complete/ttf/hinted/IBMPlexSansTC-Regular.ttf"
+sha256 = "654677156ffc9ba35503ff569a4d55bc7044501f055bd7752a404445ed31cee7"
+
+[sources.plex.artifacts.tc_bold]
+file = "IBMPlexSansTC-Bold.ttf"
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-tc/fonts/complete/ttf/hinted/IBMPlexSansTC-Bold.ttf"
+sha256 = "3462a66b8be1f52a0408ebc16c099e0b9caae0bfa8172ecb9e7f34267c35f98e"
+
+[sources.plex.artifacts.jp_regular]
+file = "IBMPlexSansJP-Regular.ttf"
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-jp/fonts/complete/ttf/hinted/IBMPlexSansJP-Regular.ttf"
+sha256 = "b0f1098d93801e99521a50a05d92a9b255081e598814e48979e0319e5deedb89"
+
+[sources.plex.artifacts.jp_bold]
+file = "IBMPlexSansJP-Bold.ttf"
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-jp/fonts/complete/ttf/hinted/IBMPlexSansJP-Bold.ttf"
+sha256 = "31f6db78780f92ba26666a5d46c1f8ef268a04ddd33321892986af45f22d8e04"
+
+[sources.plex.artifacts.kr_regular]
+file = "IBMPlexSansKR-Regular.ttf"
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-kr/fonts/complete/ttf/hinted/IBMPlexSansKR-Regular.ttf"
+sha256 = "193af4c0c4f979251edd13708ea4c3eb4d0d07f9352b3d2a58b43b042767183b"
+
+[sources.plex.artifacts.kr_bold]
+file = "IBMPlexSansKR-Bold.ttf"
+url = "https://raw.githubusercontent.com/IBM/plex/222657a016f31e6d913ede88520de7dec84dc81b/packages/plex-sans-kr/fonts/complete/ttf/hinted/IBMPlexSansKR-Bold.ttf"
+sha256 = "2aa49909a6dae0591efa1cc892bf99a2556b3b56fbcb639439240010518548ae"
 
 [sources.plex.artifacts.legacy_archive]
 fetch = "embedded"
@@ -53,23 +99,20 @@ cjk_adv = 1100
 upm = 1000
 latin_src_adv = 600
 
+# Was `LilexSansSC NFM`, which baked two upstream reserved names into name
+# ID 1. The house name is ours (KIT-282); the donors are credited in name ID 5,
+# name ID 10, the README and the release notes, which is where RFN attribution
+# belongs anyway.
 [naming]
-family = "LilexSansSC NFM"
-ps = "LilexSansSCNFM"
-stem = "LilexSansSCNFM"
-house = "LilexSansSC"
-style = "NFM"
-region = "SC"
-variant = "coding"
-id16 = "LilexSansSC NFM"
-id17 = "{weight}"
-rfn_note = "Lilex and Plex are reserved upstream names; review before public OFL redistribution."
-base_family = "LilexSansSC Dual"
-base_ps = "LilexSansSCDual"
+house = "AKR"
+style = "Sans"
+variant = "NFM"
+base_variant = "Dual"
+rfn_note = "Lilex and Plex are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 
 [merge]
 version = "1.000"
-sources_note = "Lilex + Plex Sans SC"
+sources_note = "Lilex + Plex Sans {region}"
 # Lilex's mono cell is a known 600 at UPM 1000, so the Latin side needs no
 # normalising and no measuring — scale straight onto the 550 cell.
 latin = "scale"
@@ -81,6 +124,16 @@ placement = "center"
 glyph_prefix = "sc."
 required_sample = "中文荷塘月色"
 recalc_bounds = true
+
+# IBM Plex Sans KR is Hangul, not Han: 12183 codepoints, of which essentially
+# all are Hangul syllables, jamo and punctuation — 中 is not in it, and neither
+# is 韓 or 國. That is upstream's design, not a broken pin, so the Korean
+# product is a Hangul + Latin coding face and its smoke test has to be Hangul.
+#
+# The alternative was to weaken the check to "some glyphs arrived", which would
+# have turned a real gate into a green one for all four regions to hide one.
+[merge.regions.kr]
+required_sample = "한글조판검사"
 
 [metrics.coding]
 hhea_ascent = 1025
@@ -108,3 +161,18 @@ hash = "sha256-ilk38WIHygLsxo6BruwVaqTk/T+VobB4jzLc5jxcpL0="
 [options]
 lilex_ttf_regular = "ttf/Lilex-Regular.ttf"
 lilex_ttf_bold = "ttf/Lilex-Bold.ttf"
+
+# The 2:1 gate's fixed CJK sample, per region (KIT-282).
+#
+# `fontkit verify-2to1`'s built-in sample is Simplified — 测试宽对编释 etc. —
+# which is the right question for the SC product and the wrong one for the
+# other three: Plex Sans TC draws 測 and not 测, Plex Sans JP has neither 齐 nor
+# 検, and Plex Sans KR has no Han at all. Every character below is verified
+# present at the full cell in its own product, so this stays a gate rather than
+# becoming a formality.
+#
+# `sc` deliberately has no entry: it keeps the built-in sample, so the SC
+# product is gated on exactly what it was gated on before this phase.
+gate_cjk_sample_tc = "中文測試字體等寬對齊漢字編程註釋字符串"
+gate_cjk_sample_jp = "日本語組版検査全角文字等幅整列"
+gate_cjk_sample_kr = "한글조판검사전각문자정렬"

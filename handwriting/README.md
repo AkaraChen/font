@@ -1,11 +1,11 @@
-# handwriting — RadonWenKai NFM / RadonWenKai Text
+# handwriting — AKR Hand SC NFM / AKR Hand SC Text
 
 **Monaspace Radon** Latin + **霞鹜文楷 LXGW WenKai** CJK, in two profiles that are two
 different products:
 
-- **RadonWenKai NFM** — the coding face. Strict **2:1** dual width, **Nerd icons**,
+- **AKR Hand SC NFM** — the coding face. Strict **2:1** dual width, **Nerd icons**,
   ligatures **on by default**.
-- **RadonWenKai Text** — the reading face (Phase 6, KIT-281). No 2:1 declaration, no
+- **AKR Hand SC Text** — the reading face (Phase 6, KIT-281). No 2:1 declaration, no
   Nerd icons, East_Asian_Width left alone, a typographic line box, and a **Light**.
 
 Both share the CJK side sheared to Radon's own lean, and both share the optical stroke
@@ -22,12 +22,12 @@ matching that shear is calibrated with.
 | CJK slant | measured from Radon's stems | **7.5°** |
 | Weight match | measured stems, Latin vs CJK | Light: WenKai **Regular** · Regular: **Medium** · Bold: Medium **+ s=15** — all unstroked except Bold |
 | Ligatures | coding: `liga` + `calt` **+ ss01–ss10 folded into calt** · text: `liga`, sets stay opt-in | |
-| Products | coding Regular + Bold · text Light + Regular + Bold | `out/RadonWenKaiNFM-{Regular,Bold}.ttf`, `out/RadonWenKaiText-{Light,Regular,Bold}.{ttf,woff2}` |
+| Products | coding Regular + Bold · text Light + Regular + Bold | `out/AKRHandSCNFM-{Regular,Bold}.ttf`, `out/AKRHandSCText-{Light,Regular,Bold}.{ttf,woff2}` |
 
 ```bash
 just build handwriting
-# → out/RadonWenKaiNFM-{Regular,Bold}.ttf
-#   out/RadonWenKaiText-{Light,Regular,Bold}.{ttf,woff2}
+# → out/AKRHandSCNFM-{Regular,Bold}.ttf
+#   out/AKRHandSCText-{Light,Regular,Bold}.{ttf,woff2}
 #   (~330 MiB of upstream never downloaded)
 ```
 
@@ -242,8 +242,8 @@ There is no FontForge and no Node in this family: the whole build is Python over
 ```bash
 just gate handwriting
 # or individually:
-python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw out/RadonWenKaiNFM-*.ttf
-python3 scripts/verify-features.py --expect-half 500 out/RadonWenKaiNFM-*.ttf
+python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw out/AKRHandSCNFM-*.ttf
+python3 scripts/verify-features.py --expect-half 500 out/AKRHandSCNFM-*.ttf
 ```
 
 | Check | Expected |
@@ -273,7 +273,7 @@ dedicated commit with the new measurement in the message.
 ## Sample render
 
 ```bash
-python3 scripts/render-sample.py --font out/RadonWenKaiNFM-Regular.ttf
+python3 scripts/render-sample.py --font out/AKRHandSCNFM-Regular.ttf
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -284,8 +284,8 @@ rasterises glyph outlines with FreeType.
 ## Release package
 
 ```bash
-just release handwriting          # → dist/RadonWenKaiNFM-0.1.0.zip
-nix build .#handwriting-text-release   # → dist/RadonWenKaiText-0.1.0.zip
+just release handwriting          # → dist/AKRHandSCNFM-0.1.0.zip
+nix build .#handwriting-text-release   # → dist/AKRHandSCText-0.1.0.zip
 ```
 
 Two profiles are two archives. They have different family names, different weight sets and
@@ -293,15 +293,22 @@ different formats, and someone downloading a reading face should not also get 4 
 
 ## Family / license
 
-- **Product families:** `RadonWenKai NFM` (Regular / Bold) and `RadonWenKai Text`
-  (Light / Regular / Bold), PostScript `RadonWenKaiNFM-*` / `RadonWenKaiText-*`. Separate
+- **Product families:** `AKR Hand SC NFM` (Regular / Bold) and `AKR Hand SC Text`
+  (Light / Regular / Bold), PostScript `AKRHandSCNFM-*` / `AKRHandSCText-*`. Separate
   families on purpose — installed side by side under one name, a host would treat them as two
   styles of one family and pick either for "Bold".
+- **The Text face has three weights, so name IDs 16/17 carry the grouping.** Windows' name
+  ID 2 understands only Regular / Italic / Bold / Bold Italic, so the Light ships as
+  `ID1 = "AKR Hand SC Text Light"`, `ID2 = "Regular"`, `ID16/17 = "AKR Hand SC Text" / "Light"`.
+  A consumer that reads only ID 1/2 sees a separate two-style family; that is the standard
+  arrangement and is what stops the Light from being mis-grouped or dropped.
 - Upstream is **SIL OFL 1.1** on both sides; `licenses/` copies travel with the product
-- ⚠ **Reserved font names.** Monaspace reserves `Monaspace` **and its subfamily names, including
-  `Radon`**; WenKai reserves 霞鹜 / 霞鶩 / 落霞孤鹜 / 落霞孤鶩 / `LXGW` (the Latin "WenKai" is not
-  listed). `RadonWenKai NFM` is a project source-encoding label in the same style as
-  `LilexSansSC Dual` — fine for local use, but **rename before any public redistribution**.
+- **Reserved font names — handled.** Monaspace reserves `Monaspace` **and its subfamily
+  names, including `Radon`**; WenKai reserves 霞鹜 / 霞鶩 / 落霞孤鹜 / 落霞孤鶩 / `LXGW` (the
+  Latin "WenKai" is not listed). The old `RadonWenKai NFM` carried both and could not have
+  been redistributed; KIT-282 renamed the family to `AKR Hand SC NFM`, and the donors are
+  credited in name ID 5 and name ID 10 instead. See
+  [`../docs/naming-migration.md`](../docs/naming-migration.md).
   WenKai's OFL also carries an additional permission worth reading if you plan to ship this.
 - Build scripts here: MIT (repo root) unless noted
 

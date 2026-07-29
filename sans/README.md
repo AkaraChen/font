@@ -1,4 +1,4 @@
-# sans — LilexSansSC NFM
+# sans — AKR Sans SC NFM
 
 Coding dual-width face: **Lilex** (Latin / programming ligatures) + **IBM Plex Sans SC** (CJK) + **Nerd Font Mono**, strict **2:1** grid.
 
@@ -10,9 +10,9 @@ Coding dual-width face: **Lilex** (Latin / programming ligatures) + **IBM Plex S
 | Grid | EN cell / CJK cell | **550 / 1100** |
 | Weight match | pathops embolden on SC (measured vs Lilex) | **s=5** Regular / **s=4** Bold |
 | Symbol widths | EAW-correct (N/Na/H → half, W/F → full; A left alone) | `fontkit.narrow_symbol_widths` after Nerd |
-| Intermediate | Regular + Bold (pre-Nerd) | `out/LilexSansSCDual-{Regular,Bold}.ttf` |
-| Product | Regular + Bold (Nerd Mono) | `out/nerd/LilexSansSCNFM-{Regular,Bold}.ttf` |
-| Family name | Source-encoding (see below) | **LilexSansSC NFM** |
+| Intermediate | Regular + Bold (pre-Nerd) | `out/AKRSansSCDual-{Regular,Bold}.ttf` |
+| Product | Regular + Bold (Nerd Mono) | `out/nerd/AKRSansSCNFM-{Regular,Bold}.ttf` |
+| Family name | Source-encoding (see below) | **AKR Sans SC NFM** |
 | Metrics gate | `fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
 Lilex is an extended face on IBM Plex Mono with programming ligatures and OpenType features. The merge keeps Lilex **GSUB / GPOS / GDEF** (so `calt` ligatures, stylistic sets, character variants, and mark attach survive), X-scales the mono cell from native **600 → 550**, emboldens SC full-cell outlines for optical weight, and imports SC for CJK. The Nerd step patches the complete icon set at half-cell width and restores mono host flags that FontForge clears on dual-width faces.
@@ -41,18 +41,45 @@ Embolden runs in the `cjk-prepared` step **before** the merge (full-cell SC only
 
 ## Name recipe
 
-Same style as serif’s `SarasaNZSSlab NFM` — long, concatenated sources + product tag:
+`AKR <Style> <Region> <Variant>` — see the naming section of the root
+[`README.md`](../README.md). The family name carries **no upstream reserved
+name**: the OFL does not allow a derivative to keep its donors' reserved names,
+so Lilex and Plex are credited in name ID 5 and name ID 10 instead.
 
 | Token | Meaning |
 | --- | --- |
-| **Lilex** | Lilex (Latin / programming glyphs + ligatures / OT features) |
-| **SansSC** | IBM Plex Sans SC (Simplified Chinese CJK) |
+| **AKR** | this repository's house name |
+| **Sans** | Lilex Latin (programming glyphs, ligatures, OT features) on a sans CJK |
+| **SC / TC / JP / KR** | which IBM Plex Sans master the face draws |
 | **NFM** | Nerd Font Mono product (complete icons, single-width glyphs) |
 
-- Intermediate family (name ID 1): `LilexSansSC Dual` (pre-Nerd merge only)
-- Product family (name ID 1): `LilexSansSC NFM` (15 chars, Windows ≤31)
-- PostScript / file stem: `LilexSansSCNFM`
-- Not an official Lilex, IBM, or Nerd Fonts face. Upstream OFLs list reserved font names **“Lilex”** and **“Plex”** — treat this compound as a project source-label; review RFN before public OFL redistribution if that matters for your release.
+- Intermediate family (name ID 1): `AKR Sans SC Dual` (pre-Nerd merge only)
+- Product family (name ID 1): `AKR Sans SC NFM` (15 chars, Windows ≤31)
+- PostScript / file stem: `AKRSansSCNFM`
+- Not an official Lilex, IBM, or Nerd Fonts face.
+- Was `LilexSansSC NFM` before KIT-282 — see
+  [`../docs/naming-migration.md`](../docs/naming-migration.md).
+
+## Regions
+
+Four CJK masters at one pinned Plex commit, and **one** Latin build shared by all
+four (`nix/granularity.nix` refuses to give `src-latin` a region axis):
+
+| region | CJK master | product |
+| --- | --- | --- |
+| `sc` | IBM Plex Sans SC | `AKR Sans SC NFM` |
+| `tc` | IBM Plex Sans TC | `AKR Sans TC NFM` |
+| `jp` | IBM Plex Sans JP | `AKR Sans JP NFM` |
+| `kr` | IBM Plex Sans KR | `AKR Sans KR NFM` |
+
+`hk` is declared impossible rather than left out: Plex has no Hong Kong master,
+and HKSCS forms are not a relabelling of TC (`[[build.unsupported]]` in
+[`font.toml`](font.toml)).
+
+```bash
+just build sans             # all four regions, into sans/out
+just build sans coding jp   # one cell, into sans/out-coding-jp
+```
 
 ## Pins
 
@@ -103,8 +130,8 @@ Shared, not duplicated: [`../lib/fontkit/`](../lib/fontkit/) (`fontkit.measure`,
 ```bash
 cd sans
 just build sans
-# → out/LilexSansSCDual-{Regular,Bold}.ttf          (intermediate)
-# → out/nerd/LilexSansSCNFM-{Regular,Bold}.ttf      (product)
+# → out/AKRSansSCDual-{Regular,Bold}.ttf          (intermediate)
+# → out/nerd/AKRSansSCNFM-{Regular,Bold}.ttf      (product)
 ```
 
 Step by step:
@@ -120,8 +147,8 @@ just gate sans                  # hard-fail if advances / flags / EAW / features
 ```bash
 # after build; run inside `nix develop` (Pillow, freetype-py)
 python3 scripts/render-sample.py \
-  --font out/nerd/LilexSansSCNFM-Regular.ttf \
-  --title "LilexSansSC NFM · EN 550 / CJK 1100 · weight s=5"
+  --font out/nerd/AKRSansSCNFM-Regular.ttf \
+  --title "AKR Sans SC NFM · EN 550 / CJK 1100 · weight s=5"
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -129,7 +156,7 @@ python3 scripts/render-sample.py \
 
 ```bash
 just release sans
-# → dist/LilexSansSCNFM-0.1.0.zip
+# → dist/AKRSansSCNFM-0.1.0.zip
 ```
 
 ## Character policy
@@ -154,8 +181,8 @@ Not yet done (known limits):
 ## Verify
 
 ```bash
-python3 -m fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw out/nerd/LilexSansSCNFM-*.ttf
-python3 scripts/verify-features.py out/nerd/LilexSansSCNFM-*.ttf
+python3 -m fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw out/nerd/AKRSansSCNFM-*.ttf
+python3 scripts/verify-features.py out/nerd/AKRSansSCNFM-*.ttf
 ```
 
 | Set | Expected |
@@ -188,9 +215,9 @@ Documented exceptions (multi-em dashes, a few vertical presentation forms) live 
 Re-run the fix on an existing product TTF:
 
 ```bash
-python3 -m fontkit.narrow_symbol_widths --no-donor out/nerd/LilexSansSCNFM-*.ttf
-python3 -m fontkit.fix_terminal_metrics out/nerd/LilexSansSCNFM-*.ttf
-python3 -m fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw out/nerd/LilexSansSCNFM-*.ttf
+python3 -m fontkit.narrow_symbol_widths --no-donor out/nerd/AKRSansSCNFM-*.ttf
+python3 -m fontkit.fix_terminal_metrics out/nerd/AKRSansSCNFM-*.ttf
+python3 -m fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw out/nerd/AKRSansSCNFM-*.ttf
 ```
 
 | Symptom | Cause | Fix |
@@ -209,7 +236,7 @@ python3 -m fontkit.verify2to1 --expect-half 550 --check-nerd --check-eaw out/ner
 
 ## Family / license
 
-- **Product family:** `LilexSansSC NFM` (Regular / Bold)
+- **Product family:** `AKR Sans SC NFM` (Regular / Bold)
 - Upstream is **SIL OFL 1.1** (Lilex RFN **“Lilex”**; Plex RFN **“Plex”**)
 - Nerd glyph sets follow the Nerd Fonts / individual icon-font licenses (see patcher)
 - Keep `licenses/OFL-Lilex.txt` and `licenses/OFL-IBM-Plex.txt` (and copies next to shipped TTFs) with redistributions

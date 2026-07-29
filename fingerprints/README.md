@@ -4,11 +4,37 @@ One directory per family, holding the normalised regression baseline for that
 family's build products. Written by `just fingerprint <family>`, checked by
 `just verify <family>`. See [`../docs/build-toolchain.md`](../docs/build-toolchain.md).
 
-**Adopted from run
-[30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683)**, the
-`x86_64-linux` build of the font-patcher 4.26.0 pin — seven families green, 22
-products. Every family is gated for real from here: drift fails the build
-instead of printing a warning.
+## ⚠️ Retired by the AKR rename (KIT-282) — currently empty
+
+The 22 baselines here were adopted from run
+[30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683), the
+`x86_64-linux` build of the font-patcher 4.26.0 pin. Phase 7 renamed every
+family (`LilexSansSC NFM` → `AKR Sans SC NFM`, and six more), which moves the
+name table, which is *in* the fingerprint. So all 22 went stale at once, and
+none of them describes a product this repo still builds.
+
+**This is the sanctioned direction of the rule below, not an exception to it.**
+The rule is: never re-adopt a baseline to make a red gate green when the product
+changed unexpectedly. Here the product changed *by design* — the whole phase is
+a deliberate, maintainer-approved breaking rename — and the baselines are being
+re-taken from a green CI run, on the canonical platform, exactly as bootstrapping
+prescribes.
+
+Three things also changed shape, so the new set is not a renamed copy of the old:
+
+* **sans and pixel gained the region axis.** Four regions each instead of one,
+  so 22 products becomes 40.
+* **Phase 6's products were never baselined at all.** handwriting's three `text`
+  faces and its Light have had no entry since KIT-281; they are adopted with the
+  rest rather than left as a standing `NEW`.
+* **The intermediates were renamed too.** serif's `SarasaMonoSlabNeoZhiSongSC-Opt`
+  is `AKRSlabSCDual` now — it ships in `serif/out/` and carried three upstream
+  reserved names in one file stem.
+
+Until they are re-adopted, `just verify <family>` and the CI fingerprint step
+report every product as `NEW` and exit **3** — a warning with an artifact, not a
+pass. Follow [Bootstrapping](#bootstrapping) below, once per family, from a green
+run of the PR that renamed them.
 
 ## Baselines belong to CI, not to a laptop
 

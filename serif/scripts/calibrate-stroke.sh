@@ -22,7 +22,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/tools/diagnostic.sh"
 
 CAL="${REPO_ROOT}/tools/calibrate-cjk-weight.py"
-STEM="SarasaMonoSlabNeoZhiSongSC-Opt"
+STEM="AKRSlabSCDual"
 
 log "realising the merged product (Latin target) and the raw CJK master"
 LAT_R="$(step merged-Regular)/${STEM}-Regular.ttf"

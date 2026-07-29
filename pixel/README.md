@@ -1,14 +1,29 @@
-# pixel — FusionPixel12 NFM
+# pixel — AKR Pixel SC NFM
 
 Coding product: **Fusion Pixel 12px monospaced** + **hand-drawn programming ligatures** + **Nerd Font Mono**.
 
 | Component | Source | Notes |
 | --- | --- | --- |
-| Base | [Fusion Pixel Font](https://github.com/TakWolf/fusion-pixel-font) 12px mono `zh_hans` | dual-width EN 600 / CJK 1200 (1px = 100 U) |
+| Base | [Fusion Pixel Font](https://github.com/TakWolf/fusion-pixel-font) 12px mono `zh_hans` / `zh_hant` / `ja` / `ko` | dual-width EN 600 / CJK 1200 (1px = 100 U) |
 | Ligatures | [`ligatures/ligatures.txt`](ligatures/ligatures.txt) | **hand-drawn** pixel art; `calt` type-4 GSUB |
 | Icons | [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) patcher | shipped as-is; single-cell icons |
-| Product | Regular | `out/nerd/FusionPixel12NFM-Regular.ttf` |
-| Family | Windows-safe ≤31 | **FusionPixel12 NFM** |
+| Product | Regular | `out/nerd/AKRPixelSCNFM-Regular.ttf` |
+| Family | Windows-safe ≤31 | **AKR Pixel SC NFM** (also `TC` / `JP` / `KR`) |
+
+The four regional flavours are four members of the one pinned archive, so the
+region axis costs this family nothing in the source layer:
+
+```bash
+just build pixel            # all four regions
+just build pixel coding ko  # one cell, into pixel/out-coding-ko
+```
+
+`hk` is declared impossible in [`font.toml`](font.toml): upstream ships no HK
+flavour, and HKSCS forms would have to be *drawn* on the 12px grid.
+
+Was `FusionPixel12 NFM` before KIT-282 — the `12` moved out of the family name
+and into the README and name ID 10, because a 31-character budget is better
+spent on the region. See [`../docs/naming-migration.md`](../docs/naming-migration.md).
 
 ## Pipeline
 
@@ -24,7 +39,7 @@ preview             → HarfBuzz render sheets (a diagnostic, not a build step)
 ```bash
 cd pixel
 just build pixel
-# → out/nerd/FusionPixel12NFM-Regular.ttf
+# → out/nerd/AKRPixelSCNFM-Regular.ttf
 ```
 
 ## Ligatures

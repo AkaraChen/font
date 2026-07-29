@@ -27,7 +27,19 @@ FETCHED_FILES = {
     },
     "pixel": {"fusion-pixel-12px-monospaced-ttf.zip"},
     "rounded": {"PkgTTF-IosevkaCurly.zip", "RHR-CN.7z"},
-    "sans": {"Lilex.zip", "IBMPlexSansSC-Regular.ttf", "IBMPlexSansSC-Bold.ttf"},
+    "sans": {
+        "Lilex.zip",
+        # One Plex master per region (KIT-282). The Latin side stays a single
+        # archive, which is the region axis paying for itself.
+        "IBMPlexSansSC-Regular.ttf",
+        "IBMPlexSansSC-Bold.ttf",
+        "IBMPlexSansTC-Regular.ttf",
+        "IBMPlexSansTC-Bold.ttf",
+        "IBMPlexSansJP-Regular.ttf",
+        "IBMPlexSansJP-Bold.ttf",
+        "IBMPlexSansKR-Regular.ttf",
+        "IBMPlexSansKR-Bold.ttf",
+    },
     "serif": {"LXGWNeoZhiSongPlus.ttf", "SarasaTermSlabSC-TTF-Unhinted.7z"},
     "typewriter": {
         "CourierPrime-Regular.ttf",
@@ -69,8 +81,10 @@ def test_missing_artifact_sha256_fails_at_parse_time() -> None:
 
 
 @pytest.mark.parametrize(
+    # `hk`, not `tc`: sans builds Simplified, Traditional, Japanese and Korean
+    # since KIT-282, and Plex has no Hong Kong master to build a fifth from.
     ("axis", "value"),
-    (("regions", "tc"), ("weights", "light"), ("formats", "woff2")),
+    (("regions", "hk"), ("weights", "light"), ("formats", "woff2")),
 )
 def test_matrix_cannot_reference_undeclared_axis(axis: str, value: str) -> None:
     data = raw()
@@ -81,8 +95,11 @@ def test_matrix_cannot_reference_undeclared_axis(axis: str, value: str) -> None:
 
 def test_region_needs_a_corresponding_cjk_source() -> None:
     data = raw()
-    data["build"]["regions"].append("tc")
-    data["build"]["matrix"][0]["regions"].append("tc")
+    # `hk` has no [sources.plex] master and is declared unsupported; asking the
+    # matrix for it anyway is the mistake this catches.
+    data["build"]["unsupported"] = []
+    data["build"]["regions"].append("hk")
+    data["build"]["matrix"][0]["regions"].append("hk")
     with pytest.raises(ValidationError, match="no corresponding CJK source"):
         Manifest.model_validate(data)
 
@@ -94,10 +111,35 @@ def test_italic_schema_slot_is_accepted() -> None:
     assert "italic" in Manifest.model_validate(data).build.slopes
 
 
-def test_windows_typographic_family_is_limited_to_31_characters() -> None:
+def test_windows_family_budget_is_checked_on_the_composed_name() -> None:
+    """The budget belongs to a *product*, not to a literal in the TOML.
+
+    Nothing writes `AKR Sans SC NFM` down any more — it is four segments and an
+    axis — so the check has to run on what the matrix composes.
+    """
     data = raw()
-    data["naming"]["id16"] = "x" * 32
-    with pytest.raises(ValidationError, match="at most 31 characters"):
+    data["naming"]["style"] = "x" * 32
+    with pytest.raises(ValidationError, match="at most 31"):
+        Manifest.model_validate(data)
+
+
+def test_the_budget_is_measured_against_the_weighted_name_id_1() -> None:
+    """`Light` moves into name ID 1, so it is ID 1 that can overflow.
+
+    24 characters of family plus ` Light` is 30 and fits; one more character of
+    family fits as a *family* and does not fit as a product, which is exactly
+    the failure the old family-only check could not see.
+    """
+    data = raw()
+    data["build"]["weights"].append("light")
+    data["build"]["matrix"][0]["weights"].append("light")
+    data["calibration"]["light"] = dict(data["calibration"]["regular"])
+    # "AKR " + style + " SC NFM" = 11 + len(style)
+    data["naming"]["style"] = "x" * 14  # family 25, "… Light" 31 — fits
+    Manifest.model_validate(data)
+
+    data["naming"]["style"] = "x" * 15  # family 26, "… Light" 32 — does not
+    with pytest.raises(ValidationError, match="Light"):
         Manifest.model_validate(data)
 
 
@@ -136,7 +178,7 @@ def test_a_second_profile_must_rename_the_family() -> None:
     data = raw()
     data["build"]["profiles"].append("text")
     data["metrics"]["text"] = copy.deepcopy(data["metrics"]["coding"])
-    with pytest.raises(ValidationError, match="collide with the coding face"):
+    with pytest.raises(ValidationError, match="both compose to"):
         Manifest.model_validate(data)
 
 
@@ -144,15 +186,63 @@ def test_naming_override_layers_over_the_base() -> None:
     from fontkit.manifest import naming_for
 
     manifest = load_manifest(ROOT / "handwriting" / "font.toml")
-    coding = naming_for(manifest, "coding")
-    text = naming_for(manifest, "text")
+    coding = naming_for(manifest, "coding", "sc")
+    text = naming_for(manifest, "text", "sc")
 
-    assert coding.family == "RadonWenKai NFM"
-    assert text.family == "RadonWenKai Text"
-    # Stated once, inherited by both: an override says what differs.
+    assert coding.family == "AKR Hand SC NFM"
+    assert text.family == "AKR Hand SC Text"
+    # One segment differs and one segment is written down; everything else —
+    # the house, the style token, the RFN note, the version — is inherited.
     assert text.rfn_note == coding.rfn_note
     assert text.version == coding.version
     assert text.house == coding.house
+    assert text.style == coding.style
+
+
+def test_the_region_is_an_axis_rather_than_a_string_in_the_file() -> None:
+    """Four regions, one `[naming]` table (KIT-282)."""
+    from fontkit.manifest import naming_for
+
+    manifest = load_manifest(ROOT / "sans" / "font.toml")
+    families = {
+        region: naming_for(manifest, "coding", region).family
+        for region in manifest.build.regions
+    }
+    assert families == {
+        "sc": "AKR Sans SC NFM",
+        "tc": "AKR Sans TC NFM",
+        "jp": "AKR Sans JP NFM",
+        "kr": "AKR Sans KR NFM",
+    }
+    # The PostScript name and the file stem are the same derived string, so a
+    # product's file name and its name ID 6 cannot drift apart.
+    names = naming_for(manifest, "coding", "jp")
+    assert names.ps == names.stem == "AKRSansJPNFM"
+    assert names.base_family == "AKR Sans JP Dual"
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_no_upstream_reserved_name_survives_in_a_family_name(family: str) -> None:
+    """The rename's actual point (KIT-282).
+
+    `pins.env` warned in five places that these names had to go before public
+    OFL redistribution, and the old `rfn_note` fields said the same thing. This
+    is the assertion that keeps it true.
+    """
+    from fontkit.manifest import naming_for
+
+    reserved = (
+        "iosevka", "monaspace", "radon", "lilex", "plex", "lxgw", "wenkai",
+        "sarasa", "recursive", "yozai", "courier", "zhuque", "fusion",
+        "resourcehan", "neozhisong",
+    )
+    manifest = load_manifest(ROOT / family / "font.toml")
+    for profile in manifest.build.profiles:
+        for region in manifest.build.regions:
+            names = naming_for(manifest, profile, region)
+            for candidate in filter(None, (names.family, names.base_family)):
+                flat = candidate.replace(" ", "").lower()
+                assert not [word for word in reserved if word in flat], candidate
 
 
 def test_unsupported_cannot_disown_a_value_the_family_also_builds() -> None:

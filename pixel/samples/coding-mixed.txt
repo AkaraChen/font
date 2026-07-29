@@ -1,4 +1,4 @@
-// FusionPixel12 — ligature + CJK + Nerd sample
+// AKR Pixel SC — ligature + CJK + Nerd sample
 const ok = a === b && x != null;
 if (foo => bar) { /* comment */ }
 let n = i++; n--;

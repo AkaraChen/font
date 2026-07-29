@@ -42,7 +42,7 @@ let
   inherit (m) grid;
 
   family = "handwriting";
-  ps = profile: (support.namingFor m profile).ps;
+  ps = profile: (support.namingFor m profile region).ps;
 
   # One entry per profile in [[build.matrix]]. `weights` is per entry, which is
   # how text gets a Light and coding does not.
@@ -205,7 +205,7 @@ let
     '';
 
   readme = profile: pkgs.writeText "handwriting-${profile}-README.txt" (
-    let naming = support.namingFor m profile; in
+    let naming = support.namingFor m profile region; in
     ''
       ${naming.family} @version@
       Derived from Monaspace Radon (${m.sources.monaspace.version}) and
@@ -244,7 +244,7 @@ let
   releaseFor = profile:
     let
       entry = entryFor profile;
-      naming = support.namingFor m profile;
+      naming = support.namingFor m profile region;
     in
     {
       inherit family profile region verify;
@@ -262,6 +262,19 @@ let
 in
 {
   inherit out verify;
+
+  # `nix build .#handwriting-coding-sc` / `.#handwriting-text-sc`. One entry per
+  # (profile, region) cell in [[build.matrix]] — the products of that cell, with
+  # no licence files, so a cell is exactly what its matrix row says it is.
+  cells = lib.listToAttrs (map
+    (entry: {
+      name = "${entry.profile}-${region}";
+      value = pkgs.runCommand "handwriting-${entry.profile}-${region}" { } ''
+        mkdir -p $out
+        ${lib.concatStringsSep "\n" (productsOf entry.profile)}
+      '';
+    })
+    matrix);
 
   steps = lib.listToAttrs (
     lib.concatMap

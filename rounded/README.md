@@ -1,4 +1,4 @@
-# rounded — 圆体 / IosevkaCurlyRHR NFM
+# rounded — 圆体 / AKR Round SC NFM
 
 Coding dual-width face: **Iosevka Curly** (Latin, ss20 Curly Style) + **Resource Han Rounded SC** (资源圆体 CJK) + **Nerd Font Mono**, strict **2:1** grid.
 
@@ -10,9 +10,9 @@ Coding dual-width face: **Iosevka Curly** (Latin, ss20 Curly Style) + **Resource
 | CJK | [Resource Han Rounded](https://github.com/CyanoHao/Resource-Han-Rounded) CN | **v0.990** Regular + Bold |
 | Icons | [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) FontPatcher | **v3.4.0** (`--complete --single-width-glyphs`) |
 | Grid | EN cell / CJK cell | **500 / 1000** |
-| Intermediate | Regular + Bold (pre-Nerd) | `out/IosevkaCurlyRHRDual-{Regular,Bold}.ttf` |
-| Product | Regular + Bold (Nerd Mono) | `out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf` |
-| Family name | Source-encoding (see RFN) | **IosevkaCurlyRHR NFM**（方向绰号：圆体） |
+| Intermediate | Regular + Bold (pre-Nerd) | `out/AKRRoundSCDual-{Regular,Bold}.ttf` |
+| Product | Regular + Bold (Nerd Mono) | `out/nerd/AKRRoundSCNFM-{Regular,Bold}.ttf` |
+| Family name | Source-encoding (see RFN) | **AKR Round SC NFM**（方向绰号：圆体） |
 | Metrics gate | `fontkit.verify2to1 --expect-half 500 --check-nerd --check-eaw` | after Nerd + EAW fix |
 
 ## Why Iosevka Curly (ss20), not other inherits
@@ -34,21 +34,29 @@ Iosevka stylistic inherits are pre-packaged “looks like font X” recipes. For
 
 ## Name recipe
 
-Same source-encoding style as `LilexSansSC NFM` / `SarasaNZSSlab NFM` — **inheritance is in the family name**:
+`AKR <Style> <Region> <Variant>` — see the naming section of the root
+[`README.md`](../README.md). The donors (Iosevka Curly ss20, Resource Han
+Rounded SC) are named in name ID 5, not in the family name.
 
 | Token | Meaning |
 | --- | --- |
-| **Iosevka** | Latin base (Iosevka mono) |
-| **Curly** | ss20 Curly Style prebuilt (rounded terminals; not Slab) |
-| **RHR** | Resource Han Rounded SC (CJK) |
+| **AKR** | this repository's house name |
+| **Round** | Iosevka Curly ss20 Latin × Resource Han Rounded CJK |
+| **SC** | Simplified Chinese CJK master. RHR also ships TW/HK/JP/KR, so this family can take the full region axis whenever those pins are added. |
 | **Dual** | Intermediate pre-Nerd merge only |
 | **NFM** | Nerd Font Mono product (complete icons, single-width glyphs) |
 
-- Intermediate family (name ID 1): `IosevkaCurlyRHR Dual`
-- Product family (name ID 1): `IosevkaCurlyRHR NFM` (19 chars, Windows ≤31)
-- PostScript / file stem: `IosevkaCurlyRHRNFM`
-- Docs shorthand **圆体** = product direction; install/picker name is **IosevkaCurlyRHR NFM**
-- Not an official Iosevka / Resource Han Rounded / Nerd Fonts face. Upstream OFLs reserve **Iosevka** (and Source Han RFNs may apply to the RHR lineage). Compound is a project source-label — review RFN before public OFL redistribution.
+- Intermediate family (name ID 1): `AKR Round SC Dual` (17 chars)
+- Product family (name ID 1): `AKR Round SC NFM` (16 chars, Windows ≤31)
+- PostScript / file stem: `AKRRoundSCNFM`
+- Docs shorthand **圆体** = product direction; install/picker name is **AKR Round SC NFM**
+- Not an official Iosevka / Resource Han Rounded / Nerd Fonts face. Was
+  `IosevkaCurlyRHR NFM` before KIT-282.
+
+The family name carries no upstream reserved name — the OFL does not allow a
+derivative to keep its donors' reserved names. Donors are credited in name ID 5
+(version string) and name ID 10 (description). See
+[`../docs/naming-migration.md`](../docs/naming-migration.md).
 
 ## Pins
 
@@ -94,8 +102,8 @@ Embolden / stroke tools are shared: [`../lib/fontkit/`](../lib/fontkit/).
 ```bash
 cd rounded
 just build rounded
-# → out/IosevkaCurlyRHRDual-{Regular,Bold}.ttf
-# → out/nerd/IosevkaCurlyRHRNFM-{Regular,Bold}.ttf
+# → out/AKRRoundSCDual-{Regular,Bold}.ttf
+# → out/nerd/AKRRoundSCNFM-{Regular,Bold}.ttf
 ```
 
 Step by step:
@@ -110,8 +118,8 @@ just gate rounded                   # 2:1 / mono flags / EAW / Nerd cells
 
 ```bash
 python3 scripts/render-sample.py \
-  --font out/nerd/IosevkaCurlyRHRNFM-Regular.ttf \
-  --title "圆体 IosevkaCurlyRHR NFM · EN 500 / CJK 1000 · Iosevka Curly × RHR"
+  --font out/nerd/AKRRoundSCNFM-Regular.ttf \
+  --title "圆体 AKR Round SC NFM · EN 500 / CJK 1000 · Iosevka Curly × RHR"
 # → samples/rendered/sample-{dark,light}.png
 ```
 
@@ -119,7 +127,7 @@ python3 scripts/render-sample.py \
 
 ```bash
 just release rounded
-# → dist/IosevkaCurlyRHRNFM-0.1.0.zip
+# → dist/AKRRoundSCNFM-0.1.0.zip
 ```
 
 ## Character policy
@@ -133,7 +141,7 @@ just release rounded
 ## Verify
 
 ```bash
-python3 -m fontkit.verify2to1 --expect-half 500 --check-nerd --check-eaw out/nerd/IosevkaCurlyRHRNFM-*.ttf
+python3 -m fontkit.verify2to1 --expect-half 500 --check-nerd --check-eaw out/nerd/AKRRoundSCNFM-*.ttf
 ```
 
 | Set | Expected |
@@ -145,7 +153,7 @@ python3 -m fontkit.verify2to1 --expect-half 500 --check-nerd --check-eaw out/ner
 
 ## Family / license
 
-- **Product family:** `IosevkaCurlyRHR NFM` (Regular / Bold；方向绰号 圆体)
+- **Product family:** `AKR Round SC NFM` (Regular / Bold；方向绰号 圆体)
 - Upstream **SIL OFL 1.1** (Iosevka RFN **Iosevka**; keep RHR OFL with redistributions)
 - Nerd glyph sets follow Nerd Fonts / icon-font licenses
 - Keep `licenses/OFL-Iosevka.txt` and `licenses/OFL-Resource-Han-Rounded.txt` with redistributions

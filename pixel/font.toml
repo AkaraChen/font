@@ -3,17 +3,28 @@ family = "pixel"
 
 [build]
 profiles = ["coding"]
-regions = ["sc"]
+# All four flavours Fusion Pixel ships, out of the one archive already pinned
+# below — the cheapest region axis in the repo, which is why pixel goes in the
+# same phase as sans (KIT-282).
+regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular"]
 formats = ["ttf"]
 slopes = ["upright"]
 
 [[build.matrix]]
 profile = "coding"
-regions = ["sc"]
+regions = ["sc", "tc", "jp", "kr"]
 weights = ["regular"]
 formats = ["ttf"]
 slopes = ["upright"]
+
+# Fusion Pixel's flavours are zh_hans / zh_hant / ja / ko. There is no Hong Kong
+# flavour, and a 12px bitmap HK build is not a relabelled zh_hant one: the HKSCS
+# forms would have to be drawn on the grid, glyph by glyph.
+[[build.unsupported]]
+axis = "regions"
+values = ["hk"]
+reason = "fusion-pixel ships zh_hans/zh_hant/ja/ko and no HK flavour; HKSCS forms would have to be drawn on the 12px grid, not relabelled from zh_hant"
 
 # A bitmap face is coding-only and single-weight, and both follow from the same
 # fact: the design is a 12-pixel grid. There is no stroke to thicken or thin, and
@@ -33,7 +44,7 @@ reason = "a 12px bitmap face is legible only at its design size on a snapped pix
 role = "cjk"
 repository = "https://github.com/TakWolf/fusion-pixel-font"
 version = "2026.07.20"
-regions = ["sc"]
+regions = ["sc", "tc", "jp", "kr"]
 
 [sources.fusion.artifacts.archive]
 file = "fusion-pixel-12px-monospaced-ttf.zip"
@@ -45,19 +56,15 @@ en_adv = 600
 cjk_adv = 1200
 upm = 1200
 
+# Was `FusionPixel12 NFM` (KIT-282). The `12` is gone from the family name: the
+# pixel grid is a property of the design, and it is stated in the README and in
+# name ID 10 rather than spent out of a 31-character budget.
 [naming]
-family = "FusionPixel12 NFM"
-ps = "FusionPixel12NFM"
-stem = "FusionPixel12NFM"
-house = "FusionPixel12"
-style = "NFM"
-region = "SC"
-variant = "coding"
-id16 = "FusionPixel12 NFM"
-id17 = "{weight}"
-rfn_note = "Review Fusion Pixel and Nerd Fonts naming requirements before public redistribution."
-base_family = "FusionPixel12 Mono"
-base_ps = "FusionPixel12Mono"
+house = "AKR"
+style = "Pixel"
+variant = "NFM"
+base_variant = "Dual"
+rfn_note = "Fusion Pixel is a reserved font name; this product does not carry it in its family name. Donors are credited in name IDs 5 and 10."
 
 [metrics.coding]
 hhea_ascent = 1000
@@ -69,7 +76,12 @@ commit = "64b7726c2fc3fb9bfe74a3621d317a6d3319d908"
 hash = "sha256-ilk38WIHygLsxo6BruwVaqTk/T+VobB4jzLc5jxcpL0="
 
 [options]
-fusion_ttf = "fusion-pixel-12px-monospaced-zh_hans.ttf"
+# One member of the pinned archive per region. The half-width donor is shared:
+# it is the `latin` flavour of the same release and has no regional variant.
+fusion_ttf_sc = "fusion-pixel-12px-monospaced-zh_hans.ttf"
+fusion_ttf_tc = "fusion-pixel-12px-monospaced-zh_hant.ttf"
+fusion_ttf_jp = "fusion-pixel-12px-monospaced-ja.ttf"
+fusion_ttf_kr = "fusion-pixel-12px-monospaced-ko.ttf"
 fusion_ttf_halfwidth_donor = "fusion-pixel-12px-monospaced-latin.ttf"
 fusion_font_size = 12
 px_unit = 100

@@ -384,3 +384,55 @@ def test_ambiguous_punctuation_comes_from_whoever_drew_a_whole_cell():
     assert taken[0x2026] == "wk.ellipsis"  # full cell — the CJK donor's
     assert 0x201C not in taken  # 350 — leave the Latin donor's alone
     assert CP_A not in taken  # never take the donor's Latin
+
+
+# --------------------------------------------------------------------------- #
+# Phase 7 — the region axis
+# --------------------------------------------------------------------------- #
+
+
+def test_region_reaches_the_name_table_and_nothing_else():
+    """Four regions, one set of outline rules.
+
+    If a region ever started changing the grid, the cell policy or the optical
+    matching, `latin-prepared` could not be shared across regions and the whole
+    caching claim in nix/granularity.nix would be false.
+    """
+    manifest = load_manifest(REPO / "sans" / "font.toml")
+    specs = {
+        region: merge.spec_from_manifest(manifest, "Regular", region=region)
+        for region in manifest.build.regions
+    }
+
+    assert {s.family for s in specs.values()} == {
+        "AKR Sans SC Dual",
+        "AKR Sans TC Dual",
+        "AKR Sans JP Dual",
+        "AKR Sans KR Dual",
+    }
+    # name ID 5 names the donor this build actually used.
+    assert "Plex Sans JP" in specs["jp"].sources_note
+
+    shared = ("en_adv", "cjk_adv", "latin", "cjk", "import_policy", "placement",
+              "glyph_prefix", "declares_fixed_grid", "latin_src_adv")
+    for field in shared:
+        values = {getattr(s, field) for s in specs.values()}
+        assert len(values) == 1, f"{field} differs by region: {values}"
+
+
+def test_the_cjk_smoke_test_is_asked_in_the_right_script():
+    """IBM Plex Sans KR ships no Hanja, so 中文荷塘月色 is the wrong question.
+
+    The tempting fix is to weaken the check to "some glyphs arrived", which
+    would turn a real gate into a green one for all four regions in order to
+    accommodate one. `[merge.regions.kr]` names the right sample instead.
+    """
+    manifest = load_manifest(REPO / "sans" / "font.toml")
+    samples = {
+        region: merge.spec_from_manifest(manifest, "Regular", region=region).required_sample
+        for region in manifest.build.regions
+    }
+
+    assert samples["sc"] == samples["tc"] == samples["jp"] == "中文荷塘月色"
+    assert samples["kr"] == "한글조판검사"
+    assert samples["kr"], "a region override must not be able to empty the gate"

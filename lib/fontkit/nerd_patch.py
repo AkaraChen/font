@@ -125,8 +125,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("fonts", nargs="+", type=Path, help="base fonts to patch")
     ap.add_argument("--patcher", required=True, type=Path, help="unpacked FontPatcher directory")
     ap.add_argument("--out", required=True, type=Path, help="directory to write patched fonts to")
-    ap.add_argument("--family", required=True, help="short family name, e.g. 'LilexSansSC NFM'")
-    ap.add_argument("--family-ps", required=True, help="PostScript family, e.g. 'LilexSansSCNFM'")
+    ap.add_argument("--family", required=True, help="short family name, e.g. 'AKR Sans SC NFM'")
+    ap.add_argument("--family-ps", required=True, help="PostScript family, e.g. 'AKRSansSCNFM'")
     ap.add_argument(
         "--narrow-symbols",
         action="store_true",
@@ -137,6 +137,13 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="half-width TTF to transplant symbol outlines from (serif); "
         "without it the narrow pass fits the existing outlines geometrically",
+    )
+    ap.add_argument(
+        "--narrow-shared",
+        choices=narrow_symbol_widths.NARROW_MODES,
+        default="fork",
+        help="narrow pass: what to do with a half-required glyph sharing an "
+        "outline with a full-width codepoint (fork a half copy, or skip)",
     )
     ap.add_argument(
         "--protect-ambiguous",
@@ -195,6 +202,7 @@ def main(argv: list[str] | None = None) -> int:
         print("==> narrow/widen symbols to match East_Asian_Width", file=sys.stderr)
         narrow_args = ["--donor", str(args.donor)] if args.donor else ["--no-donor"]
         narrow_args += ["--widen-shared", args.widen_shared]
+        narrow_args += ["--narrow-shared", args.narrow_shared]
         if args.protect_ambiguous:
             narrow_args.append("--protect-ambiguous")
         if narrow_symbol_widths.main([*narrow_args, *map(str, fonts)]):

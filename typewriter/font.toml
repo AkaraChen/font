@@ -57,19 +57,13 @@ latin_src_adv = 600
 latin_src_upm = 2048
 latin_target_upm = 1000
 
+# Was `CourierPrimeZhuque NFM` (KIT-282).
 [naming]
-family = "CourierPrimeZhuque NFM"
-ps = "CourierPrimeZhuqueNFM"
-stem = "CourierPrimeZhuqueNFM"
-house = "CourierPrimeZhuque"
-style = "NFM"
-region = "SC"
-variant = "coding"
-id16 = "CourierPrimeZhuque NFM"
-id17 = "{weight}"
-rfn_note = "Review Courier Prime and Zhuque reserved names before public OFL redistribution."
-base_family = "CourierPrimeZhuque Dual"
-base_ps = "CourierPrimeZhuqueDual"
+house = "AKR"
+style = "Type"
+variant = "NFM"
+base_variant = "Dual"
+rfn_note = "Courier Prime and Zhuque Fangsong are reserved font names; this product carries neither in its family name. Donors are credited in name IDs 5 and 10."
 
 [merge]
 version = "1.000"

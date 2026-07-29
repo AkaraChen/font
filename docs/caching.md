@@ -157,7 +157,7 @@ every run publishes its own numbers.
 
 | layer | key | measured size | why separate |
 | --- | --- | --- | --- |
-| sources | `hashFiles('*/font.toml')` | 447 MiB + 304 MiB Sarasa | biggest, changes least |
+| sources | `hashFiles('*/font.toml')` | ~490 MiB + 304 MiB Sarasa | biggest, changes least |
 | toolchain | `hashFiles('flake.lock', 'flake.nix')` | measured per run | changes on flake bumps only |
 | products | — | not cached yet | see below |
 
@@ -198,6 +198,13 @@ seven-family run on this graph. Deciding before measuring is what produced the
 against. When the numbers land, the natural cut is per-step rather than
 per-family: `latin-prepared` is shared across regions and `cjk-prepared` across
 profiles, so those two are worth far more per byte than a `packaged` zip.
+
+**The region axis barely touches this layer.** KIT-282 added three IBM Plex Sans
+masters (TC / JP / KR, ~14 MiB each hinted) for sans, and nothing at all for
+pixel — its four regional flavours are members of the archive it already pulls.
+The `gc-max-store-size-linux: 3G` cap on the source layer is unchanged and still
+has room. What the region axis *does* grow is the family jobs' build time, which
+is why `build-matrix.yml` raised their timeout; those jobs save no cache.
 
 **Prefix fallback on the source layer.** A partial source set from an older pin
 list is worse than a clean fetch: it gets carried forward, counted against the

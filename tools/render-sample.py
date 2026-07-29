@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render a properly shaped sample of RadonWenKai NFM.
+"""Render a properly shaped sample of AKR Hand SC NFM.
 
 Pillow only shapes text when it was built with libraqm — without it `!=` draws
 as two glyphs and a ligature font looks broken in its own screenshot. So this
@@ -7,7 +7,7 @@ script shapes with HarfBuzz (`uharfbuzz`) and rasterises each glyph outline with
 FreeType (`freetype-py`): what the PNG shows is what the font actually does,
 `liga` + `calt` applied, CJK on the full cell, Latin on the half cell.
 
-  render-sample.py --font out/RadonWenKaiNFM-Regular.ttf
+  render-sample.py --font out/AKRHandSCNFM-Regular.ttf
   → samples/rendered/sample-{dark,light}.png
 """
 
@@ -32,7 +32,7 @@ except ImportError as exc:  # pragma: no cover
     )
     raise SystemExit(2) from exc
 
-DEFAULT_BODY = """// RadonWenKai NFM · Monaspace Radon × 霞鹜文楷 · 中英 2:1 对齐
+DEFAULT_BODY = """// AKR Hand SC NFM · Monaspace Radon × 霞鹜文楷 · 中英 2:1 对齐
 fn walk(path: &str) -> Result<(), Error> {
   // day by day 走过的 path，观察 leaf 与 flower 的 rhythm
   if x != y && a <= b || c >= d { log("path=%s ==> ok", path); }
@@ -160,9 +160,9 @@ def render(font_path: Path, out_dir: Path, theme: str, *, body: str, title: str,
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--font", type=Path, default=root / "out" / "RadonWenKaiNFM-Regular.ttf")
+    ap.add_argument("--font", type=Path, default=root / "out" / "AKRHandSCNFM-Regular.ttf")
     ap.add_argument("--out-dir", type=Path, default=root / "samples" / "rendered")
-    ap.add_argument("--title", default="RadonWenKai NFM · 中英 2:1 · Nerd Font Mono")
+    ap.add_argument("--title", default="AKR Hand SC NFM · 中英 2:1 · Nerd Font Mono")
     ap.add_argument("--body-file", type=Path, default=None)
     ap.add_argument("--size", type=int, default=19)
     args = ap.parse_args()

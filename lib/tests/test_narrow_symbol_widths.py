@@ -108,3 +108,58 @@ def test_rejects_an_unknown_widen_mode(make_font):
     except SystemExit:
         return
     raise AssertionError("expected SystemExit")
+
+
+# --------------------------------------------------------------------------- #
+# Phase 7 (KIT-282) — a narrow codepoint sharing an outline with a wide one
+# --------------------------------------------------------------------------- #
+
+CP_FF64 = 0xFF64  # ､ HALFWIDTH IDEOGRAPHIC COMMA — EAW=H, one cell
+CP_FE51 = 0xFE51  # ︑ SMALL IDEOGRAPHIC COMMA     — EAW=W, two cells
+
+
+def _shared_comma_font(make_font):
+    """IBM Plex Sans TC/JP/KR map both commas to one glyph, drawn full width."""
+    return make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "uniFE51": (FULL, (600, 0, 800, 200)),
+        },
+        cmap={CP_A: "A", CP_ZHONG: "zhong", CP_FF64: "uniFE51", CP_FE51: "uniFE51"},
+    )
+
+
+def test_a_narrow_codepoint_sharing_a_wide_outline_gets_its_own_copy(make_font):
+    """Neither narrowing in place nor skipping is right, so fork.
+
+    In place would squash U+FE51, which genuinely needs two cells. Skipping
+    leaves U+FF64 two cells wide, and a terminal gives it one — which is the
+    `eaw-half` violation that failed the sans TC/JP/KR gate.
+    """
+    path = _shared_comma_font(make_font)
+    nsw.narrow_font(path, None)
+
+    font = TTFont(path, lazy=False)
+    cmap = font.getBestCmap()
+    hmtx = font["hmtx"]
+
+    assert cmap[CP_FF64] != cmap[CP_FE51], "the two commas must not share a glyph"
+    assert hmtx[cmap[CP_FF64]][0] == HALF
+    assert hmtx[cmap[CP_FE51]][0] == FULL, "the wide comma must be untouched"
+    # Unrelated glyphs are not disturbed.
+    assert hmtx[cmap[CP_ZHONG]][0] == FULL
+    font.close()
+
+
+def test_narrow_shared_skip_keeps_the_old_behaviour(make_font):
+    """serif asks for this: Sarasa shares outlines across width classes far more
+    often, and forking every one of them inflates the glyph count."""
+    path = _shared_comma_font(make_font)
+    nsw.narrow_font(path, None, narrow_shared="skip")
+
+    font = TTFont(path, lazy=False)
+    cmap = font.getBestCmap()
+    assert cmap[CP_FF64] == cmap[CP_FE51]
+    assert font["hmtx"][cmap[CP_FF64]][0] == FULL
+    font.close()

@@ -164,7 +164,13 @@ jobs:
     # serif runs the full upstream Sarasa toolchain (patched tree + npm build);
     # it is by far the longest pole. No family has a measured number yet, which
     # is exactly what this run produces.
-    timeout-minutes: 180
+    #
+    # Raised from 180 by KIT-282: sans went from two products to eight (four
+    # regions x two weights) and pixel from one to four, and each of those is a
+    # Nerd patch. The Latin side is still built once per weight for all four
+    # regions — that is nix/granularity.nix's whole point — so the growth is in
+    # `merged` and `nerd`, not in the source or Latin layers.
+    timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:

@@ -1,4 +1,4 @@
-# serif — SarasaNZSSlab NFM (Nerd Font Mono)
+# serif — AKR Slab SC NFM (Nerd Font Mono)
 
 Coding mono: **Slab Latin (IosevkaNSlab)** + **霞鹜新致宋 Opt** + **Nerd icons**, strict **2:1** dual-width.
 
@@ -8,7 +8,7 @@ Coding mono: **Slab Latin (IosevkaNSlab)** + **霞鹜新致宋 Opt** + **Nerd ic
 | CJK | [LXGW Neo ZhiSong Plus](https://github.com/lxgw/LxgwNeoZhiSong) `v1.066` |
 | Grid | 2:1 mono (`A=500` / `中=1000`) |
 | Weight match | pathops embolden **s=7.5** (Regular) / **s=24** (Bold), stem-measured vs IosevkaNSlab |
-| **Product** | **Nerd Font Mono** → `out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf` |
+| **Product** | **Nerd Font Mono** → `out/nerd/AKRSlabSCNFM-{Regular,Bold}.ttf` |
 | Symbol widths | EAW-correct: half-width donor outlines from Sarasa `TermSlab` |
 | Mono flags | `post.isFixedPitch=1` + PANOSE `bProportion=9` (FontForge clears these) |
 | Ligatures | default `calt` **+** Iosevka `dlig` (discretionary) folded in by `fontkit expand-ligatures` |
@@ -28,7 +28,7 @@ See `font.toml`: Sarasa / LXGW / embolden strengths / `nerd.commit`.
 
 Do **not** hand-tune embolden by eye alone. Stem widths are measured from outlines:
 
-1. **Latin target** — IosevkaNSlab as it comes out of this build's own `merged` step (`SarasaMonoSlabNeoZhiSongSC-Opt-{Regular,Bold}.ttf`); no second copy to drift.
+1. **Latin target** — IosevkaNSlab as it comes out of this build's own `merged` step (`AKRSlabSCDual-{Regular,Bold}.ttf`); no second copy to drift.
 2. **CJK trial** — LXGW Neo ZhiSong Plus scaled to UPM 1000, emboldened at candidate strengths.
 3. **Metric** — scanline vertical-stem median on sample glyphs (`H I l n o T E` / `中 一 十 日 国 木 工`). Vertical stems dominate mixed CN/EN optical weight in a mono face; Song horizontals stay thinner by design.
 
@@ -85,8 +85,8 @@ machines could produce two different fonts silently.
 ```bash
 # From the repository root:
 just build serif
-# → out/nerd/SarasaNZSSlabNFM-{Regular,Bold}.ttf
-# Family name: "SarasaNZSSlab NFM"  (Windows-safe ≤31)
+# → out/nerd/AKRSlabSCNFM-{Regular,Bold}.ttf
+# Family name: "AKR Slab SC NFM"  (Windows-safe ≤31)
 ```
 
 Step by step — each of these is a derivation, and building one builds only what
@@ -117,7 +117,7 @@ calt feature.
 Repair an already-built TTF without a full rebuild:
 
 ```bash
-fontkit expand-ligatures SarasaNZSSlabNFM-Regular.ttf
+fontkit expand-ligatures AKRSlabSCNFM-Regular.ttf
 # optional: also fold language packs (can overlap; prefer dlig-only for product)
 # fontkit expand-ligatures --include all font.ttf
 ```
@@ -160,7 +160,7 @@ because terminals let the user choose 1 or 2 cells for those.
 
 ## Troubleshooting (terminal alignment / Nerd icons)
 
-Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metric fix):
+Measured on **v0.1.0** `AKRSlabSCNFM-Regular.ttf` (and re-checked after metric fix):
 
 | Observation | Cause | What to do |
 | --- | --- | --- |
@@ -175,11 +175,11 @@ Measured on **v0.1.0** `SarasaNZSSlabNFM-Regular.ttf` (and re-checked after metr
 
 ```bash
 # Repair an already-built/released TTF without a full rebuild:
-python3 -m fontkit.narrow_symbol_widths SarasaNZSSlabNFM-Regular.ttf \
+python3 -m fontkit.narrow_symbol_widths AKRSlabSCNFM-Regular.ttf \
   --protect-ambiguous --widen-shared skip \
   --donor SarasaTermSlabSC-Regular.ttf      # donor URL: see font.toml
-python3 -m fontkit.fix_terminal_metrics SarasaNZSSlabNFM-Regular.ttf
-python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw SarasaNZSSlabNFM-Regular.ttf
+python3 -m fontkit.fix_terminal_metrics AKRSlabSCNFM-Regular.ttf
+python3 -m fontkit.verify2to1 --profile dense --check-nerd --check-eaw AKRSlabSCNFM-Regular.ttf
 ```
 
 `fontkit.narrow_symbol_widths` transplants Sarasa **Term**'s properly drawn 1-cell
@@ -191,7 +191,7 @@ matters: it saves via fontTools, which recomputes `head`, so run
 
 ```bash
 just release serif
-# → result-serif-release/SarasaNZSSlabNFM-0.1.0.zip  (Nerd TTFs only)
+# → result-serif-release/AKRSlabSCNFM-0.1.0.zip  (Nerd TTFs only)
 ```
 
 The zip is gated: `packaged` depends on `serif-verify`, so a red gate is a build
@@ -199,10 +199,10 @@ failure rather than an archive nobody checked. Then:
 
 ```bash
 gh release create v0.1.0 \
-  result-serif-release/SarasaNZSSlabNFM-0.1.0.zip \
-  out/nerd/SarasaNZSSlabNFM-Regular.ttf \
-  out/nerd/SarasaNZSSlabNFM-Bold.ttf \
-  --title "SarasaNZSSlab NFM v0.1.0" \
+  result-serif-release/AKRSlabSCNFM-0.1.0.zip \
+  out/nerd/AKRSlabSCNFM-Regular.ttf \
+  out/nerd/AKRSlabSCNFM-Bold.ttf \
+  --title "AKR Slab SC NFM v0.1.0" \
   --notes "Nerd Font Mono coding build (2:1 SC)."
 ```
 
@@ -210,7 +210,7 @@ gh release create v0.1.0 \
 
 ```bash
 python3 scripts/render-coding-sample.py \
-  --font out/nerd/SarasaNZSSlabNFM-Regular.ttf \
+  --font out/nerd/AKRSlabSCNFM-Regular.ttf \
   --sizes 12,14,16
 ```
 
@@ -240,10 +240,16 @@ Do **not** commit multi-MiB font binaries; the CJK master is a pinned fetch.
 
 ## Family name
 
-- **Product:** `SarasaNZSSlab NFM` (Regular / Bold)
-- Intermediate pre-Nerd names are build artifacts only.
+- **Product:** `AKR Slab SC NFM` (Regular / Bold) — 15 chars, Windows ≤ 31
+- **Intermediate:** `AKR Slab SC Dual`, a build artifact that nevertheless ships
+  in `out/`, which is why KIT-282 renamed it too: it used to be
+  `SarasaMonoSlabNeoZhiSongSC-Opt`, three upstream reserved names in one stem.
 
-Experimental naming; respect OFL / reserved font names if redistributing.
+The family name carries no upstream reserved name — the OFL does not allow a
+derivative to keep its donors' reserved names. Sarasa, Iosevka N Slab and LXGW
+Neo ZhiSong are credited in name ID 5 (version string) and name ID 10
+(description). Was `SarasaNZSSlab NFM`; see
+[`../docs/naming-migration.md`](../docs/naming-migration.md).
 
 ## License notes
 

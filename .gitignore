@@ -1,4 +1,8 @@
 # Build trees & products
+# `out-<profile>-<region>` is `just build <family> <profile> <region>` — one
+# matrix cell, materialised next to (never into) the full `out/` the fingerprint
+# baseline is keyed on.
+*/out-*/
 serif/work/
 serif/out/
 serif/dist/

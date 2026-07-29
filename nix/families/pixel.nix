@@ -7,6 +7,10 @@
 # Single weight, and the Latin and CJK halves arrive in the same upstream file,
 # so this family has no separate latin-prepared / cjk-prepared split — it goes
 # src-cjk → merged → nerd → packaged.
+#
+# Phase 7 (KIT-282) added the region axis, and pixel is where it is cheapest:
+# zh_hans / zh_hant / ja / ko are four members of the *same* pinned archive, so
+# four regions cost no extra bytes in the source layer at all.
 { pkgs
 , lib
 , support
@@ -16,23 +20,30 @@
 }:
 
 let
-  inherit (support) step file profile region patcher;
+  inherit (support) step file profile patcher;
   m = manifest.data;
-  inherit (m) grid naming;
+  inherit (m) grid;
   metrics = m.metrics.coding;
 
   family = "pixel";
   weight = support.weightName (lib.head m.build.weights);
 
+  regions = lib.unique (map (cell: cell.region) (support.cellsOf m));
+  naming = region: support.namingFor m profile region;
+  tag = region: lib.optionalString (lib.length regions > 1) "-${region}";
+
   # --- src-cjk --------------------------------------------------------------
   # The product face and the half-width donor come out of the same zip; both are
-  # upstream bytes, so they belong to the same source step.
-  src = step "src-cjk" { inherit family region weight; } {
+  # upstream bytes, so they belong to the same source step. The donor has no
+  # regional variant — it is the `latin` flavour and is the same file for all
+  # four — but it is unpacked per region anyway, because splitting it out would
+  # mean a second derivation over the same archive to save one copy.
+  src = region: step "src-cjk" { inherit family region weight; } {
     nativeBuildInputs = [ pkgs.unzip ];
     buildCommand = ''
       mkdir -p $out unpacked
       unzip -q ${sources.perFamily.pixel."fusion-pixel-12px-monospaced-ttf.zip"} -d unpacked
-      cp unpacked/${m.options.fusion_ttf} $out/fusion-base.ttf
+      cp unpacked/${m.options.${"fusion_ttf_${region}"}} $out/fusion-base.ttf
       cp unpacked/${m.options.fusion_ttf_halfwidth_donor} $out/fusion-halfwidth-donor.ttf
     '';
   };
@@ -41,34 +52,32 @@ let
   # Ligature injection and the ambiguous-width narrowing were two scripts, but
   # they are one cache unit: nothing else consumes the un-narrowed face, and
   # the Nerd step's metric hygiene has to see final advances.
-  merged = step "merged"
-    {
-      inherit family profile region weight;
-    }
-    {
+  merged = region:
+    let names = naming region; in
+    step "merged" { inherit family profile region weight; } {
       buildCommand = ''
         mkdir -p $out
         python3 ${file "pixel/scripts/build_ligatures.py"} \
-          --base ${src}/fusion-base.ttf \
+          --base ${src region}/fusion-base.ttf \
           --art ${file "pixel/ligatures/ligatures.txt"} \
-          --out $out/${naming.base_ps}-${weight}.ttf \
-          --family ${lib.escapeShellArg naming.base_family} \
-          --family-ps ${naming.base_ps} \
+          --out $out/${names.base_ps}-${weight}.ttf \
+          --family ${lib.escapeShellArg names.base_family} \
+          --family-ps ${names.base_ps} \
           --half ${toString grid.en_adv} \
           --px ${toString m.options.px_unit} \
           --ascent ${toString metrics.hhea_ascent}
 
-        # Fusion's zh_hans flavour draws “ ” ‘ ’ … · ‥ ․ ‧ at two cells with the
-        # ink in the right half; the latin flavour of the same release draws
-        # them at one. Transplant those before anything measures advances.
+        # Fusion's CJK flavours draw “ ” ‘ ’ … · ‥ ․ ‧ at two cells with the ink
+        # in the right half; the latin flavour of the same release draws them at
+        # one. Transplant those before anything measures advances.
         python3 ${file "pixel/scripts/narrow_ambiguous.py"} \
-          --donor ${src}/fusion-halfwidth-donor.ttf \
+          --donor ${src region}/fusion-halfwidth-donor.ttf \
           $out/*.ttf
       '';
     };
 
   # --- nerd -----------------------------------------------------------------
-  nerd = step "nerd" { inherit family region weight; } {
+  nerd = region: step "nerd" { inherit family region weight; } {
     nativeBuildInputs = [ support.fontforge ];
     buildCommand = ''
       export HOME=$TMPDIR
@@ -76,9 +85,9 @@ let
       fontkit nerd-patch \
         --patcher ${patcher} \
         --out $out \
-        --family ${lib.escapeShellArg naming.family} \
-        --family-ps ${naming.ps} \
-        ${merged}/*.ttf
+        --family ${lib.escapeShellArg (naming region).family} \
+        --family-ps ${(naming region).ps} \
+        ${merged region}/*.ttf
     '';
   };
 
@@ -86,10 +95,15 @@ let
   # The same layout the shell build left in pixel/out, because that is what the
   # fingerprint baselines are keyed on (tools/fingerprint.py walks it and names
   # each product by its path relative to out/).
+  cellOut = region: pkgs.runCommand "pixel-${profile}-${region}" { } ''
+    mkdir -p $out/nerd
+    cp ${merged region}/*.ttf $out/
+    cp ${nerd region}/*.ttf $out/nerd/
+  '';
+
   out = pkgs.runCommand "pixel-out" { } ''
     mkdir -p $out/nerd
-    cp ${merged}/*.ttf $out/
-    cp ${nerd}/*.ttf $out/nerd/
+    ${lib.concatMapStringsSep "\n" (r: "cp -R ${cellOut r}/. $out/") regions}
   '';
 
   # --- verify ---------------------------------------------------------------
@@ -101,49 +115,75 @@ let
       nativeBuildInputs = [ support.pythonEnv ];
     }
     ''
-      python3 ${file "pixel/scripts/verify.py"} \
-        --half ${toString grid.en_adv} \
-        --full ${toString grid.cjk_adv} \
-        --check-nerd \
-        --check-ligatures \
-        --check-eaw \
-        ${nerd}/*.ttf
+      ${lib.concatMapStringsSep "\n" (region: ''
+        echo "==> ${region}"
+        python3 ${file "pixel/scripts/verify.py"} \
+          --half ${toString grid.en_adv} \
+          --full ${toString grid.cjk_adv} \
+          --check-nerd \
+          --check-ligatures \
+          --check-eaw \
+          ${nerd region}/*.ttf
+      '') regions}
       touch $out
     '';
 
-  readme = pkgs.writeText "pixel-README.txt" ''
-    ${naming.family} @version@
-    ============================================
+  readme = region: pkgs.writeText "pixel-${region}-README.txt" (
+    let names = naming region; in
+    ''
+      ${names.family} @version@
+      ============================================
 
-    Family: ${naming.family}
-    Grid:   Fusion Pixel 12px mono (EN ${toString grid.en_adv} / CJK ${toString grid.cjk_adv})
-    Ligatures: hand-drawn pixel programming ligatures (calt)
-    Icons:  Nerd Fonts complete set (single-cell), not redrawn
-            font-patcher ${m.nerd.version}
+      Family: ${names.family}
+      Grid:   Fusion Pixel 12px mono (EN ${toString grid.en_adv} / CJK ${toString grid.cjk_adv})
+              The 12px design size is a property of the outlines, not of the
+              family name — this face is legible at its design size on a snapped
+              pixel grid and nowhere else.
+      Region: ${m.options.${"fusion_ttf_${region}"}}
+      Ligatures: hand-drawn pixel programming ligatures (calt)
+      Icons:  Nerd Fonts complete set (single-cell), not redrawn
+              font-patcher ${m.nerd.version}
 
-    Install: copy the .ttf into your OS fonts directory.
-    In terminals/IDEs pick family "${naming.family}" and enable font ligatures.
+      Install: copy the .ttf into your OS fonts directory.
+      In terminals/IDEs pick family "${names.family}" and enable font ligatures.
 
-    Sources: https://github.com/AkaraChen/font (pixel/)
-    Upstream: Fusion Pixel Font (OFL), Nerd Fonts glyph sets
-  '';
+      Sources: https://github.com/AkaraChen/font (pixel/)
+      Upstream: Fusion Pixel Font (OFL), Nerd Fonts glyph sets
+    ''
+  );
+
+  releaseFor = region: {
+    inherit family profile region weight verify;
+    readme = readme region;
+    stem = (naming region).ps;
+    fontDir = nerd region;
+    licenseDir = file "pixel/licenses";
+  };
 
 in
 {
   inherit out verify;
 
+  # `nix build .#pixel-coding-ja`.
+  cells = lib.listToAttrs (
+    map (region: lib.nameValuePair "${profile}-${region}" (cellOut region)) regions
+  );
+
   # Attribute names are the contract's step names — nix/checks.nix asserts it,
   # so a family cannot invent a step of its own and be the only one that has it.
-  steps = {
-    "src-cjk" = src;
-    inherit merged nerd;
-  };
+  steps = lib.listToAttrs (
+    lib.concatMap
+      (region: [
+        { name = "src-cjk${tag region}"; value = src region; }
+        { name = "merged${tag region}"; value = merged region; }
+        { name = "nerd${tag region}"; value = nerd region; }
+      ])
+      regions
+  );
 
   # Everything the release archive ships, and the gate it must pass first.
-  release = {
-    inherit family profile region weight readme verify;
-    stem = naming.stem;
-    fontDir = nerd;
-    licenseDir = file "pixel/licenses";
-  };
+  release = releaseFor (lib.head regions);
+  extraReleases = lib.listToAttrs (
+    map (region: lib.nameValuePair region (releaseFor region)) (lib.tail regions)
+  );
 }

@@ -1,4 +1,4 @@
-// RadonWenKai NFM · Monaspace Radon × 霞鹜文楷 · 中英 2:1 对齐
+// AKR Hand SC NFM · Monaspace Radon × 霞鹜文楷 · 中英 2:1 对齐
 fn walk(path: &str) -> Result<(), Error> {
   // day by day 走过的 path，观察 leaf 与 flower 的 rhythm
   if x != y && a <= b || c >= d { log("path=%s ==> ok", path); }
