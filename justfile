@@ -92,6 +92,14 @@ graph:
 cache-report layer +results:
     @tools/cache-report.sh {{layer}} {{results}}
 
+# Digest that keys the CI sources layer (sources-only projection of font.toml).
+sources-cache-key:
+    @python3 tools/sources-cache-key.py --digest
+
+# Digest that keys the CI intermediates layer (latin-prepared + serif-sarasa).
+intermediates-cache-key:
+    @python3 tools/intermediates-cache-key.py --digest
+
 # Build one family and materialise its products under <family>/out.
 #
 # All seven are derivations since Phase 5 (KIT-280) moved serif's Sarasa
