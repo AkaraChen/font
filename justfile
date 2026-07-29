@@ -24,6 +24,38 @@ families := "casual handwriting pixel rounded sans serif typewriter"
 _default:
     @just --list --unsorted
 
+# Refuse to start a font build off Linux (KIT-297).
+#
+# The flake stops offering the family attributes on darwin, so the machine-level
+# answer is already "attribute 'sans' missing". This is the human-level one: the
+# reason is not obvious, and the recipes below are where someone meets it.
+#
+# Not a capability problem — a darwin build runs fine and produces a *different
+# font*, because FontForge rounds the icons the Nerd patch imports differently
+# per architecture. Three hours, then a `just verify` failure that is nobody's
+# bug. fingerprints/README.md has the measurement.
+_linux-only recipe:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # A plain `if`, not `[[ … ]] && exit 0`: under `set -e` that form is the
+    # classic footgun — the failing test short-circuits the AND-list and the
+    # message below never prints.
+    if [[ "$(uname -s)" == "Linux" ]]; then
+      exit 0
+    fi
+    exec >&2
+    echo "just {{recipe}}: fonts are built on Linux only."
+    echo
+    echo "  This is $(uname -s)/$(uname -m). A build here would succeed and produce"
+    echo "  a font that differs from the released one — FontForge redraws every"
+    echo "  icon the Nerd patch imports, and that code rounds per architecture"
+    echo "  (272 of 13797 glyphs, measured; see fingerprints/README.md)."
+    echo
+    echo "  Open a PR and let CI build it, or use a Linux machine or container."
+    echo "  Everything that does not produce a shipped byte still works here:"
+    echo "  just test / just dump / just fmt / just toolchain-fingerprint."
+    exit 2
+
 # Enter the pinned toolchain shell.
 dev:
     {{nix}} develop
@@ -74,7 +106,7 @@ cache-report layer +results:
 # The one-cell form writes to its own directory on purpose. `<family>/out` is
 # what the fingerprint baseline is keyed on, and a partial build landing there
 # would make `just verify` report every other region as MISSING.
-build family profile="" region="":
+build family profile="" region="": (_linux-only "build")
     #!/usr/bin/env bash
     set -euo pipefail
     if [[ -n "{{profile}}" || -n "{{region}}" ]]; then
@@ -96,7 +128,7 @@ build family profile="" region="":
 
 # Build one step in isolation — for bisecting a fingerprint diff, or feeding a
 # calibration run. `just steps <family>` lists what a family has.
-step family name:
+step family name: (_linux-only "step")
     {{nix}} build --out-link result-{{family}}-{{name}} .#{{family}}-{{name}}
     @ls -lLR result-{{family}}-{{name}}/
 
@@ -108,16 +140,16 @@ steps family:
 
 # Run one family's gate against its products. The release step depends on this,
 # so a red gate means no archive rather than an archive nobody checked.
-gate family:
+gate family: (_linux-only "gate")
     {{nix}} build --no-link --print-build-logs .#{{family}}-verify
 
 # Build the release archive (gated: it depends on `gate`).
-release family:
+release family: (_linux-only "release")
     {{nix}} build --out-link result-{{family}}-release .#{{family}}-release
     @ls -lL result-{{family}}-release/
 
 # Build every family, sequentially. Keeps going so one failure does not hide the rest.
-build-all:
+build-all: (_linux-only "build-all")
     #!/usr/bin/env bash
     set -uo pipefail
     failed=()
@@ -131,15 +163,15 @@ build-all:
 
 # (Re)write a family's fingerprint baseline from its current build products.
 # Idempotent: same products in, byte-identical files out.
-fingerprint family:
+fingerprint family: (_linux-only "fingerprint")
     {{nix}} develop --command python3 tools/fingerprint.py write {{family}}
 
 # Compare the current build products against the committed baseline.
-verify family:
+verify family: (_linux-only "verify")
     {{nix}} develop --command python3 tools/fingerprint.py check {{family}}
 
 # Verify every family against its baseline.
-verify-all:
+verify-all: (_linux-only "verify-all")
     #!/usr/bin/env bash
     set -uo pipefail
     failed=()
@@ -154,6 +186,17 @@ verify-all:
 # Print one font file's normalised fingerprint (for ad-hoc inspection).
 dump font:
     {{nix}} develop --command python3 tools/fingerprint.py dump {{font}}
+
+# The toolchain's own fingerprint — accelerators, libm, and the two build steps
+# that consume it.
+#
+# Runs anywhere, including the platforms that no longer build fonts; that is the
+# point. It is what established which parts of the cross-platform difference are
+# in *our* code (none) and which are in FontForge (all of it, KIT-297), and it is
+# the first thing to run when CI's own answers start moving — a nixpkgs bump that
+# quietly turns on fontTools' Cython accelerators would show up here as `so`.
+toolchain-fingerprint:
+    @{{nix}} develop --command python3 tools/toolchain-fingerprint.py
 
 # Run the fontkit unit tests (seconds — no font build needed).
 test:

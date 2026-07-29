@@ -121,6 +121,26 @@ Baselines live in `fingerprints/<family>/`, one `.fp` per product plus an
 `head.modified`; fontforge ignores it, which is why the net does not depend on
 byte reproducibility in the first place.
 
+### Fonts are built on Linux (KIT-297)
+
+`flake.nix` offers the family attributes on `x86_64-linux` and `aarch64-linux`
+only, and `just build` / `step` / `gate` / `release` / `fingerprint` / `verify`
+refuse elsewhere with the reason. `tools/fingerprint.py write` will not author a
+baseline into `fingerprints/<family>/` off Linux either.
+
+A darwin build was never *broken* — it succeeded and produced a different font,
+because `font-patcher` redraws every icon it imports through FontForge's
+compiled outline code and that code rounds per architecture (272 of 13797
+glyphs, measured). So it cost three hours and ended in a `just verify` failure
+that was nobody's bug. The measurement, and the four hypotheses it ruled out,
+are in [`../fingerprints/README.md`](../fingerprints/README.md).
+
+Everything that does not produce a shipped byte still runs anywhere: `nix
+develop`, `just test`, `just dump`, `just fmt`, and
+`just toolchain-fingerprint` — which prints the toolchain's own fingerprint
+(accelerators, libm, per-step digests) and is what to reach for if CI's answers
+ever start moving.
+
 ### Why they are committed as text
 
 They are build products, so the obvious move is to store them as binary and stop
