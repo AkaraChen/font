@@ -1,23 +1,8 @@
-# Publish every family in one coordinated release, triggered by a repo-wide tag.
+# Push a tag, get a release: every family, every variant, one release.
 #
-# This does NOT replace release.yml. The two answer different questions:
-#
-#   release.yml         workflow_dispatch, one family, tag `<family>-vX.Y.Z`
-#                       — "ship sans, on its own schedule"
-#   release-on-tag.yml  push of `vX.Y.Z`, every family, one release
-#                       — "cut a repository release: these seven, together"
-#
-# release.yml's comment says a single `vX.Y.Z` "could only ever mean one of
-# them". That was true while the families shipped independently under their own
-# names. It stops being true for a coordinated release whose whole point is that
-# it contains all seven — so the repo-wide tag namespace is reclaimed here for
-# exactly that, and per-family tags keep doing what they already did.
-#
-# The version still lives in font.toml, not in the tag. The tag is what the push
-# *claims* to publish and `prepare` fails if any family's `[naming] version`
-# disagrees — same invariant release.yml enforces, widened to seven files,
-# because the version is stamped into name ID 5 and the archive name at build
-# time. Bump the manifests in a commit, then tag that commit.
+# The version comes from the tag. `prepare` stamps it into all seven manifests
+# before anything is built, so the archive names and the tag cannot disagree —
+# no bumping seven files by hand first.
 #
 # A version containing `-` (e.g. 1.0.0-beta.1) publishes as a pre-release.
 name: Release on tag
@@ -35,158 +20,115 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Same epoch as build-matrix.yml / release.yml — all three restore the same
-  # two cache layers, and bumping one alone silently halves the hit rate.
+  # Same epoch as build-matrix.yml — both restore the same two cache layers.
   CACHE_EPOCH: v1
 
 jobs:
   prepare:
-    name: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.v.outputs.version }}
       families: ${{ steps.v.outputs.families }}
       prerelease: ${{ steps.v.outputs.prerelease }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      # Every family in one release means every family's manifest has to agree
-      # on the version. Checking all seven here — before a single derivation is
-      # built — turns a 7-way mismatch into a 30-second failure instead of a
-      # partly-published release.
-      - name: Resolve version and check every manifest
-        id: v
+      - id: v
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
-          version="${tag#v}"
-          echo "tag=$tag version=$version"
-
+          version="${GITHUB_REF_NAME#v}"
           families=$(nix eval --json .#lib.matrix | jq -r '[.[].family] | unique | sort | @json')
-          echo "families: $families"
-
-          bad=0
-          for f in $(jq -r '.[]' <<<"$families"); do
-            declared=$(python3 -c "
-          import tomllib
-          with open('$f/font.toml','rb') as fh:
-              print(tomllib.load(fh)['naming'].get('version','0.1.0'))
-          ")
-            if [[ "$declared" != "$version" ]]; then
-              echo "::error title=Version mismatch::$f/font.toml declares [naming] version = \"$declared\", tag $tag asks for \"$version\". The version is stamped into name ID 5 and the archive name at build time, so it cannot be overridden here — bump every family's manifest in one commit and tag that commit."
-              bad=1
-            else
-              echo "  ok  $f  $declared"
-            fi
-          done
-          [[ "$bad" == "0" ]] || exit 1
-
           prerelease=false
           [[ "$version" == *-* ]] && prerelease=true
-
           {
             echo "version=$version"
             echo "families=$families"
             echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
-
-          {
-            echo "## $tag"
-            echo
-            echo "version \`$version\` — pre-release: \`$prerelease\`"
-            echo
-            echo "Families: $(jq -r 'join(", ")' <<<"$families")"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## ${GITHUB_REF_NAME} — $(jq -r 'join(", ")' <<<"$families")" >> "$GITHUB_STEP_SUMMARY"
 
   build:
     name: ${{ matrix.family }}
     needs: prepare
     runs-on: ubuntu-latest
-    # Same ceiling as build-matrix.yml — a release builds from source, serif's
-    # upstream Sarasa toolchain included.
     timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
         family: ${{ fromJson(needs.prepare.outputs.families) }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      # Restore-only, like every other job in this repo: seven store snapshots
-      # would blow the 10 GB repository budget and evict the two layers that pay
-      # for themselves (docs/caching.md).
-      - name: Restore cached layers
-        uses: nix-community/cache-nix-action/restore@v7
+      # Restore-only: seven store snapshots would blow the 10 GB repo budget.
+      - uses: nix-community/cache-nix-action/restore@v7
         with:
           primary-key: nix-reltag-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ matrix.family }}-never-saved
           restore-prefixes-all-matches: |
             nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/font.toml') }}
             nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
 
-      - name: Toolchain fingerprint
-        run: nix develop --command python3 tools/toolchain-fingerprint.py | tee toolchain-fingerprint.txt
-
-      - name: Resolve cells
-        id: cells
+      # The tag is the version. Stamped in before the build so the archive name
+      # and the tag are the same string by construction.
+      - name: Stamp the version
         run: |
           set -euo pipefail
-          nix eval --json .#lib.matrix > matrix.json
-          jq --arg family "${{ matrix.family }}" \
-             '[ .[] | select(.family == $family) ]' matrix.json > cells.json
-          jq -r '.[] | "  \(.profile) \(.region)  weights=\(.weights|join(",")) formats=\(.formats|join(","))"' cells.json
+          python3 - "${{ matrix.family }}/font.toml" "${{ needs.prepare.outputs.version }}" <<'PY'
+          import re, sys
+          path, version = sys.argv[1], sys.argv[2]
+          text = open(path, encoding="utf-8").read()
+          start = re.search(r'^\[naming\]\s*$', text, flags=re.M).end() + 1
+          nxt = re.search(r'^\[', text[start:], flags=re.M)
+          end = start + (nxt.start() if nxt else len(text) - start)
+          body = text[start:end]
+          if re.search(r'^version\s*=', body, flags=re.M):
+              body = re.sub(r'^version\s*=\s*".*?"', f'version = "{version}"', body, count=1, flags=re.M)
+          else:
+              body = f'version = "{version}"\n' + body
+          open(path, "w", encoding="utf-8").write(text[:start] + body + text[end:])
+          PY
+          grep -A1 '^\[naming\]' "${{ matrix.family }}/font.toml" | head -3
 
-      # One `nix build` per cell. The archive derivation depends on the family's
-      # gate, so this is also the gate run — a red gate is a missing archive,
-      # not an unchecked one.
-      - name: Build the archives
+      # One nix build per cell. The archive derivation depends on the family's
+      # gate, so this is the gate run too.
+      - name: Build
         run: |
           set -euo pipefail
           mkdir -p assets
-          while read -r profile region; do
-            attr="${{ matrix.family }}-${profile}-${region}-release"
-            echo "::group::nix build .#${attr}"
-            out=$(nix build --no-link --print-out-paths --print-build-logs ".#${attr}")
-            echo "::endgroup::"
-            cp "$out"/*.zip assets/
-          done < <(jq -r '.[] | "\(.profile) \(.region)"' cells.json)
+          nix eval --json .#lib.matrix \
+            | jq -r --arg f "${{ matrix.family }}" '.[] | select(.family==$f) | "\(.profile) \(.region)"' \
+            | while read -r profile region; do
+                out=$(nix build --no-link --print-out-paths --print-build-logs \
+                      ".#${{ matrix.family }}-${profile}-${region}-release")
+                cp "$out"/*.zip assets/
+              done
           ls -lh assets/
 
-      # Generated from the same font.toml the build read, so the notes cannot
-      # drift from the bytes. Includes the AKR rename migration note.
-      - name: Render release notes
+      - name: Release notes
         run: |
           set -euo pipefail
           : > notes-${{ matrix.family }}.md
-          while read -r profile region; do
-            nix develop --command fontkit release-notes \
-              --manifest "${{ matrix.family }}/font.toml" \
-              --profile "$profile" \
-              --region "$region" \
-              --version "${{ needs.prepare.outputs.version }}" \
-              >> notes-${{ matrix.family }}.md
-            printf '\n' >> notes-${{ matrix.family }}.md
-          done < <(jq -r '.[] | "\(.profile) \(.region)"' cells.json)
-          cat notes-${{ matrix.family }}.md >> "$GITHUB_STEP_SUMMARY"
+          nix eval --json .#lib.matrix \
+            | jq -r --arg f "${{ matrix.family }}" '.[] | select(.family==$f) | "\(.profile) \(.region)"' \
+            | while read -r profile region; do
+                nix develop --command fontkit release-notes \
+                  --manifest "${{ matrix.family }}/font.toml" \
+                  --profile "$profile" --region "$region" \
+                  --version "${{ needs.prepare.outputs.version }}" >> notes-${{ matrix.family }}.md
+                printf '\n' >> notes-${{ matrix.family }}.md
+              done
 
-      - name: Upload
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.family }}
           path: |
@@ -196,21 +138,18 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: publish ${{ github.ref_name }}
     needs: [prepare, build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download every family's assets
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           pattern: release-*
           path: incoming
 
-      - name: Assemble
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p release-assets
@@ -219,16 +158,12 @@ jobs:
           {
             echo "# ${GITHUB_REF_NAME}"
             echo
-            echo "A coordinated release of every family in this repository, built from"
-            echo "source at \`${GITHUB_SHA}\` with the pinned Nix toolchain."
+            echo "Every family, every variant, built from source at \`${GITHUB_SHA}\`."
             echo
-            echo "> **Renamed families.** Every product now uses the \`AKR\` house name"
-            echo "> (\`AKR Sans SC NFM\`, \`AKR Hand SC Text\`, …). Fonts installed from a"
-            echo "> \`v0.1.x\` release carry their old family names, so editor and terminal"
-            echo "> settings that name a font will not follow the upgrade — update them to"
-            echo "> the new family name. The old tags are left in place."
-            echo
-            echo "> The \`v0.1.x\` tags predate the rename and were serif-only."
+            echo "> **Renamed families.** Products use the \`AKR\` house name"
+            echo "> (\`AKR Sans SC NFM\`, \`AKR Hand SC Text\`, …). Fonts from a \`v0.1.x\`"
+            echo "> release carry their old names, so settings that name a font need"
+            echo "> updating. The \`v0.1.x\` tags predate the rename and were serif-only."
             echo
             echo "---"
             echo
@@ -237,23 +172,10 @@ jobs:
             cat "$f" >> notes.md
             printf '\n---\n\n' >> notes.md
           done
-          ls -lh release-assets/
-          cat notes.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Publish
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            draft=$(gh release view "$TAG" --repo "${{ github.repository }}" --json isDraft -q .isDraft)
-            if [[ "$draft" == "true" ]]; then
-              gh release delete "$TAG" --repo "${{ github.repository }}" --yes
-            else
-              echo "::error title=Already published::$TAG exists and is not a draft. Bump every family's [naming] version and tag again."
-              exit 1
-            fi
+            gh release delete "$TAG" --repo "${{ github.repository }}" --yes
           fi
 
           gh release create "$TAG" \
