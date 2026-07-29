@@ -15,6 +15,20 @@ weights = ["regular"]
 formats = ["ttf"]
 slopes = ["upright"]
 
+# A bitmap face is coding-only and single-weight, and both follow from the same
+# fact: the design is a 12-pixel grid. There is no stroke to thicken or thin, and
+# a reading face that only renders correctly at one size and one snapped grid is
+# not a reading face.
+[[build.unsupported]]
+axis = "weights"
+values = ["light"]
+reason = "a 12px bitmap design has no stroke weight axis — outlines are grid-snapped rectangles, not strokes"
+
+[[build.unsupported]]
+axis = "profiles"
+values = ["text"]
+reason = "a 12px bitmap face is legible only at its design size on a snapped pixel grid; prose is set at arbitrary sizes"
+
 [sources.fusion]
 role = "cjk"
 repository = "https://github.com/TakWolf/fusion-pixel-font"

@@ -270,7 +270,12 @@ jobs:
               # Baselines are authored by CI, not by a laptop: fontforge and
               # skia-pathops do not produce identical output across platforms.
               # The first run bootstraps them; they must then be committed.
-              echo "::warning title=No fingerprint baseline::${{ matrix.family }} has no committed baseline. Download the fingerprints-${{ matrix.family }} artifact from this run and commit it under fingerprints/${{ matrix.family }}/."
+              #
+              # Also reached when a family gains a *new* product — a new weight
+              # or a new profile — that no baseline covers yet. Existing
+              # products that changed or disappeared still exit 1, so this
+              # cannot hide a regression in what already shipped.
+              echo "::warning title=Fingerprint baseline missing::${{ matrix.family }} has products with no committed baseline (see the step log for which). Download the fingerprints-${{ matrix.family }} artifact from this run and commit it under fingerprints/${{ matrix.family }}/."
               ;;
             *) exit "$rc" ;;
           esac

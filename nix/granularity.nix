@@ -29,13 +29,24 @@ let
   ];
 
   steps = {
-    # Raw upstream bytes. Latin is identical in every region and every scene.
+    # Raw upstream bytes. Identical in every region — sc/tc/hk/jp/kr ask for the
+    # same Latin file — but NOT in every scene, which the note here used to
+    # claim. Phase 6 (KIT-281) is where that stopped being true: "no Nerd Font
+    # patch in the text profile" is not an un-patch step, it is a different
+    # upstream file. handwriting's coding faces come from Monaspace's
+    # pre-patched `MonaspaceRadonNF-*` and its text faces from the plain
+    # `MonaspaceRadon-*` in the same release.
+    #
+    # Modelling that as an axis rather than letting the two share a derivation
+    # name is the point of this file: two different upstream files under one
+    # name is a graph nobody can bisect.
     src-latin = {
       axes = [
         "family"
+        "profile"
         "weight"
       ];
-      note = "upstream Latin face, shared across every profile and region";
+      note = "upstream Latin face for one scene; shared across every region";
     };
 
     # CJK source does vary by region: sc/tc/hk/jp/kr are different masters or

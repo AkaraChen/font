@@ -43,7 +43,7 @@ let
   };
 
   # --- src ------------------------------------------------------------------
-  srcLatin = weight: step "src-latin" { inherit family weight; } {
+  srcLatin = weight: step "src-latin" { inherit family profile weight; } {
     nativeBuildInputs = [ pkgs.unzip ];
     buildCommand = ''
       mkdir -p $out unpacked

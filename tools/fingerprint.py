@@ -530,12 +530,18 @@ def check_family(repo_root: Path, family: str, baseline_dir: Path,
         current_files = {p.name for p in tmp.glob("*.fp")}
 
         failed = False
+        unbaselined = False
         for name in sorted(baseline_files - current_files):
             print(f"MISSING  {name} — product disappeared from this build")
             failed = True
+        # A product that has no baseline entry yet is the same situation as a
+        # family that has no baseline directory yet: nothing to compare against,
+        # and the answer is to adopt one from the canonical platform rather than
+        # to fail. It cannot mask a regression — an existing product that
+        # changed is CHANGED, and one that vanished is MISSING; both still fail.
         for name in sorted(current_files - baseline_files):
-            print(f"NEW      {name} — product not in the baseline")
-            failed = True
+            print(f"NEW      {name} — product has no baseline yet")
+            unbaselined = True
 
         for name in sorted(baseline_files & current_files):
             old = (baseline_dir / name).read_text(encoding="utf-8").splitlines()
@@ -554,7 +560,16 @@ def check_family(repo_root: Path, family: str, baseline_dir: Path,
             if len(diff) > 200:
                 print(f"    … {len(diff) - 200} more diff lines suppressed")
 
-        return 1 if failed else 0
+        if failed:
+            return 1
+        if unbaselined:
+            print(
+                "notice: products above have no committed baseline. Adopt them "
+                "from a canonical-platform run (see fingerprints/README.md).",
+                file=sys.stderr,
+            )
+            return 3
+        return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

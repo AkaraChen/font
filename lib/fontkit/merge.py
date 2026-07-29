@@ -19,9 +19,11 @@ Three things this engine deliberately keeps apart, because Phase 6 (`text`
 profile) and the italic interface both need them separable:
 
 * ``apply_vertical_metrics`` — line box + USE_TYPO_METRICS. Both profiles.
-* ``declare_strict_2to1``    — the fixed-grid declaration (`post.isFixedPitch`,
-  PANOSE bProportion, `xAvgCharWidth` = the half cell). **coding only**: a
-  reading face has no terminal grid to be strict about. Optical stroke matching
+* ``declare_strict_2to1`` / ``declare_proportional`` — the grid declaration
+  (`post.isFixedPitch`, PANOSE bProportion, `xAvgCharWidth`). Which of the two
+  runs is `PROFILE_RULES[profile].declares_fixed_grid`; a reading face has no
+  terminal grid to be strict about, and has to *withdraw* the claim rather than
+  merely omit it, because monospaced donors arrive with it set. Optical stroke matching
   between Latin and CJK is the other half of what used to be one
   `unify_metrics`, and it lives where it belongs — the per-weight
   ``[calibration.<weight>].embolden`` the `cjk-prepared` step consumes, so a
@@ -54,7 +56,7 @@ from fontTools.ttLib.scaleUpem import scale_upem
 from fontTools.ttLib.tables import ttProgram
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
 
-from fontkit.manifest import Manifest, load_manifest
+from fontkit.manifest import Manifest, load_manifest, naming_for
 
 # TrueType cannot address more glyphs than this, and a Latin base plus a full
 # CJK donor gets close enough that it is worth saying so before the merge runs
@@ -137,6 +139,78 @@ CODING_LAYOUT_FEATURES = [
 ]
 
 
+# East_Asian_Width **Ambiguous** punctuation that Chinese typography draws on a
+# full cell. Unicode leaves the width to the environment precisely because the
+# answer differs by scene, and this is where the two profiles genuinely part:
+#
+#   coding  a terminal gives Ambiguous one cell (the default everywhere except
+#           a few CJK locales), so the Latin donor's narrow ellipsis is right
+#           and the CJK donor's is not.
+#   text    a reader sees 中文……“引号”·间隔 set by a CJK face, where every one of
+#           these is a full-width mark. Taking the Latin donor's here is the
+#           bug — the ellipsis dots land at half the size of the surrounding Han.
+#
+# Deliberately a short, named list rather than "all of EAW=A": Ambiguous also
+# covers Greek, Cyrillic and most maths, and importing those from a CJK donor
+# would replace a designed Latin with a fallback.
+#
+# Being on this list is a *candidate*, not a decision — see
+# `cjk_draws_for_the_full_cell`. Measured on the pinned donors, LXGW WenKai
+# draws … and — for the full cell but ‘ ’ “ ” · at 350/1000, i.e. as part of its
+# own proportional Latin. Importing that 350 would not give a reader full-width
+# quotation marks; it would give them WenKai's Latin quotes next to Radon's
+# Latin letters, which is worse than either font on its own.
+CJK_PREFERRED_AMBIGUOUS = (
+    0x00B7,  # · 间隔号
+    0x2014,  # — 破折号
+    0x2018,  # ‘
+    0x2019,  # ’
+    0x201C,  # “
+    0x201D,  # ”
+    0x2026,  # … 省略号
+)
+
+
+@dataclass(frozen=True)
+class ProfileRules:
+    """What a profile *is*, stated once and independent of any family.
+
+    Phase 6's judgement call, in one place: does a constraint serve the terminal
+    cell, or does it serve reading? Everything below is the first kind, which is
+    why `text` switches all of it off. Optical stroke matching and baseline
+    alignment are the second kind — they are not here, because they live in
+    `[calibration.<weight>]` and both profiles get them from the same shared
+    `cjk-prepared` step.
+    """
+
+    # `post.isFixedPitch` / PANOSE bProportion / `OS/2.xAvgCharWidth`.
+    declares_fixed_grid: bool
+    # Force every import onto a half or full cell from East_Asian_Width, and
+    # re-cast base-only EAW-wide glyphs (Nerd icons) into the full cell.
+    forces_cell_widths: bool
+    # Which codepoints come from the CJK donor. `None` keeps the family's own
+    # `[merge].import_policy`.
+    import_policy: str | None
+    # How an import lands. `None` keeps the family's own `[merge].placement`.
+    placement: str | None
+
+
+PROFILE_RULES = {
+    "coding": ProfileRules(
+        declares_fixed_grid=True,
+        forces_cell_widths=True,
+        import_policy=None,
+        placement=None,
+    ),
+    "text": ProfileRules(
+        declares_fixed_grid=False,
+        forces_cell_widths=False,
+        import_policy="cjk-side-plus-cjk-punctuation",
+        placement="native",
+    ),
+}
+
+
 def is_cjk_side(cp: int) -> bool:
     return any(lo <= cp <= hi for lo, hi in CJK_RANGES)
 
@@ -175,8 +249,11 @@ class MergeSpec:
     # engine options
     latin: str  # none | scale | normalize
     cjk: str  # as-is | normalize | require-same-upm
-    import_policy: str  # cjk-side | cjk-side-or-missing | east-asian-width
-    placement: str  # center | fit
+    # cjk-side | cjk-side-or-missing | east-asian-width |
+    # cjk-side-plus-cjk-punctuation
+    import_policy: str
+    placement: str  # center | fit | native
+    declares_fixed_grid: bool
     glyph_prefix: str
     required_sample: str
     latin_subset: str  # none | coding
@@ -218,7 +295,13 @@ def spec_from_manifest(
     if metrics is None:
         raise SystemExit(f"error: {manifest.family}/font.toml has no [metrics.{profile}]")
 
-    naming = manifest.naming
+    rules = PROFILE_RULES.get(profile)
+    if rules is None:
+        raise SystemExit(f"error: unknown profile {profile!r}")
+
+    naming = naming_for(manifest, profile)
+    override = getattr(merge, profile, None) if profile != "coding" else None
+    sources_note = (override.sources_note if override else None) or merge.sources_note
     # The merge writes the intermediate face where a family has one (the "Dual"
     # products that are later Nerd-patched into the shipped family), and the
     # product face where it does not.
@@ -229,7 +312,7 @@ def spec_from_manifest(
         family=family,
         family_ps=naming.base_ps or naming.ps,
         version=merge.version,
-        sources_note=merge.sources_note.format(slant=f"{calibration.slant_deg:g}"),
+        sources_note=sources_note.format(slant=f"{calibration.slant_deg:g}"),
         en_adv=manifest.grid.en_adv,
         cjk_adv=manifest.grid.cjk_adv,
         metrics={
@@ -250,8 +333,12 @@ def spec_from_manifest(
         slant_deg=calibration.slant_deg,
         latin=merge.latin,
         cjk=merge.cjk,
-        import_policy=merge.import_policy,
-        placement=merge.placement,
+        # The family says what its donors need; the profile says what the scene
+        # needs. Where they disagree the scene wins, because "which cell does an
+        # ellipsis get" is a question about the reader, not about WenKai.
+        import_policy=rules.import_policy or merge.import_policy,
+        placement=rules.placement or merge.placement,
+        declares_fixed_grid=rules.declares_fixed_grid,
         glyph_prefix=merge.glyph_prefix,
         required_sample=merge.required_sample,
         latin_subset=merge.latin_subset,
@@ -260,7 +347,10 @@ def spec_from_manifest(
         drop_hinting_on_upem_change=merge.drop_hinting,
         set_weight_class=merge.set_weight_class,
         recalc_bounds=merge.recalc_bounds,
-        widen_wide_base_glyphs=merge.widen_wide_base_glyphs,
+        # Re-casting a base-only EAW-wide glyph into the full cell repairs a
+        # *terminal* cell count. A reading face has no cells to repair, and the
+        # glyphs in question are Nerd icons it does not carry.
+        widen_wide_base_glyphs=merge.widen_wide_base_glyphs and rules.forces_cell_widths,
         drop_vertical_metrics=merge.drop_vertical_metrics,
         check_glyph_budget=merge.check_glyph_budget,
     )
@@ -681,6 +771,30 @@ def declare_strict_2to1(font: TTFont, en_adv: int) -> None:
         pass
 
 
+def declare_proportional(font: TTFont) -> None:
+    """Withdraw the fixed-grid claim. **text profile only.**
+
+    The mirror of `declare_strict_2to1`, and it has to be an active step rather
+    than "just don't call the other one": both donors are monospaced by design,
+    so `post.isFixedPitch` and PANOSE bProportion arrive from the Latin face
+    already set. Leaving them would advertise a face whose advances are 500 for
+    Latin, 1000 for Han and 1000 for an ellipsis as a terminal font — every
+    "monospace only" picker would offer it, and every one of them would be
+    wrong.
+
+    `OS/2.xAvgCharWidth` is recomputed rather than pinned to the half cell,
+    because for a reading face it is what it claims to be: an average.
+    """
+    font["post"].isFixedPitch = 0
+    try:
+        font["OS/2"].panose.bProportion = 0  # Any
+    except Exception:
+        pass
+    widths = [w for w, _ in font["hmtx"].metrics.values() if w > 0]
+    if widths:
+        font["OS/2"].xAvgCharWidth = int(round(sum(widths) / len(widths)))
+
+
 def apply_slope(font: TTFont, slope: str, *, angle: float = 0.0) -> None:
     """Write every slope-dependent bit from one argument.
 
@@ -719,6 +833,11 @@ def set_weight_class(font: TTFont, subfamily: str) -> None:
     elif subfamily.lower() == "regular":
         os2.usWeightClass = 400
         os2.fsSelection = (os2.fsSelection | 0x40) & ~0x20
+    elif subfamily.lower() == "light":
+        # Not REGULAR and not BOLD: a Light that sets the REGULAR bit makes a
+        # host treat it as the family's default face.
+        os2.usWeightClass = 300
+        os2.fsSelection &= ~(0x20 | 0x40)
 
 
 # --------------------------------------------------------------------------- #
@@ -849,14 +968,39 @@ def prepare_cjk(path: Path, spec: MergeSpec, latin: TTFont) -> TTFont:
 
 
 def codepoints_to_import(
-    spec: MergeSpec, latin_cmap: dict[int, str], cjk_cmap: dict[int, str]
+    spec: MergeSpec,
+    latin_cmap: dict[int, str],
+    cjk_cmap: dict[int, str],
+    cjk_advance: dict[str, int] | None = None,
 ) -> dict[int, str]:
+    def cjk_draws_for_the_full_cell(glyph: str) -> bool:
+        """Did the CJK donor draw this as a full-cell mark, or as its own Latin?
+
+        Asked of the donor rather than assumed from the codepoint, because the
+        answer is a design decision each donor made separately and getting it
+        wrong is invisible until someone reads a paragraph.
+        """
+        if cjk_advance is None:
+            return True
+        return cjk_advance.get(glyph, 0) == spec.cjk_adv
+
     if spec.import_policy == "cjk-side":
         # The donor's own Latin is discarded: it is a different design.
         return {cp: g for cp, g in cjk_cmap.items() if is_cjk_side(cp)}
     if spec.import_policy == "cjk-side-or-missing":
         return {
             cp: g for cp, g in cjk_cmap.items() if is_cjk_side(cp) or cp not in latin_cmap
+        }
+    if spec.import_policy == "cjk-side-plus-cjk-punctuation":
+        # The reading face. Nothing is taken because the Latin donor happens to
+        # lack it — a text face wants its Latin to be one design, not a patchwork
+        # of two — so the only addition to the CJK side is the ambiguous-width
+        # punctuation Chinese typography sets full width.
+        return {
+            cp: g
+            for cp, g in cjk_cmap.items()
+            if is_cjk_side(cp)
+            or (cp in CJK_PREFERRED_AMBIGUOUS and cjk_draws_for_the_full_cell(g))
         }
     # east-asian-width: also take the donor's drawing for any W/F codepoint the
     # base happens to cover (e.g. 〈 〉) — those need a full cell and the donor
@@ -898,7 +1042,12 @@ def merge_pair(
 
     latin_cmap = latin.getBestCmap() or {}
     cjk_cmap = cjk.getBestCmap() or {}
-    to_import = codepoints_to_import(spec, latin_cmap, cjk_cmap)
+    to_import = codepoints_to_import(
+        spec,
+        latin_cmap,
+        cjk_cmap,
+        {name: width for name, (width, _) in cjk["hmtx"].metrics.items()},
+    )
 
     if spec.check_glyph_budget:
         projected = len(latin.getGlyphOrder()) + len(to_import)
@@ -916,6 +1065,7 @@ def merge_pair(
     glyph_set = latin.getGlyphSet() if by_cell else None
     wide = compressed = 0
 
+    native = spec.placement == "native"
     for i, (cp, src_name) in enumerate(sorted(to_import.items())):
         if by_cell:
             target = spec.cjk_adv if is_wide(cp) else spec.en_adv
@@ -924,6 +1074,16 @@ def merge_pair(
             )
             compressed += fit_advance(latin, glyph_set, dest_name, target)
             wide += target == spec.cjk_adv
+        elif native:
+            # The donor drew this glyph for a cell it chose. `copy_glyph_deep`
+            # already brought that advance across, so the whole placement step
+            # is *not touching it* — which is the point: a reading face has no
+            # grid to snap to, and snapping is what would put an ellipsis at
+            # half the size of the Han it sits between.
+            dest_name = copy_glyph_deep(
+                cjk, latin, src_name, rename, prefix=spec.glyph_prefix
+            )
+            wide += latin["hmtx"].metrics[dest_name][0] >= spec.cjk_adv
         else:
             dest_name = copy_glyph_deep(
                 cjk, latin, src_name, rename, prefix=spec.glyph_prefix
@@ -939,6 +1099,11 @@ def merge_pair(
             f"  advances: {wide} full-cell, {len(to_import) - wide} half-cell "
             f"(by East_Asian_Width); {compressed} outlines x-compressed to fit"
         )
+    elif native:
+        print(
+            f"  advances: kept as the donor drew them "
+            f"({wide}/{len(to_import)} at or above the full cell)"
+        )
 
     if spec.widen_wide_base_glyphs:
         widened = widen_wide_base_glyphs(latin, final_map, spec.en_adv, spec.cjk_adv)
@@ -952,8 +1117,10 @@ def merge_pair(
     rename_family(latin, subfamily, spec)
 
     apply_vertical_metrics(latin, spec.metrics)
-    if spec.profile == "coding":
+    if spec.declares_fixed_grid:
         declare_strict_2to1(latin, spec.en_adv)
+    else:
+        declare_proportional(latin)
     if spec.set_weight_class:
         set_weight_class(latin, subfamily)
     apply_slope(latin, spec.slope, angle=spec.slant_deg)
@@ -994,15 +1161,61 @@ def merge_pair(
     check.close()
 
 
+def faces_from_args(args: argparse.Namespace) -> list[tuple[Path, Path, str]]:
+    """(latin, cjk, subfamily) triples, in either spelling.
+
+    `--weight/--latin/--cjk` in matching order is the general form and the only
+    one that can express a third weight. The `--latin-regular` / `--latin-bold`
+    pair predates Light and is kept because four families' derivations still
+    spell it that way; it is exactly `--weight Regular … --weight Bold …`.
+    """
+    if args.weight:
+        counts = {len(args.weight), len(args.latin), len(args.cjk)}
+        if counts != {len(args.weight)}:
+            raise SystemExit(
+                "error: --weight, --latin and --cjk must be given the same number "
+                f"of times (got {len(args.weight)}/{len(args.latin)}/{len(args.cjk)})"
+            )
+        return list(zip(args.latin, args.cjk, args.weight))
+
+    missing = [
+        flag
+        for flag, value in (
+            ("--latin-regular", args.latin_regular),
+            ("--latin-bold", args.latin_bold),
+            ("--cjk-regular", args.cjk_regular),
+            ("--cjk-bold", args.cjk_bold),
+        )
+        if value is None
+    ]
+    if missing:
+        raise SystemExit(
+            "error: pass --weight/--latin/--cjk, or all four of "
+            f"--latin-regular --latin-bold --cjk-regular --cjk-bold (missing {missing})"
+        )
+    return [
+        (args.latin_regular, args.cjk_regular, "Regular"),
+        (args.latin_bold, args.cjk_bold, "Bold"),
+    ]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--manifest", type=Path, required=True, help="the family's font.toml")
-    ap.add_argument("--latin-regular", type=Path, required=True)
-    ap.add_argument("--latin-bold", type=Path, required=True)
-    ap.add_argument("--cjk-regular", type=Path, required=True)
-    ap.add_argument("--cjk-bold", type=Path, required=True)
+    ap.add_argument(
+        "--weight",
+        action="append",
+        default=[],
+        help="product subfamily to build, e.g. Light. Repeat with --latin/--cjk.",
+    )
+    ap.add_argument("--latin", action="append", default=[], type=Path)
+    ap.add_argument("--cjk", action="append", default=[], type=Path)
+    ap.add_argument("--latin-regular", type=Path)
+    ap.add_argument("--latin-bold", type=Path)
+    ap.add_argument("--cjk-regular", type=Path)
+    ap.add_argument("--cjk-bold", type=Path)
     ap.add_argument("--out-dir", type=Path, required=True)
-    ap.add_argument("--profile", default="coding", choices=("coding", "text"))
+    ap.add_argument("--profile", default="coding", choices=tuple(PROFILE_RULES))
     ap.add_argument("--slope", default="upright", choices=("upright", "italic"))
     args = ap.parse_args(argv)
 
@@ -1012,10 +1225,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{args.manifest}: {error}", file=sys.stderr)
         return 2
 
-    for latin, cjk, subfamily in (
-        (args.latin_regular, args.cjk_regular, "Regular"),
-        (args.latin_bold, args.cjk_bold, "Bold"),
-    ):
+    for latin, cjk, subfamily in faces_from_args(args):
         if not latin.exists() or not cjk.exists():
             print(f"error: missing input {latin} / {cjk}", file=sys.stderr)
             return 1

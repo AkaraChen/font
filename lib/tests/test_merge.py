@@ -67,6 +67,13 @@ def _spec(**overrides):
         check_glyph_budget=False,
     )
     base.update(overrides)
+    # The profile decides the grid declaration, so the helper must not let a
+    # test set `profile="text"` and still get a face that claims a fixed grid —
+    # that combination cannot come out of `spec_from_manifest`.
+    base.setdefault(
+        "declares_fixed_grid",
+        merge.PROFILE_RULES[base["profile"]].declares_fixed_grid,
+    )
     return merge.MergeSpec(**base)
 
 
@@ -280,8 +287,100 @@ def test_calibration_is_per_weight_not_regulars_reused(family):
     """Adding Light means re-measuring the CJK stem against *that* weight.
 
     An engine that silently fell back to Regular would ship a Light whose CJK is
-    as heavy as the Regular's, and nothing downstream would notice.
+    as heavy as the Regular's, and nothing downstream would notice. handwriting
+    took a Light in Phase 6 and has `[calibration.light]`; the rest have not, and
+    for them asking for one must still be an error rather than a silent Regular.
     """
     manifest = load_manifest(REPO / family / "font.toml")
+    if "light" in manifest.calibration:
+        spec = merge.spec_from_manifest(manifest, "Light")
+        regular = merge.spec_from_manifest(manifest, "Regular")
+        # Not asserting it is *lighter* — that is the build's job to measure —
+        # only that it resolved from its own entry.
+        assert spec.family_ps == regular.family_ps
+        return
     with pytest.raises(SystemExit, match="calibration"):
         merge.spec_from_manifest(manifest, "Light")
+
+
+# --------------------------------------------------------------------------- #
+# Phase 6 — the text profile is a scene, not a family option
+# --------------------------------------------------------------------------- #
+
+
+def test_profile_overrides_the_familys_cell_policy(tmp_path, make_font):
+    """A family declares what its donors need; the profile declares the scene.
+
+    handwriting's `[merge]` says `placement = "fit"` because a terminal sizes
+    cells from East_Asian_Width. A reading face has no cells, so the same
+    manifest must not produce a face whose CJK was snapped to a grid.
+    """
+    manifest = load_manifest(REPO / "handwriting" / "font.toml")
+
+    coding = merge.spec_from_manifest(manifest, "Regular", profile="coding")
+    text = merge.spec_from_manifest(manifest, "Regular", profile="text")
+
+    assert coding.placement == "fit"
+    assert coding.import_policy == "east-asian-width"
+    assert coding.declares_fixed_grid
+
+    assert text.placement == "native"
+    assert text.import_policy == "cjk-side-plus-cjk-punctuation"
+    assert not text.declares_fixed_grid
+    # The terminal-cell repair goes with the terminal.
+    assert not text.widen_wide_base_glyphs
+    # …while the optical work does not: both profiles read the same
+    # [calibration.<weight>], because `cjk-prepared` is shared between them.
+    assert text.slant_deg == coding.slant_deg
+
+
+def test_a_second_profile_is_a_second_family_name():
+    """Two profiles under one family name would collide in a font menu."""
+    manifest = load_manifest(REPO / "handwriting" / "font.toml")
+
+    coding = merge.spec_from_manifest(manifest, "Regular", profile="coding")
+    text = merge.spec_from_manifest(manifest, "Regular", profile="text")
+
+    assert coding.family != text.family
+    assert coding.family_ps != text.family_ps
+    # Inherited, not restated: the override says what differs and nothing else.
+    assert manifest.naming.rfn_note
+
+
+def test_text_withdraws_the_mono_claim_a_donor_arrived_with(font):
+    """Both donors are monospaced, so `isFixedPitch` arrives set.
+
+    Not calling `declare_strict_2to1` is not enough — the flag has to be cleared,
+    or the reading face turns up in every 'monospace only' font picker.
+    """
+    font["post"].isFixedPitch = 1
+    font["OS/2"].panose.bProportion = 9
+
+    merge.declare_proportional(font)
+
+    assert font["post"].isFixedPitch == 0
+    assert font["OS/2"].panose.bProportion != 9
+
+
+def test_ambiguous_punctuation_comes_from_whoever_drew_a_whole_cell():
+    """… is full width in Chinese typography — but only if the donor drew it so.
+
+    LXGW WenKai draws … and — for the full cell and ‘ ’ “ ” · at 350/1000, as
+    part of its own proportional Latin. Taking the 350 would put WenKai's Latin
+    quotes next to Radon's Latin letters, which is worse than either font alone,
+    so the rule is asked of the donor rather than assumed from the codepoint.
+    """
+    spec = _spec(profile="text", import_policy="cjk-side-plus-cjk-punctuation")
+    latin_cmap = {0x2026: "ellipsis", 0x201C: "quotedblleft", CP_A: "A"}
+    cjk_cmap = {
+        CP_ZHONG: "zhong",
+        0x2026: "wk.ellipsis",
+        0x201C: "wk.quotedblleft",
+    }
+    advances = {"zhong": 1000, "wk.ellipsis": 1000, "wk.quotedblleft": 350}
+
+    taken = merge.codepoints_to_import(spec, latin_cmap, cjk_cmap, advances)
+
+    assert taken[0x2026] == "wk.ellipsis"  # full cell — the CJK donor's
+    assert 0x201C not in taken  # 350 — leave the Latin donor's alone
+    assert CP_A not in taken  # never take the donor's Latin

@@ -29,7 +29,7 @@ let
 
   emboldenFor = weight: toString m.calibration.${lib.toLower weight}.embolden;
 
-  srcLatin = weight: step "src-latin" { inherit family weight; } {
+  srcLatin = weight: step "src-latin" { inherit family profile weight; } {
     nativeBuildInputs = [ pkgs.unzip ];
     buildCommand = ''
       mkdir -p $out unpacked
