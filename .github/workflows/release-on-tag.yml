@@ -36,8 +36,8 @@ concurrency:
 
 env:
   # Same epoch as build-matrix.yml / release.yml — all three restore the same
-  # two cache layers, and bumping one alone silently halves the hit rate.
-  CACHE_EPOCH: v1
+  # cache layers, and bumping one alone silently halves the hit rate.
+  CACHE_EPOCH: v2
 
 jobs:
   prepare:
@@ -130,15 +130,22 @@ jobs:
             accept-flake-config = true
 
       # Restore-only, like every other job in this repo: seven store snapshots
-      # would blow the 10 GB repository budget and evict the two layers that pay
+      # would blow the 10 GB repository budget and evict the layers that pay
       # for themselves (docs/caching.md).
+      - name: Layer keys
+        id: keys
+        run: |
+          echo "src=$(python3 tools/sources-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
+          echo "mid=$(python3 tools/intermediates-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
+
       - name: Restore cached layers
         uses: nix-community/cache-nix-action/restore@v7
         with:
           primary-key: nix-reltag-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ matrix.family }}-never-saved
           restore-prefixes-all-matches: |
-            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/font.toml') }}
+            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.src }}
             nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
+            nix-mid-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.mid }}
 
       - name: Toolchain fingerprint
         run: nix develop --command python3 tools/toolchain-fingerprint.py | tee toolchain-fingerprint.txt

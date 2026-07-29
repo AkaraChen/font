@@ -77,9 +77,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Same epoch as build-matrix.yml: the two workflows restore the same two cache
-  # layers, and bumping one without the other would silently halve the hit rate.
-  CACHE_EPOCH: v1
+  # Same epoch as build-matrix.yml: the workflows restore the same cache layers,
+  # and bumping one without the other would silently halve the hit rate.
+  CACHE_EPOCH: v2
 
 jobs:
   release:
@@ -104,13 +104,20 @@ jobs:
       # the edge of the 10 GB repository budget (docs/caching.md), and a release
       # is rare — it should ride the layers a push already paid for, not evict
       # them. A cold release just takes longer.
+      - name: Layer keys
+        id: keys
+        run: |
+          echo "src=$(python3 tools/sources-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
+          echo "mid=$(python3 tools/intermediates-cache-key.py --digest)" >> "$GITHUB_OUTPUT"
+
       - name: Restore cached layers
         uses: nix-community/cache-nix-action/restore@v7
         with:
           primary-key: nix-release-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ inputs.family }}-never-saved
           restore-prefixes-all-matches: |
-            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('*/font.toml') }}
+            nix-src-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.src }}
             nix-tool-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
+            nix-mid-${{ env.CACHE_EPOCH }}-${{ runner.os }}-${{ steps.keys.outputs.mid }}
 
       # The same table the toolchain job prints (KIT-297), recorded here because
       # this is the run whose bytes people install. If a nixpkgs bump ever flips
