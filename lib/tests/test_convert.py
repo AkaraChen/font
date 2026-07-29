@@ -282,6 +282,81 @@ def test_a_contour_that_draws_nothing_is_dropped_and_counted(product, tmp_path, 
     assert verify_formats.main([str(tmp_path), str(product.parent)]) == 0
 
 
+def _renamed(path, tmp_path, **records):
+    """A copy of the product with some name records replaced.
+
+    Both the Mac (1,0,0) and Windows (3,1,0x409) records, because a real product
+    carries both and `getDebugName` — which is what the CFF top dict is built
+    from — returns whichever English record it meets first. Setting only one
+    leaves the other as the string the conversion actually reads.
+
+    Which is also why the strings below are non-ASCII but mac_roman-encodable
+    (`°`, `©`, `Ø`): a Mac record is written in mac_roman, so a CJK string
+    cannot go in one at all. That is not a limitation of this helper — it is why
+    the real product's name ID 5 carries a degree sign and not a Han character.
+    """
+    font = TTFont(path, recalcBBoxes=False, recalcTimestamp=False)
+    try:
+        for nid, value in records.items():
+            font["name"].setName(value, int(nid[1:]), 3, 1, 0x409)
+            font["name"].setName(value, int(nid[1:]), 1, 0, 0)
+        out = tmp_path / "renamed" / path.name
+        out.parent.mkdir(parents=True, exist_ok=True)
+        font.save(out)
+    finally:
+        font.close()
+    return out
+
+
+def test_a_non_ascii_version_string_is_dropped_from_the_cff_not_fatal(product, tmp_path, capsys):
+    """The third thing the first CI runs of this phase hit.
+
+    A CFF DICT string is ASCII — they are SIDs into the CFF string INDEX and
+    fontTools compiles them with `encoding="ascii"`. A `name` table is UTF-16
+    and has no such limit, and this repo writes a degree sign into name ID 5:
+    `[merge] sources_note` for handwriting is
+    `Monaspace Radon NF + LXGW WenKai {slant}° slant`. Copying it into the top
+    dict raised `UnicodeEncodeError` and killed the build.
+
+    The name table is the one every modern consumer reads, so the CFF's copy is
+    dropped rather than transliterated — mangling `7.5°` into `7.5` would put a
+    quietly different provenance string in the font. Both halves are asserted:
+    the string survives where it matters, and the drop is announced.
+    """
+    source = _renamed(
+        product,
+        tmp_path,
+        n5="1.000;KIT;AKR Hand SC Text merge (Monaspace Radon NF + LXGW WenKai 7.5° slant)",
+        n0="Copyright © 2026 AkaraChen",
+    )
+    convert.main(["--format", "otf", "--out-dir", str(tmp_path), str(source)])
+    out = capsys.readouterr().out
+    assert "`version` omitted" in out
+    assert "`Notice` omitted" in out
+
+    otf = TTFont((tmp_path / source.name).with_suffix(".otf"))
+    try:
+        cff = otf["CFF "].cff
+        top = cff[cff.fontNames[0]].rawDict
+        assert "version" not in top
+        assert "Notice" not in top
+        # …and the full string is still in the font, where it is readable.
+        assert "7.5°" in otf["name"].getDebugName(5)
+        assert "©" in otf["name"].getDebugName(0)
+    finally:
+        otf.close()
+
+
+def test_a_non_ascii_family_name_is_a_hard_error(product, tmp_path):
+    """Not the same call. A PostScript name is required to be printable ASCII,
+    and a family name that is not is a naming bug — not something a format
+    converter should paper over by dropping the field."""
+    source = _renamed(product, tmp_path, n1="AKR Ømega SC Text", n4="AKR Ømega SC Text")
+    with pytest.raises(SystemExit) as raised:
+        convert.main(["--format", "otf", "--out-dir", str(tmp_path), str(source)])
+    assert "not ASCII" in str(raised.value)
+
+
 def test_subroutinization_is_part_of_the_product(product, tmp_path):
     """…so it cannot be a best-effort import.
 

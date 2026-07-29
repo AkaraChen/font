@@ -184,6 +184,18 @@ def _charstrings(font: TTFont, max_err: float) -> dict:
     """
     glyph_set = font.getGlyphSet()
     hmtx = font["hmtx"]
+    # Glyph names land in the CFF charset, which is the same ASCII string INDEX
+    # the top dict draws on — so a non-ASCII glyph name fails identically, and
+    # thirty frames deeper. Checked up front because the answer is "fix the
+    # merge", not anything this module can do about it.
+    unnameable = [n for n in font.getGlyphOrder() if not _is_ascii(n)]
+    if unnameable:
+        raise SystemExit(
+            f"error: {len(unnameable)} glyph name(s) are not ASCII, which the CFF "
+            f"charset requires — first: {', '.join(unnameable[:5])}. The merge step "
+            "names glyphs; fix it there."
+        )
+
     charstrings = {}
     inkless = 0
     for name in font.getGlyphOrder():
@@ -197,8 +209,40 @@ def _charstrings(font: TTFont, max_err: float) -> dict:
     return charstrings, inkless
 
 
+def _is_ascii(value: str) -> bool:
+    try:
+        value.encode("ascii")
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
 def _font_info(font: TTFont) -> dict:
-    """The CFF top dict, taken from the tables that already hold these facts."""
+    """The CFF top dict, taken from the tables that already hold these facts.
+
+    **A CFF DICT string is ASCII.** They are SIDs into the CFF string INDEX,
+    which the spec puts in the Standard Encoding character set; fontTools
+    compiles them with `tobytes(value, encoding="ascii")` and raises otherwise.
+    A `name` table is UTF-16 and has no such limit, so a string that is perfectly
+    legal there — this repo writes `Monaspace Radon NF + LXGW WenKai 7.5° slant`
+    into name ID 5 (`[merge] sources_note`) — cannot be copied into the top dict
+    verbatim.
+
+    Two different answers, because these are two different kinds of field:
+
+    * `Notice` and `version` are **legacy duplicates** of name IDs 0 and 5. The
+      `name` table travels with the OTF unchanged and is where every modern
+      consumer reads copyright and version, so a non-ASCII one is dropped from
+      the CFF rather than transliterated. Mangling `7.5°` into `7.5` would put a
+      quietly different provenance string in the font; inventing `7.5 deg` would
+      put a string in it that nobody wrote. It is reported, not silent.
+    * `FullName` / `FamilyName` / `Weight` and the PostScript name are **not**
+      duplicates a reader can do without, and a PostScript name is required to
+      be printable ASCII in the first place. A non-ASCII one is a defect in the
+      product's naming, not something for a format converter to paper over, so
+      it fails loudly. `nix/checks.nix` already asserts the composed family
+      names are ASCII segments, which is why this has never fired.
+    """
     names = font["name"]
 
     def name_id(nid: int, default: str = "") -> str:
@@ -208,10 +252,26 @@ def _font_info(font: TTFont) -> dict:
     head = font["head"]
     post = font["post"]
     ps_name = name_id(6) or name_id(4).replace(" ", "") or "Untitled"
-    info = {
+
+    required = {
+        "PostScript name": ps_name,
         "FullName": name_id(4, ps_name),
         "FamilyName": name_id(1, ps_name),
         "Weight": name_id(2, "Regular"),
+    }
+    for field, value in required.items():
+        if not _is_ascii(value):
+            raise SystemExit(
+                f"error: {field} is not ASCII ({value!r}). A CFF DICT string and a "
+                "PostScript name must be, so this cannot be converted to OTF — and "
+                "a non-ASCII product name is a naming bug rather than a conversion "
+                "one. Fix [naming] in font.toml."
+            )
+
+    info = {
+        "FullName": required["FullName"],
+        "FamilyName": required["FamilyName"],
+        "Weight": required["Weight"],
         "isFixedPitch": bool(post.isFixedPitch),
         "ItalicAngle": post.italicAngle,
         "UnderlinePosition": post.underlinePosition,
@@ -220,13 +280,17 @@ def _font_info(font: TTFont) -> dict:
         # a qu2cu fit inside --max-err cannot leave it.
         "FontBBox": [head.xMin, head.yMin, head.xMax, head.yMax],
     }
-    notice = name_id(0)
-    if notice:
-        info["Notice"] = notice
-    version = name_id(5)
-    if version:
-        info["version"] = version
-    return ps_name, info
+
+    dropped = []
+    for key, nid in (("Notice", 0), ("version", 5)):
+        value = name_id(nid)
+        if not value:
+            continue
+        if _is_ascii(value):
+            info[key] = value
+        else:
+            dropped.append((key, nid))
+    return ps_name, info, dropped
 
 
 # No hinting is carried across, so there are no blue zones and no stem widths to
@@ -251,7 +315,7 @@ def to_otf(src: Path, dst: Path, max_err: float, subroutinize: bool) -> None:
         if "glyf" not in font:
             raise SystemExit(f"error: {src.name} has no glyf table — not a TrueType product")
         charstrings, inkless = _charstrings(font, max_err)
-        ps_name, info = _font_info(font)
+        ps_name, info, dropped_strings = _font_info(font)
 
         for tag in TRUETYPE_ONLY + INVALIDATED:
             if tag in font:
@@ -281,6 +345,13 @@ def to_otf(src: Path, dst: Path, max_err: float, subroutinize: bool) -> None:
         print(
             f"    dropped {inkless} ink-less contour(s) — single points, which "
             f"TrueType allows and a charstring cannot express"
+        )
+    for key, nid in dropped_strings:
+        # Also not silent: the name table still carries the full string, and
+        # this says which field the CFF copy of it had to give up.
+        print(
+            f"    CFF top dict `{key}` omitted — name ID {nid} is not ASCII, "
+            f"which a CFF DICT string must be. The name table keeps it in full."
         )
 
 
