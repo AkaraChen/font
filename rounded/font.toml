@@ -48,6 +48,7 @@ latin_target_upm = 1000
 # masters, so this family can take the full region axis — but the pins here are
 # CN only and adding the other four is a pin change, not a naming change.
 [naming]
+version = "1.0.0-beta.1"
 house = "AKR"
 style = "Round"
 variant = "NFM"

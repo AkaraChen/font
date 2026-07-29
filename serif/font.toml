@@ -61,6 +61,7 @@ upm = 1000
 # intermediate used to ship under upstream's own `SarasaMonoSlabNeoZhiSongSC-Opt`
 # stem, which is three reserved names in one file name.
 [naming]
+version = "1.0.0-beta.1"
 house = "AKR"
 style = "Slab"
 variant = "NFM"

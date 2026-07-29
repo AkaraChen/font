@@ -59,6 +59,7 @@ latin_target_upm = 1000
 
 # Was `CourierPrimeZhuque NFM` (KIT-282).
 [naming]
+version = "1.0.0-beta.1"
 house = "AKR"
 style = "Type"
 variant = "NFM"
