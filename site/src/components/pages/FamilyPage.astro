@@ -33,7 +33,12 @@ const jsonLd = {
   'description': description,
   'license': 'https://scripts.sil.org/OFL',
   'isBasedOn': related.map(upstream => ({ '@type': 'CreativeWork', 'name': upstream.name.en, 'url': upstream.url })),
-  'author': { '@type': 'Person', 'name': 'AkaraChen' },
+  'author': {
+    '@type': 'Person',
+    'name': 'AkaraChen',
+    'url': 'https://github.com/AkaraChen',
+  },
+  'isAccessibleForFree': true,
 }
 
 const faqJsonLd = family.faq.length
@@ -47,9 +52,11 @@ const faqJsonLd = family.faq.length
       })),
     }
   : undefined
+
+const jsonLdBlocks = faqJsonLd ? [jsonLd, faqJsonLd] : [jsonLd]
 ---
 
-<Base locale={locale} title={title} description={description} path={`/family/${family.id}`} jsonLd={jsonLd}>
+<Base locale={locale} title={title} description={description} path={`/family/${family.id}`} jsonLd={jsonLdBlocks}>
   <article>
     <header class="page head">
       <span class="eyebrow">{family.product}</span>
@@ -141,8 +148,6 @@ const faqJsonLd = family.faq.length
       </section>
     )}
   </article>
-
-  {faqJsonLd && <script is:inline type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
 </Base>
 
 <style>

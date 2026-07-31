@@ -1,6 +1,7 @@
 ---
+import { ogImageUrl, markdownAlternatePath } from '../data/geo'
 import { manifest, subsetFontFaceCss } from '../data/fonts'
-import { localePath, useTranslations, type Locale } from '../i18n/ui'
+import { useTranslations, type Locale } from '../i18n/ui'
 import { localeAbsolute } from '../i18n/urls'
 import Footer from '../components/Footer.astro'
 import Nav from '../components/Nav.astro'
@@ -12,11 +13,13 @@ interface Props {
   description: string
   /** Path without locale prefix, e.g. `/family/hand`. Used for hreflang. */
   path: string
-  /** Optional JSON-LD, serialised as-is. */
-  jsonLd?: Record<string, unknown>
+  /** Optional JSON-LD object or list, serialised as-is. */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[]
+  /** Override markdown alternate URL; `false` to omit (e.g. blog posts without .md). */
+  markdown?: string | false
 }
 
-const { locale, title, description, path, jsonLd } = Astro.props
+const { locale, title, description, path, jsonLd, markdown } = Astro.props
 const t = useTranslations(locale)
 
 const canonical = localeAbsolute(Astro.site, locale, path)
@@ -28,6 +31,28 @@ const alternates = [
 
 const fullTitle = path === '/' ? `${title} — ${t('site.tagline')}` : `${title} · ${t('site.title')}`
 const fontFaces = subsetFontFaceCss()
+const ogImage = ogImageUrl()
+
+const supportsMarkdown = (() => {
+  if (markdown === false) return false
+  if (typeof markdown === 'string') return true
+  if (path === '/' || path === '/families' || path === '/license' || path === '/preview' || path === '/upstream') return true
+  if (path.startsWith('/family/')) return true
+  if (path.startsWith('/upstream/')) return true
+  return false
+})()
+
+const markdownUrl = (() => {
+  if (!supportsMarkdown) return undefined
+  if (typeof markdown === 'string') return markdown
+  const mdPath = markdownAlternatePath(locale, path)
+  if (!Astro.site) return mdPath
+  return `${Astro.site.href.replace(/\/+$/, '')}${mdPath}`
+})()
+
+const jsonLdList = jsonLd
+  ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd])
+  : []
 ---
 
 <!doctype html>
@@ -37,21 +62,34 @@ const fontFaces = subsetFontFaceCss()
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <meta name="author" content="AkaraChen" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#f6f1e8" />
     <link rel="canonical" href={canonical} />
     {alternates.map(alt => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
+    {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} title="Markdown" />}
 
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={t('site.title')} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
     <meta property="og:locale" content={locale === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:locale:alternate" content={locale === 'zh' ? 'en_US' : 'zh_CN'} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="author" href="https://github.com/AkaraChen" />
 
     {fontFaces && <style set:html={fontFaces} />}
-    {jsonLd && <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {jsonLdList.map(block => (
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(block)} />
+    ))}
   </head>
   <body>
     <a class="skip-link" href="#main">{locale === 'zh' ? '跳到正文' : 'Skip to content'}</a>
