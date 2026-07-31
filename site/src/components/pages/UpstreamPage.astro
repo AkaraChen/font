@@ -1,0 +1,156 @@
+---
+import { families } from '../../data/families'
+import { cssFamily, hasFonts } from '../../data/fonts'
+import type { Upstream } from '../../data/upstreams'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+
+interface Props {
+  locale: Locale
+  upstream: Upstream
+}
+
+const { locale, upstream } = Astro.props
+const t = useTranslations(locale)
+
+const used = families.filter(family => upstream.families.includes(family.id))
+const name = upstream.name[locale]
+
+const title = locale === 'zh'
+  ? `${name} 的编程字体版本：${used.map(f => f.product).join(' / ')}`
+  : `${name} as a coding font: ${used.map(f => f.product).join(' / ')}`
+
+const description = locale === 'zh'
+  ? `把 ${name} 做成中英等宽编程字体：${used.map(f => f.product).join('、')}，严格 2:1 网格、Nerd 图标、SIL OFL 1.1。本页不是 ${name} 官方页面。`
+  : `${name} turned into a CJK monospace coding font: ${used.map(f => f.product).join(', ')}. Strict 2:1 grid, Nerd icons, SIL OFL 1.1. Not an official ${name} page.`
+
+const notOfficial = t('upstream.notOfficial').replaceAll('{name}', name)
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': title,
+  'description': description,
+  'about': { '@type': 'CreativeWork', 'name': upstream.name.en, 'url': upstream.url },
+}
+---
+
+<Base locale={locale} title={title} description={description} path={`/upstream/${upstream.slug}`} jsonLd={jsonLd}>
+  <article>
+    <header class="page head">
+      <span class="eyebrow">{t('upstream.title')}</span>
+      <h1>{name}</h1>
+      <p class="notice">{notOfficial}</p>
+      <p class="lead">
+        {t('upstream.original')}: <a href={upstream.url} rel="noopener">{upstream.url.replace('https://', '')}</a>
+        <span aria-hidden="true"> · </span>{upstream.author}<span aria-hidden="true"> · </span>{upstream.license}
+      </p>
+    </header>
+
+    <section class="page section">
+      <span class="eyebrow">{t('upstream.what')}</span>
+      <h2>{t('upstream.what')}</h2>
+      <p class="prose">{upstream.what[locale]}</p>
+    </section>
+
+    <section class="page section">
+      <span class="eyebrow">{t('upstream.akr')}</span>
+      <h2>{t('upstream.akr')}</h2>
+      <p class="prose">{upstream.what_akr_does[locale]}</p>
+    </section>
+
+    <section class="page section">
+      <span class="eyebrow">{t('upstream.families')}</span>
+      <h2>{t('upstream.families')}</h2>
+      <div class="used">
+        {used.map(family => (
+          <a class="used__card" href={localePath(locale, `/family/${family.id}`)}>
+            <strong>{family.product}</strong>
+            <span
+              class="used__sample"
+              style={hasFonts ? `font-family:"${cssFamily(family.id)}", ui-monospace, monospace` : undefined}
+            >{family.sample}</span>
+            <span class="used__meta">{family.latin} × {family.cjk}</span>
+            <span class="used__meta">{t('family.grid')} {family.grid}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="page section">
+      <p class="prose small">
+        {locale === 'zh'
+          ? `AKR 的产品名不使用 ${name} 的保留字体名。上游按 ${upstream.license} 发布，衍生产品同样按 ${upstream.license} 发布。`
+          : `No AKR product name uses a ${name} reserved font name. Upstream ships under ${upstream.license}, and so does this derivative.`}
+      </p>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(40px, 6vw, 64px) 0;
+  }
+
+  .notice {
+    max-width: var(--measure);
+    font-size: 13px;
+    color: var(--ink-muted);
+    border-left: 2px solid var(--accent);
+    padding-left: 14px;
+    margin-block: 20px;
+  }
+
+  .section {
+    padding-block: clamp(24px, 3vw, 34px);
+  }
+
+  .section h2 {
+    margin-bottom: 14px;
+  }
+
+  .used {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 20px;
+  }
+
+  .used__card {
+    display: block;
+    background: var(--paper);
+    padding: 22px 20px;
+    text-decoration: none;
+  }
+
+  .used__card:hover {
+    background: var(--paper-raised);
+  }
+
+  .used__card strong {
+    font-family: var(--font-display);
+    font-size: 15px;
+  }
+
+  .used__sample {
+    display: block;
+    font-size: 21px;
+    line-height: 1.6;
+    margin: 14px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .used__meta {
+    display: block;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+
+  .small {
+    font-size: 13px;
+  }
+</style>

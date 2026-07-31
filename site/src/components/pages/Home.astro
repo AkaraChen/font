@@ -1,0 +1,189 @@
+---
+import { families } from '../../data/families'
+import { cssFamily, hasFonts, manifest } from '../../data/fonts'
+import { upstreams } from '../../data/upstreams'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+import SpecimenStrip from '../SpecimenStrip.astro'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+
+const hero = families.find(family => family.id === 'hand')!
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  'name': t('site.title'),
+  'applicationCategory': 'DesignApplication',
+  'operatingSystem': 'Windows, macOS, Linux',
+  'description': t('site.description'),
+  'license': 'https://scripts.sil.org/OFL',
+  'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
+  'author': { '@type': 'Person', 'name': 'AkaraChen' },
+  'softwareVersion': manifest.tag || undefined,
+  'downloadUrl': manifest.releaseUrl,
+}
+---
+
+<Base locale={locale} title={t('site.title')} description={t('site.description')} path="/" jsonLd={jsonLd}>
+  <section class="page hero">
+    <div>
+      <span class="eyebrow">{t('home.eyebrow')}</span>
+      <h1>{t('home.heading')}</h1>
+      <p class="lead">{t('home.intro')}</p>
+      <div class="hero__cta">
+        <a class="button" href={manifest.releaseUrl} rel="noopener">{t('home.cta.download')}</a>
+        <a class="button button--ghost" href={localePath(locale, '/preview')}>{t('home.cta.preview')}</a>
+      </div>
+    </div>
+    <p
+      class="hero__glyph"
+      style={hasFonts ? `font-family:"${cssFamily(hero.id)}", serif` : undefined}
+      aria-hidden="true"
+    >
+      永Ag
+      <small>{hero.product}</small>
+    </p>
+  </section>
+
+  <section class="page section">
+    <span class="eyebrow">{t('home.specimen')}</span>
+    <h2>{t('home.families.heading')}</h2>
+    <p class="lead">{t('home.specimen.note')}</p>
+  </section>
+  <div class="page">
+    <SpecimenStrip locale={locale} />
+  </div>
+
+  <section class="page section">
+    <span class="eyebrow">{t('nav.preview')}</span>
+    <h2>{t('preview.title')}</h2>
+    <p class="lead">{t('preview.intro')}</p>
+    <p><a class="button" href={localePath(locale, '/preview')}>{t('nav.preview')} →</a></p>
+  </section>
+
+  <hr />
+
+  <section class="page section">
+    <span class="eyebrow">{t('home.upstream.heading')}</span>
+    <h2>{t('home.upstream.heading')}</h2>
+    <p class="lead">{t('home.upstream.intro')}</p>
+    <ul class="upstreams">
+      {upstreams.map(upstream => (
+        <li>
+          <a href={localePath(locale, `/upstream/${upstream.slug}`)}>
+            <strong>{upstream.name[locale]}</strong>
+            <span>{upstream.families.map(id => families.find(f => f.id === id)?.name[locale]).filter(Boolean).join(' · ')}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <hr />
+
+  <section class="page section">
+    <span class="eyebrow">{t('home.why.heading')}</span>
+    <h2>{t('home.why.heading')}</h2>
+    <p class="prose">{t('home.why.body')}</p>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 56px;
+    align-items: end;
+    padding-block: clamp(48px, 8vw, 76px) 56px;
+  }
+
+  .hero h1 {
+    max-width: 15ch;
+  }
+
+  .hero__cta {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  .hero__glyph {
+    margin: 0;
+    font-size: clamp(120px, 18vw, 230px);
+    line-height: 0.85;
+    text-align: right;
+  }
+
+  .hero__glyph small {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 18px;
+  }
+
+  .section {
+    padding-block: clamp(48px, 6vw, 72px);
+  }
+
+  .section h2 {
+    margin-bottom: 10px;
+  }
+
+  .upstreams {
+    list-style: none;
+    padding: 0;
+    margin: 28px 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1px;
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+
+  .upstreams a {
+    display: block;
+    background: var(--paper);
+    box-shadow: 1px 1px 0 var(--rule);
+    padding: 18px 20px;
+    text-decoration: none;
+    height: 100%;
+  }
+
+  .upstreams a:hover {
+    background: var(--paper-raised);
+  }
+
+  .upstreams strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 15px;
+  }
+
+  .upstreams span {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+  }
+
+  @media (max-width: 860px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    .hero__glyph {
+      text-align: left;
+    }
+  }
+</style>

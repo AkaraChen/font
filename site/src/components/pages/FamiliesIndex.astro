@@ -1,0 +1,84 @@
+---
+import { families } from '../../data/families'
+import { manifest } from '../../data/fonts'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+import SpecimenStrip from '../SpecimenStrip.astro'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+
+const description = locale === 'zh'
+  ? `AKR 的八套中英混排编程字体：${families.map(f => f.product).join('、')}。每套都列出拉丁与汉字上游、网格、字重与许可。`
+  : `The eight AKR CJK coding fonts: ${families.map(f => f.product).join(', ')}. Latin and CJK upstream, grid, weights and license for each.`
+---
+
+<Base locale={locale} title={t('nav.families')} description={description} path="/families">
+  <section class="page head">
+    <span class="eyebrow">{manifest.tag || t('nav.families')}</span>
+    <h1>{t('home.families.heading')}</h1>
+    <p class="lead">{t('home.specimen.note')}</p>
+  </section>
+
+  <div class="page">
+    <SpecimenStrip locale={locale} />
+  </div>
+
+  <section class="page section">
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th scope="col">{t('nav.families')}</th>
+          <th scope="col">Latin</th>
+          <th scope="col">CJK</th>
+          <th scope="col">{t('family.grid')}</th>
+          <th scope="col">{t('family.weights')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {families.map(family => (
+          <tr>
+            <td><a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a></td>
+            <td>{family.latin}</td>
+            <td>{family.cjk}</td>
+            <td>{family.grid}</td>
+            <td>{family.weights.join(' · ')}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(40px, 6vw, 64px) 32px;
+  }
+
+  .section {
+    padding-block: clamp(36px, 5vw, 56px);
+    overflow-x: auto;
+  }
+
+  .spec-table th {
+    width: auto;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .spec-table td {
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+
+  .spec-table td:first-child {
+    font-family: var(--font-display);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+</style>

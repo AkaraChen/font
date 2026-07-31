@@ -1,0 +1,12 @@
+---
+import UpstreamPage from '../../components/pages/UpstreamPage.astro'
+import { upstreams } from '../../data/upstreams'
+
+export function getStaticPaths() {
+  return upstreams.map(upstream => ({ params: { slug: upstream.slug }, props: { upstream } }))
+}
+
+const { upstream } = Astro.props
+---
+
+<UpstreamPage locale="zh" upstream={upstream} />

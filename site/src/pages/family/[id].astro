@@ -1,0 +1,12 @@
+---
+import FamilyPage from '../../components/pages/FamilyPage.astro'
+import { families } from '../../data/families'
+
+export function getStaticPaths() {
+  return families.map(family => ({ params: { id: family.id }, props: { family } }))
+}
+
+const { family } = Astro.props
+---
+
+<FamilyPage locale="zh" family={family} />

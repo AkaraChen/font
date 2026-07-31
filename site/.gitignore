@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+.cache/
+# Fonts are pulled from a release at build time, never committed.
+public/fonts/
+src/data/fonts.generated.json

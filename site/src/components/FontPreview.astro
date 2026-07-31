@@ -1,0 +1,382 @@
+---
+// The editable font preview.
+//
+// Subsetted faces only cover the characters the site itself uses, so anything a
+// reader types needs the full font. Those are several megabytes each, so they
+// are fetched one at a time via the FontFace API, and only after an explicit
+// action: on /preview the component autoloads the selected family, on a family
+// page the reader presses the button first.
+
+import { families } from '../data/families'
+import { cssFamily, fullFontFor, manifest } from '../data/fonts'
+import { useTranslations, type Locale } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+  /** Family id shown first. */
+  initial?: string
+  /** Limit the picker to these families; defaults to everything released. */
+  only?: string[]
+  /** Start fetching the full font on load instead of waiting for a press. */
+  autoload?: boolean
+  /** Write the current state into the URL — only the standalone page does this. */
+  syncUrl?: boolean
+}
+
+const { locale, initial = 'hand', only, autoload = false, syncUrl = false } = Astro.props
+const t = useTranslations(locale)
+
+const available = families.filter(family => (only ? only.includes(family.id) : true))
+const options = available.map(family => ({
+  id: family.id,
+  label: family.name[locale],
+  product: family.product,
+  css: cssFamily(family.id),
+  full: fullFontFor(family.id)?.full ?? '',
+  bytes: fullFontFor(family.id)?.fullBytes ?? 0,
+}))
+
+const samples = {
+  code: `// ${locale === 'zh' ? '中英混排在 2:1 网格上对齐' : 'Latin and CJK aligned on the 2:1 grid'}
+const 宽度对齐 = "字体 font"  // != === <= >= --> |>
+export function 排版(文本: string) {
+  return 文本.split("").map(字 => 字.length === 1 ? "半角" : "全角")
+}`,
+  mixed: locale === 'zh'
+    ? '永安 Ag 汉字与 Latin 同一行也不会错位。\nThe quick brown fox jumps over the lazy dog 0123456789\n一二三四五六七八九十 ABCDEFGHIJ 0123456789'
+    : 'Latin and CJK share one grid: 永安 Ag stays aligned.\nThe quick brown fox jumps over the lazy dog 0123456789\n一二三四五六七八九十 ABCDEFGHIJ 0123456789',
+  prose: locale === 'zh'
+    ? '中文编程字体的难点不在字形，在网格。拉丁和汉字必须严格 2:1，符号宽度要跟 East_Asian_Width 对上，Nerd 图标不能占两格，字重要在两种笔法之间对齐。'
+    : 'The hard part of a CJK coding font is not the glyphs, it is the grid: strict 2:1 cells, symbol widths that agree with East_Asian_Width, icons that stay single-width, and weight matched across two ways of drawing a stroke.',
+}
+---
+
+<section
+  class="preview"
+  data-preview
+  data-autoload={autoload ? 'true' : 'false'}
+  data-sync-url={syncUrl ? 'true' : 'false'}
+  data-initial={initial}
+  data-fonts={JSON.stringify(options)}
+  data-samples={JSON.stringify(samples)}
+  data-label-loading={t('preview.loading')}
+  data-label-loaded={t('preview.loaded')}
+  data-label-copied={t('preview.copied')}
+  data-label-copy={t('preview.copyLink')}
+>
+  <div class="preview__bar">
+    <label class="preview__field">
+      <span>{t('preview.family')}</span>
+      <select data-preview-family>
+        {options.map(option => <option value={option.id} selected={option.id === initial}>{option.label}</option>)}
+      </select>
+    </label>
+
+    <label class="preview__field">
+      <span>{t('preview.size')}</span>
+      <input type="range" min="12" max="48" step="1" value="20" data-preview-size />
+      <output data-preview-size-out>20px</output>
+    </label>
+
+    <label class="preview__field">
+      <span>{t('preview.lineHeight')}</span>
+      <input type="range" min="1.1" max="2.4" step="0.05" value="1.9" data-preview-leading />
+      <output data-preview-leading-out>1.9</output>
+    </label>
+
+    <label class="preview__field preview__field--check">
+      <input type="checkbox" checked data-preview-ligatures />
+      <span>{t('preview.ligatures')}</span>
+    </label>
+
+    <div class="preview__field preview__field--group" role="group" aria-label={t('preview.sample')}>
+      <span>{t('preview.sample')}</span>
+      <button type="button" data-preview-sample="code">{t('preview.sample.code')}</button>
+      <button type="button" data-preview-sample="mixed">{t('preview.sample.mixed')}</button>
+      <button type="button" data-preview-sample="prose">{t('preview.sample.prose')}</button>
+    </div>
+
+    <label class="preview__field preview__field--check">
+      <input type="checkbox" data-preview-dark />
+      <span>{t('preview.theme.dark')}</span>
+    </label>
+  </div>
+
+  <textarea
+    class="preview__canvas"
+    data-preview-canvas
+    spellcheck="false"
+    aria-label={t('preview.title')}
+    rows={autoload ? 10 : 6}>{samples.code}</textarea>
+
+  <div class="preview__foot">
+    <p class="preview__status" data-preview-status role="status">
+      {manifest.tag ? t('preview.size.note') : ''}
+    </p>
+    <div class="preview__actions">
+      <button type="button" data-preview-load hidden>{t('preview.loadFull')}</button>
+      {syncUrl && <button type="button" data-preview-copy>{t('preview.copyLink')}</button>}
+    </div>
+  </div>
+</section>
+
+<style>
+  .preview {
+    border: 1px solid var(--ink);
+    background: var(--paper-raised);
+  }
+
+  .preview__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .preview__field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+
+  .preview__field select,
+  .preview__field input[type='range'] {
+    font: inherit;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 4px 6px;
+  }
+
+  .preview__field input[type='range'] {
+    padding: 0;
+    width: 96px;
+    accent-color: var(--ink);
+  }
+
+  .preview__field output {
+    min-width: 3.5em;
+    color: var(--ink);
+  }
+
+  .preview__field--group button,
+  .preview__actions button {
+    font-family: var(--font-display);
+    font-size: 12px;
+    padding: 5px 11px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+
+  .preview__field--group button[aria-pressed='true'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .preview__canvas {
+    display: block;
+    width: 100%;
+    border: 0;
+    resize: vertical;
+    padding: 26px 22px;
+    background: transparent;
+    color: inherit;
+    font-family: var(--preview-font, var(--font-mono));
+    font-size: var(--preview-size, 20px);
+    line-height: var(--preview-leading, 1.9);
+    font-feature-settings: var(--preview-features, normal);
+  }
+
+  .preview__canvas:focus-visible {
+    outline-offset: -2px;
+  }
+
+  .preview[data-dark='true'] {
+    background: var(--dark-bg);
+    border-color: var(--dark-bg);
+    color: var(--dark-ink);
+  }
+
+  .preview[data-dark='true'] .preview__bar,
+  .preview[data-dark='true'] .preview__foot {
+    border-color: var(--dark-rule);
+  }
+
+  .preview[data-dark='true'] .preview__field,
+  .preview[data-dark='true'] .preview__status {
+    color: var(--dark-muted);
+  }
+
+  .preview[data-dark='true'] select,
+  .preview[data-dark='true'] button {
+    background: #1e1a16;
+    border-color: var(--dark-rule);
+    color: var(--dark-ink);
+  }
+
+  .preview__foot {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-display);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+
+  .preview__status {
+    margin: 0;
+  }
+
+  .preview__actions {
+    display: flex;
+    gap: 8px;
+  }
+</style>
+
+<script>
+  interface FontOption {
+    id: string
+    label: string
+    product: string
+    css: string
+    full: string
+    bytes: number
+  }
+
+  const loaded = new Set<string>()
+
+  function setupPreview(root: HTMLElement) {
+    const options: FontOption[] = JSON.parse(root.dataset.fonts ?? '[]')
+    const samples: Record<string, string> = JSON.parse(root.dataset.samples ?? '{}')
+    const syncUrl = root.dataset.syncUrl === 'true'
+    const autoload = root.dataset.autoload === 'true'
+
+    const select = root.querySelector<HTMLSelectElement>('[data-preview-family]')!
+    const size = root.querySelector<HTMLInputElement>('[data-preview-size]')!
+    const sizeOut = root.querySelector<HTMLOutputElement>('[data-preview-size-out]')!
+    const leading = root.querySelector<HTMLInputElement>('[data-preview-leading]')!
+    const leadingOut = root.querySelector<HTMLOutputElement>('[data-preview-leading-out]')!
+    const ligatures = root.querySelector<HTMLInputElement>('[data-preview-ligatures]')!
+    const dark = root.querySelector<HTMLInputElement>('[data-preview-dark]')!
+    const canvas = root.querySelector<HTMLTextAreaElement>('[data-preview-canvas]')!
+    const status = root.querySelector<HTMLElement>('[data-preview-status]')!
+    const loadButton = root.querySelector<HTMLButtonElement>('[data-preview-load]')
+    const copyButton = root.querySelector<HTMLButtonElement>('[data-preview-copy]')
+    const sampleButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-preview-sample]')]
+
+    const params = new URLSearchParams(syncUrl ? window.location.search : '')
+
+    const clampNumber = (value: string | null, min: number, max: number, fallback: number) => {
+      if (value === null || value.trim() === '') return fallback
+      const parsed = Number(value)
+      if (!Number.isFinite(parsed)) return fallback
+      return Math.min(max, Math.max(min, parsed))
+    }
+
+    if (syncUrl) {
+      const wanted = params.get('family')
+      if (wanted && options.some(option => option.id === wanted)) select.value = wanted
+      size.value = String(clampNumber(params.get('size'), 12, 48, Number(size.value)))
+      leading.value = String(clampNumber(params.get('leading'), 1.1, 2.4, Number(leading.value)))
+      if (params.get('ligatures') === '0') ligatures.checked = false
+      if (params.get('theme') === 'dark') dark.checked = true
+      const sample = params.get('sample')
+      if (sample && samples[sample]) canvas.value = samples[sample]
+    }
+
+    function currentOption(): FontOption | undefined {
+      return options.find(option => option.id === select.value)
+    }
+
+    function render() {
+      const option = currentOption()
+      root.style.setProperty('--preview-font', option ? `"${option.css}", ui-monospace, monospace` : '')
+      root.style.setProperty('--preview-size', `${size.value}px`)
+      root.style.setProperty('--preview-leading', leading.value)
+      root.style.setProperty('--preview-features', ligatures.checked ? 'normal' : '"liga" 0, "calt" 0')
+      root.dataset.dark = String(dark.checked)
+      sizeOut.value = `${size.value}px`
+      leadingOut.value = leading.value
+      if (syncUrl) writeUrl()
+    }
+
+    function writeUrl() {
+      const next = new URLSearchParams()
+      next.set('family', select.value)
+      next.set('size', size.value)
+      next.set('leading', leading.value)
+      if (!ligatures.checked) next.set('ligatures', '0')
+      if (dark.checked) next.set('theme', 'dark')
+      window.history.replaceState(null, '', `${window.location.pathname}?${next}`)
+    }
+
+    async function loadFullFont() {
+      const option = currentOption()
+      if (!option?.full) return
+      if (loaded.has(option.css)) {
+        status.textContent = `${root.dataset.labelLoaded} · ${option.product}`
+        return
+      }
+      const megabytes = option.bytes ? ` (${(option.bytes / 1024 / 1024).toFixed(1)} MB)` : ''
+      status.textContent = `${root.dataset.labelLoading}${megabytes}`
+      try {
+        const face = new FontFace(option.css, `url(${option.full}) format("woff2")`, { display: 'swap' })
+        await face.load()
+        document.fonts.add(face)
+        loaded.add(option.css)
+        status.textContent = `${root.dataset.labelLoaded} · ${option.product}`
+        if (loadButton) loadButton.hidden = true
+      }
+      catch {
+        status.textContent = option.product
+      }
+      render()
+    }
+
+    for (const control of [select, size, leading, ligatures, dark]) {
+      control.addEventListener('input', () => {
+        render()
+        if (control === select && (autoload || loadButton?.hidden)) void loadFullFont()
+      })
+    }
+
+    for (const button of sampleButtons) {
+      button.addEventListener('click', () => {
+        const key = button.dataset.previewSample!
+        canvas.value = samples[key] ?? canvas.value
+        for (const other of sampleButtons) other.setAttribute('aria-pressed', String(other === button))
+        if (syncUrl) {
+          const next = new URLSearchParams(window.location.search)
+          next.set('sample', key)
+          window.history.replaceState(null, '', `${window.location.pathname}?${next}`)
+        }
+      })
+    }
+
+    copyButton?.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(window.location.href)
+      copyButton.textContent = root.dataset.labelCopied!
+      setTimeout(() => (copyButton.textContent = root.dataset.labelCopy!), 1600)
+    })
+
+    loadButton?.addEventListener('click', () => void loadFullFont())
+
+    render()
+    if (autoload) void loadFullFont()
+    else if (loadButton) loadButton.hidden = false
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-preview]')) setupPreview(root)
+</script>

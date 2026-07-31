@@ -1,0 +1,240 @@
+/*
+ * Design direction A —「字谱 Specimen」: warm paper, near-black ink, editorial
+ * grid, rules instead of boxes. The page furniture stays quiet so the specimens
+ * carry the visual weight.
+ *
+ * Only tokens, reset, font faces and a few shared primitives live here. Page
+ * and component styling belongs in the component that owns it.
+ */
+
+:root {
+  --paper: #faf7f1;
+  --paper-raised: #fffdf8;
+  --ink: #1a1815;
+  --ink-muted: #5d564c;
+  --ink-faint: #8a8073;
+  --rule: #ddd6c9;
+  --rule-soft: #ece5d9;
+  --accent: #8a3d1f;
+
+  /* The dark surface is borrowed from direction B and stays scoped to code and
+     the preview canvas — it never takes over a page. */
+  --dark-bg: #14120f;
+  --dark-ink: #e8e2d6;
+  --dark-muted: #8f877a;
+  --dark-rule: #2a2621;
+
+  --font-sans: 'AKR Sans', ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-display: 'AKR Slab', var(--font-sans);
+  --font-mono: 'AKR Slab', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --measure: 68ch;
+  --page: 1180px;
+  --gutter: clamp(20px, 5vw, 40px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(34px, 5.4vw, 60px);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+h2 {
+  font-size: clamp(24px, 3.2vw, 32px);
+}
+
+h3 {
+  font-size: 18px;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--rule);
+}
+
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+}
+
+code {
+  font-size: 0.92em;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Shared primitives ------------------------------------------------------- */
+
+.page {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+
+.lead {
+  color: var(--ink-muted);
+  font-size: 16.5px;
+  max-width: var(--measure);
+}
+
+.prose {
+  max-width: var(--measure);
+  color: var(--ink-muted);
+}
+
+.prose strong,
+.prose b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.button {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 1;
+  padding: 13px 22px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.button:hover {
+  background: #000;
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.button--ghost:hover {
+  background: var(--rule-soft);
+}
+
+.spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.spec-table th,
+.spec-table td {
+  text-align: left;
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+
+.spec-table th {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  width: 12em;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip-link:focus {
+  left: var(--gutter);
+  top: 10px;
+  z-index: 10;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 8px 14px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

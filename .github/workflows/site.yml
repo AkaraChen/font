@@ -1,0 +1,70 @@
+# Build the website whenever it changes.
+#
+# This does not deploy: the domain is still undecided, and the host follows from
+# it. What this catches is the thing a static site fails at silently — a family
+# page that stops building, a release whose assets no longer match what
+# scripts/fetch-fonts.mjs expects, a type error in the data files.
+#
+# The build downloads one release's zips (~200 MB) and subsets them, so it only
+# runs when site/ or this workflow changes.
+name: Site
+
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/site.yml']
+  pull_request:
+    paths: ['site/**', '.github/workflows/site.yml']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to build against (default: latest)'
+        required: false
+        type: string
+
+defaults:
+  run:
+    working-directory: site
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # Keyed on the release tag so a rerun on the same release skips the
+      # download entirely.
+      - id: release
+        run: echo "tag=${{ inputs.release_tag || 'latest' }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: site/.cache/fonts
+          key: fonts-${{ steps.release.outputs.tag }}-${{ hashFiles('site/scripts/fetch-fonts.mjs') }}
+
+      - run: pnpm build
+        env:
+          FONT_RELEASE_TAG: ${{ inputs.release_tag }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL }}
+
+      - run: pnpm check
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site/dist
+          retention-days: 7

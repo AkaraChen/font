@@ -1,0 +1,82 @@
+---
+import { getCollection } from 'astro:content'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+
+const posts = (await getCollection('blog', post => post.data.lang === locale && !post.data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+
+const description = locale === 'zh'
+  ? '关于中文编程字体的长文：怎么选、网格是怎么回事、上游字体各自适合做成什么。'
+  : 'Long-form writing on CJK coding fonts: how to choose one, what the grid actually does, and what each upstream is good for.'
+---
+
+<Base locale={locale} title={t('blog.title')} description={description} path="/blog">
+  <section class="page head">
+    <span class="eyebrow">{t('blog.title')}</span>
+    <h1>{t('blog.title')}</h1>
+    <p class="lead">{description}</p>
+  </section>
+
+  <div class="page">
+    {posts.length === 0
+      ? <p class="lead">{t('blog.empty')}</p>
+      : (
+          <ul class="list">
+            {posts.map(post => (
+              <li class="list__item">
+                <a class="list__title" href={localePath(locale, `/blog/${post.data.pair ?? post.id}`)}>{post.data.title}</a>
+                <p class="list__desc">{post.data.description}</p>
+                <time class="list__date" datetime={post.data.date.toISOString()}>
+                  {post.data.date.toISOString().slice(0, 10)}
+                </time>
+              </li>
+            ))}
+          </ul>
+        )}
+  </div>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(40px, 6vw, 64px) 24px;
+  }
+
+  .list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .list__item {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .list__title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .list__desc {
+    max-width: var(--measure);
+    color: var(--ink-muted);
+    font-size: 14.5px;
+    margin: 8px 0;
+  }
+
+  .list__date {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+</style>

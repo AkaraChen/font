@@ -1,0 +1,21 @@
+{
+  "name": "@akr/font-site",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "dev": "astro dev",
+    "build": "node scripts/fetch-fonts.mjs && astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^7.1.6",
+    "subset-font": "^2.5.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  }
+}

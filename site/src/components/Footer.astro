@@ -1,0 +1,69 @@
+---
+import { manifest } from '../data/fonts'
+import { upstreams } from '../data/upstreams'
+import { localePath, useTranslations, type Locale } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+---
+
+<footer class="footer">
+  <div class="page footer__inner">
+    <p class="footer__line">{t('footer.derived')}</p>
+    <p class="footer__credits">
+      {locale === 'zh' ? '上游致谢：' : 'Upstream credits: '}
+      {upstreams.map((upstream, index) => (
+        <>
+          {index > 0 && <span aria-hidden="true"> · </span>}
+          <a href={upstream.url} rel="noopener">{upstream.name[locale]}</a>
+        </>
+      ))}
+    </p>
+    <p class="footer__meta">
+      {manifest.tag && (
+        <>
+          <a href={manifest.releaseUrl} rel="noopener">{t('common.release')} {manifest.tag}</a>
+          <span aria-hidden="true"> · </span>
+        </>
+      )}
+      <a href={localePath(locale, '/license')}>{t('nav.license')}</a>
+      <span aria-hidden="true"> · </span>
+      <a href="https://github.com/AkaraChen/font" rel="noopener">GitHub</a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--rule);
+    margin-top: 80px;
+  }
+
+  .footer__inner {
+    padding-block: 40px 64px;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+  }
+
+  .footer__line {
+    color: var(--ink-muted);
+    max-width: var(--measure);
+  }
+
+  .footer__credits,
+  .footer__meta {
+    line-height: 2;
+  }
+
+  .footer a {
+    color: inherit;
+  }
+
+  .footer a:hover {
+    color: var(--ink);
+  }
+</style>
