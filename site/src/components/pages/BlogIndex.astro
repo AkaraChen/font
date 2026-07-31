@@ -18,7 +18,8 @@ const description = locale === 'zh'
   : 'Long-form writing on CJK coding fonts: how to choose one, what the grid actually does, and what each upstream is good for.'
 ---
 
-<Base locale={locale} title={t('blog.title')} description={description} path="/blog">
+<Base locale={locale} title={t('blog.title')} description={description} path="/blog"
+  markdown={false}>
   <section class="page head">
     <span class="eyebrow">{t('blog.title')}</span>
     <h1>{t('blog.title')}</h1>

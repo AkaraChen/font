@@ -2,9 +2,8 @@
 import sitemap from '@astrojs/sitemap'
 import { defineConfig } from 'astro/config'
 
-// Set SITE_URL in CI once the domain is decided; the default keeps sitemap and
-// canonical URLs working for a GitHub Pages deploy.
-const site = process.env.SITE_URL || 'https://akarachen.github.io/font'
+// Prefer SITE_URL in CI/Vercel; default to the production custom domain.
+const site = process.env.SITE_URL || 'https://font.akr.moe'
 
 export default defineConfig({
   site,
