@@ -1,0 +1,105 @@
+---
+import { localePath, otherLocale, useTranslations, type Locale } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+  /** Unprefixed path of the current page, so the language switch stays put. */
+  path: string
+}
+
+const { locale, path } = Astro.props
+const t = useTranslations(locale)
+const other = otherLocale(locale)
+
+const links = [
+  { href: '/families', label: t('nav.families') },
+  { href: '/preview', label: t('nav.preview') },
+  { href: '/upstream', label: t('nav.upstream') },
+  { href: '/blog', label: t('nav.blog') },
+  { href: '/license', label: t('nav.license') },
+]
+---
+
+<header class="nav">
+  <div class="page nav__inner">
+    <a class="nav__logo" href={localePath(locale, '/')}>AKR {locale === 'zh' ? '字体' : 'Fonts'}</a>
+    <nav class="nav__links" aria-label={locale === 'zh' ? '主导航' : 'Main'}>
+      {links.map(link => (
+        <a href={localePath(locale, link.href)} aria-current={path.startsWith(link.href) ? 'page' : undefined}>
+          {link.label}
+        </a>
+      ))}
+      <a href="https://github.com/AkaraChen/font" rel="noopener">GitHub</a>
+    </nav>
+    <a class="nav__lang" href={localePath(other, path)} lang={other === 'zh' ? 'zh-Hans' : 'en'}>
+      {t('common.otherLang')}
+    </a>
+  </div>
+</header>
+
+<style>
+  .nav {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding-block: 20px;
+  }
+
+  .nav__logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  .nav__links {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+
+  .nav__links a {
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    text-decoration: none;
+  }
+
+  .nav__links a:hover,
+  .nav__links a[aria-current='page'] {
+    color: var(--ink);
+  }
+
+  .nav__lang {
+    font-family: var(--font-display);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--rule);
+    padding: 4px 9px;
+    color: var(--ink-muted);
+    text-decoration: none;
+  }
+
+  .nav__lang:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  @media (max-width: 720px) {
+    .nav__inner {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .nav__links {
+      order: 3;
+      width: 100%;
+      gap: 16px;
+    }
+  }
+</style>

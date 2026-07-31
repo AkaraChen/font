@@ -1,0 +1,89 @@
+---
+import { families } from '../../data/families'
+import { upstreams } from '../../data/upstreams'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+
+const description = locale === 'zh'
+  ? 'AKR 字体按 SIL OFL 1.1 发布，构建脚本按 MIT 发布。本页列出全部上游字体、作者与许可证。'
+  : 'AKR fonts ship under SIL OFL 1.1 and the build recipes under MIT. This page lists every upstream font, its author and its license.'
+---
+
+<Base locale={locale} title={t('license.title')} description={description} path="/license">
+  <section class="page head">
+    <span class="eyebrow">{t('license.title')}</span>
+    <h1>{t('license.title')}</h1>
+    <p class="lead">{t('license.fonts')}</p>
+    <p class="prose">{t('license.rfn')}</p>
+  </section>
+
+  <section class="page section">
+    <h2>{t('license.thanks')}</h2>
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th scope="col">{t('upstream.title')}</th>
+          <th scope="col">{locale === 'zh' ? '作者' : 'Author'}</th>
+          <th scope="col">{locale === 'zh' ? '许可' : 'License'}</th>
+          <th scope="col">{t('upstream.families')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {upstreams.map(upstream => (
+          <tr>
+            <td><a href={upstream.url} rel="noopener">{upstream.name[locale]}</a></td>
+            <td>{upstream.author}</td>
+            <td>{upstream.license}</td>
+            <td>
+              {upstream.families.map((id, index) => {
+                const family = families.find(f => f.id === id)
+                return family
+                  ? (
+                      <>
+                        {index > 0 && <span aria-hidden="true"> · </span>}
+                        <a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a>
+                      </>
+                    )
+                  : null
+              })}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(40px, 6vw, 64px) 0;
+  }
+
+  .section {
+    padding-block: clamp(36px, 5vw, 56px);
+    overflow-x: auto;
+  }
+
+  .section h2 {
+    margin-bottom: 18px;
+  }
+
+  .spec-table th {
+    width: auto;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .spec-table td {
+    font-size: 13.5px;
+    color: var(--ink-muted);
+  }
+</style>

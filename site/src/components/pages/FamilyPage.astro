@@ -1,0 +1,209 @@
+---
+import type { Family } from '../../data/families'
+import { families } from '../../data/families'
+import { cssFamily, downloadUrl, hasFonts, manifest } from '../../data/fonts'
+import { upstreams } from '../../data/upstreams'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+import FontPreview from '../FontPreview.astro'
+
+interface Props {
+  locale: Locale
+  family: Family
+}
+
+const { locale, family } = Astro.props
+const t = useTranslations(locale)
+
+const related = upstreams.filter(upstream => family.upstreams.includes(upstream.slug))
+const siblings = families.filter(f => f.id !== family.id && f.upstreams.some(u => family.upstreams.includes(u)))
+
+const title = locale === 'zh'
+  ? `${family.product}｜${family.tagline.zh}`
+  : `${family.product} — ${family.tagline.en}`
+
+const description = locale === 'zh'
+  ? `${family.product}：${family.latin} 拉丁 × ${family.cjk} 汉字，${family.grid} 网格${family.nerd ? '、含 Nerd 图标' : ''}，SIL OFL 1.1 免费下载。`
+  : `${family.product}: ${family.latin} Latin with ${family.cjk} CJK on a ${family.grid} grid${family.nerd ? ', Nerd icons included' : ''}. Free under SIL OFL 1.1.`
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  'name': family.product,
+  'description': description,
+  'license': 'https://scripts.sil.org/OFL',
+  'isBasedOn': related.map(upstream => ({ '@type': 'CreativeWork', 'name': upstream.name.en, 'url': upstream.url })),
+  'author': { '@type': 'Person', 'name': 'AkaraChen' },
+}
+
+const faqJsonLd = family.faq.length
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      'mainEntity': family.faq.map(item => ({
+        '@type': 'Question',
+        'name': item.q[locale],
+        'acceptedAnswer': { '@type': 'Answer', 'text': item.a[locale] },
+      })),
+    }
+  : undefined
+---
+
+<Base locale={locale} title={title} description={description} path={`/family/${family.id}`} jsonLd={jsonLd}>
+  <article>
+    <header class="page head">
+      <span class="eyebrow">{family.product}</span>
+      <h1>{family.name[locale]}</h1>
+      <p class="lead">{family.tagline[locale]}</p>
+      <p
+        class="head__sample"
+        style={hasFonts ? `font-family:"${cssFamily(family.id)}", ui-monospace, monospace` : undefined}
+      >{family.sample}</p>
+      <div class="head__cta">
+        {manifest.tag && (
+          <a class="button" href={downloadUrl(manifest.tag, family.product)} rel="noopener">
+            {t('family.download')} · {manifest.tag}
+          </a>
+        )}
+        <a class="button button--ghost" href={localePath(locale, `/preview?family=${family.id}`)}>{t('family.preview')}</a>
+        <a class="button button--ghost" href={`https://github.com/${manifest.repo}/tree/main/${family.dir}`} rel="noopener">
+          {t('family.source')}
+        </a>
+      </div>
+    </header>
+
+    <section class="page section">
+      <p class="prose">{family.intro[locale]}</p>
+    </section>
+
+    <section class="page section">
+      <span class="eyebrow">{t('family.spec')}</span>
+      <h2>{t('family.spec')}</h2>
+      <table class="spec-table">
+        <tbody>
+          {family.spec.map(row => (
+            <tr>
+              <th scope="row">{row.label[locale]}</th>
+              <td>{row.value[locale]}</td>
+            </tr>
+          ))}
+          <tr>
+            <th scope="row">{t('family.weights')}</th>
+            <td>{family.weights.join(' · ')}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page section">
+      <span class="eyebrow">{t('family.preview')}</span>
+      <h2>{t('family.preview')}</h2>
+      <FontPreview locale={locale} initial={family.id} only={[family.id]} />
+    </section>
+
+    <section class="page section">
+      <span class="eyebrow">{t('family.upstream')}</span>
+      <h2>{t('family.upstream')}</h2>
+      <p class="prose">{t('family.derived')}</p>
+      <ul class="upstream-list">
+        {related.map(upstream => (
+          <li>
+            <a href={localePath(locale, `/upstream/${upstream.slug}`)}>{upstream.name[locale]}</a>
+            <span> — {upstream.author} · <a href={upstream.url} rel="noopener">{upstream.url.replace('https://', '')}</a></span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    {family.faq.length > 0 && (
+      <section class="page section">
+        <span class="eyebrow">{t('family.faq')}</span>
+        <h2>{t('family.faq')}</h2>
+        <dl class="faq">
+          {family.faq.map(item => (
+            <>
+              <dt>{item.q[locale]}</dt>
+              <dd>{item.a[locale]}</dd>
+            </>
+          ))}
+        </dl>
+      </section>
+    )}
+
+    {siblings.length > 0 && (
+      <section class="page section">
+        <span class="eyebrow">{t('family.related')}</span>
+        <ul class="siblings">
+          {siblings.map(sibling => (
+            <li><a href={localePath(locale, `/family/${sibling.id}`)}>{sibling.name[locale]}</a> — {sibling.tagline[locale]}</li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </article>
+
+  {faqJsonLd && <script is:inline type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(40px, 6vw, 64px) 0;
+  }
+
+  .head__sample {
+    font-size: clamp(20px, 3vw, 34px);
+    line-height: 1.6;
+    margin: 32px 0 0;
+    padding-block: 20px;
+    border-block: 1px solid var(--rule);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .head__cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+
+  .section {
+    padding-block: clamp(36px, 5vw, 56px);
+  }
+
+  .section h2 {
+    margin-bottom: 16px;
+  }
+
+  .upstream-list,
+  .siblings {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 0;
+    font-size: 14px;
+    color: var(--ink-muted);
+    max-width: var(--measure);
+  }
+
+  .upstream-list li,
+  .siblings li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .faq {
+    max-width: var(--measure);
+    margin: 20px 0 0;
+  }
+
+  .faq dt {
+    font-family: var(--font-display);
+    font-weight: 700;
+    margin-top: 22px;
+  }
+
+  .faq dd {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+  }
+</style>

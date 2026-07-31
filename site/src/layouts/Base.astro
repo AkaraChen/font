@@ -1,0 +1,65 @@
+---
+import { manifest, subsetFontFaceCss } from '../data/fonts'
+import { localePath, useTranslations, type Locale } from '../i18n/ui'
+import { localeAbsolute } from '../i18n/urls'
+import Footer from '../components/Footer.astro'
+import Nav from '../components/Nav.astro'
+import '../styles/global.css'
+
+interface Props {
+  locale: Locale
+  title: string
+  description: string
+  /** Path without locale prefix, e.g. `/family/hand`. Used for hreflang. */
+  path: string
+  /** Optional JSON-LD, serialised as-is. */
+  jsonLd?: Record<string, unknown>
+}
+
+const { locale, title, description, path, jsonLd } = Astro.props
+const t = useTranslations(locale)
+
+const canonical = localeAbsolute(Astro.site, locale, path)
+const alternates = [
+  { hreflang: 'zh-Hans', href: localeAbsolute(Astro.site, 'zh', path) },
+  { hreflang: 'en', href: localeAbsolute(Astro.site, 'en', path) },
+  { hreflang: 'x-default', href: localeAbsolute(Astro.site, 'zh', path) },
+]
+
+const fullTitle = path === '/' ? `${title} — ${t('site.tagline')}` : `${title} · ${t('site.title')}`
+const fontFaces = subsetFontFaceCss()
+---
+
+<!doctype html>
+<html lang={locale === 'zh' ? 'zh-Hans' : 'en'}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {alternates.map(alt => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={locale === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    {fontFaces && <style set:html={fontFaces} />}
+    {jsonLd && <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{locale === 'zh' ? '跳到正文' : 'Skip to content'}</a>
+    <Nav locale={locale} path={path} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer locale={locale} />
+    {manifest.tag && <span class="visually-hidden" data-release={manifest.tag} />}
+  </body>
+</html>

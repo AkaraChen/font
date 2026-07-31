@@ -1,0 +1,79 @@
+---
+import { families } from '../../data/families'
+import { upstreams } from '../../data/upstreams'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+
+const description = locale === 'zh'
+  ? `AKR 用到的全部上游字体：${upstreams.map(u => u.name.zh).join('、')}。每个上游一页，说明原版是什么、AKR 做了什么、差别在哪。`
+  : `Every upstream AKR builds on: ${upstreams.map(u => u.name.en).join(', ')}. One page each — what the original is, what AKR made of it, and how they differ.`
+---
+
+<Base locale={locale} title={t('upstream.title')} description={description} path="/upstream">
+  <section class="page head">
+    <span class="eyebrow">{t('upstream.title')}</span>
+    <h1>{t('home.upstream.heading')}</h1>
+    <p class="lead">{t('home.upstream.intro')}</p>
+  </section>
+
+  <div class="page">
+    <ul class="list">
+      {upstreams.map(upstream => (
+        <li class="list__item">
+          <a class="list__name" href={localePath(locale, `/upstream/${upstream.slug}`)}>{upstream.name[locale]}</a>
+          <p class="list__what">{upstream.what[locale]}</p>
+          <p class="list__meta">
+            {upstream.author} · {upstream.license} ·
+            {' '}
+            {upstream.families.map(id => families.find(f => f.id === id)?.product).filter(Boolean).join(' · ')}
+          </p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(40px, 6vw, 64px) 24px;
+  }
+
+  .list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .list__item {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .list__name {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .list__what {
+    max-width: var(--measure);
+    color: var(--ink-muted);
+    font-size: 14.5px;
+    margin: 8px 0;
+  }
+
+  .list__meta {
+    margin: 0;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+</style>

@@ -1,0 +1,122 @@
+---
+import type { CollectionEntry } from 'astro:content'
+import { render } from 'astro:content'
+import { localePath, useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+
+interface Props {
+  locale: Locale
+  post: CollectionEntry<'blog'>
+}
+
+const { locale, post } = Astro.props
+const t = useTranslations(locale)
+const { Content } = await render(post)
+
+const slug = post.data.pair ?? post.id
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  'headline': post.data.title,
+  'description': post.data.description,
+  'datePublished': post.data.date.toISOString(),
+  'inLanguage': locale === 'zh' ? 'zh-Hans' : 'en',
+  'author': { '@type': 'Person', 'name': 'AkaraChen' },
+}
+---
+
+<Base
+  locale={locale}
+  title={post.data.title}
+  description={post.data.description}
+  path={`/blog/${slug}`}
+  jsonLd={jsonLd}
+>
+  <article class="page post">
+    <header>
+      <a class="post__back" href={localePath(locale, '/blog')}>← {t('blog.title')}</a>
+      <h1>{post.data.title}</h1>
+      <time class="post__date" datetime={post.data.date.toISOString()}>
+        {post.data.date.toISOString().slice(0, 10)}
+      </time>
+    </header>
+    <div class="post__body">
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .post {
+    padding-block: clamp(40px, 6vw, 64px) 0;
+    max-width: 780px;
+  }
+
+  .post__back {
+    font-family: var(--font-display);
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-decoration: none;
+  }
+
+  .post h1 {
+    margin-top: 16px;
+  }
+
+  .post__date {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 14px;
+  }
+
+  .post__body {
+    margin-top: 36px;
+    color: var(--ink-muted);
+  }
+
+  .post__body :global(h2) {
+    margin-top: 48px;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+
+  .post__body :global(p) {
+    margin-bottom: 1.2em;
+  }
+
+  .post__body :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-bottom: 1.5em;
+  }
+
+  .post__body :global(th),
+  .post__body :global(td) {
+    text-align: left;
+    padding: 9px 12px 9px 0;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+
+  .post__body :global(th) {
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--ink-faint);
+  }
+
+  .post__body :global(pre) {
+    background: var(--dark-bg);
+    color: var(--dark-ink);
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .post__body :global(code) {
+    font-size: 0.94em;
+  }
+</style>

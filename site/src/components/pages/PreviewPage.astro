@@ -1,0 +1,38 @@
+---
+import { useTranslations, type Locale } from '../../i18n/ui'
+import Base from '../../layouts/Base.astro'
+import FontPreview from '../FontPreview.astro'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+
+const description = locale === 'zh'
+  ? '在浏览器里预览 AKR 的八套中英混排编程字体：切换字体、字号、行高、连字与深浅主题，输入自己的代码实时看效果。'
+  : 'Preview all eight AKR CJK coding fonts in the browser: switch family, size, line height, ligatures and theme, and type your own code.'
+---
+
+<Base locale={locale} title={t('preview.title')} description={description} path="/preview">
+  <section class="page head">
+    <span class="eyebrow">{t('nav.preview')}</span>
+    <h1>{t('preview.title')}</h1>
+    <p class="lead">{t('preview.intro')}</p>
+  </section>
+
+  <div class="page body">
+    <FontPreview locale={locale} autoload syncUrl />
+  </div>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(40px, 6vw, 64px) 28px;
+  }
+
+  .body {
+    padding-bottom: clamp(40px, 6vw, 72px);
+  }
+</style>
