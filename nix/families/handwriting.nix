@@ -183,31 +183,48 @@ let
   # Two gates, not one with a flag: every assertion in `verify-2to1` is a claim
   # about a terminal cell, and a text product fails all of them *for being
   # correct*. See lib/fontkit/verify_text.py.
-  verify = pkgs.runCommand "handwriting-verify"
-    {
-      nativeBuildInputs = [ support.verifyEnv ];
-    }
-    ''
-      fontkit verify-2to1 --profile dense --check-nerd --check-eaw \
-        ${out}/${ps "coding"}-*.ttf
-      python3 ${file "handwriting/scripts/verify-features.py"} \
-        --expect-half ${toString grid.en_adv} ${out}/${ps "coding"}-*.ttf
+  #
+  # Per-profile so the CI matrix can gate coding and text in parallel (KIT-305)
+  # without either job realising the other profile's products.
+  verifyProfile = profile:
+    let
+      products = pkgs.runCommand "handwriting-${profile}-gate-products" { } ''
+        mkdir -p $out
+        ${lib.concatStringsSep "\n" (productsOf profile)}
+      '';
+    in
+    pkgs.runCommand "handwriting-verify-${profile}"
+      {
+        nativeBuildInputs = [ support.verifyEnv ];
+      }
+      (
+        (
+          if profile == "coding" then ''
+            fontkit verify-2to1 --profile dense --check-nerd --check-eaw \
+              ${products}/${ps "coding"}-*.ttf
+            python3 ${file "handwriting/scripts/verify-features.py"} \
+              --expect-half ${toString grid.en_adv} ${products}/${ps "coding"}-*.ttf
+          '' else ''
+            fontkit verify-text --expect-full ${toString grid.cjk_adv} \
+              ${products}/${ps "text"}-*.ttf
+          ''
+        )
+        + ''
+          for font in ${products}/*.ttf; do
+            fontkit measure --font "$font" | tail -20 || true
+          done
+          # WOFF2 must be byte-identical to its TTF and the OTF must stay inside
+          # the qu2cu tolerance it was built with (KIT-283). The text profile is
+          # the one that ships all three formats, so it is where this has teeth.
+          fontkit verify-formats ${products}
+          touch $out
+        ''
+      );
 
-      fontkit verify-text --expect-full ${toString grid.cjk_adv} \
-        ${out}/${ps "text"}-*.ttf
-
-      # Informational, like sans'. See the note there about measure.py and
-      # all-off-curve contours.
-      for font in ${out}/*.ttf; do
-        fontkit measure --font "$font" | tail -20 || true
-      done
-
-      # WOFF2 must be byte-identical to its TTF and the OTF must stay inside the
-      # qu2cu tolerance it was built with (KIT-283). This family is the one that
-      # ships all three formats, so it is the one where this gate has teeth.
-      fontkit verify-formats ${out}
-      touch $out
-    '';
+  verify = pkgs.runCommand "handwriting-verify" { } ''
+    ${lib.concatMapStringsSep "\n" (p: "test -e ${verifyProfile p}") profiles}
+    touch $out
+  '';
 
   readme = profile: pkgs.writeText "handwriting-${profile}-README.txt" (
     let naming = support.namingFor m profile region; in
@@ -282,6 +299,13 @@ in
         mkdir -p $out
         ${lib.concatStringsSep "\n" (productsOf entry.profile)}
       '';
+    })
+    matrix);
+
+  cellVerifies = lib.listToAttrs (map
+    (entry: {
+      name = "${entry.profile}-${region}";
+      value = verifyProfile entry.profile;
     })
     matrix);
 

@@ -447,8 +447,19 @@ def fingerprint_font(path: Path, rel_name: str, full: bool = False) -> str:
 # family level
 # --------------------------------------------------------------------------- #
 
-def find_products(repo_root: Path, family: str) -> list[Path]:
-    out_dir = repo_root / family / "out"
+def find_products(
+    repo_root: Path,
+    family: str,
+    products_dir: Path | None = None,
+) -> list[Path]:
+    """Locate font products for a family.
+
+    By default that is `<family>/out` — the full matrix. A cell job (KIT-305)
+    materialises one (profile, region) under `<family>/out-<profile>-<region>`
+    instead; pass that path as `products_dir` so the fingerprint net only sees
+    what this cell actually built.
+    """
+    out_dir = products_dir if products_dir is not None else repo_root / family / "out"
     if not out_dir.is_dir():
         return []
     return sorted(
@@ -492,13 +503,19 @@ def _write_provenance(repo_root: Path, out_dir: Path) -> None:
     )
 
 
-def write_family(repo_root: Path, family: str, out_dir: Path,
-                 full: bool = False) -> list[str]:
-    products = find_products(repo_root, family)
+def write_family(
+    repo_root: Path,
+    family: str,
+    out_dir: Path,
+    full: bool = False,
+    products_dir: Path | None = None,
+) -> list[str]:
+    products = find_products(repo_root, family, products_dir=products_dir)
+    base = products_dir if products_dir is not None else repo_root / family / "out"
     if not products:
         raise SystemExit(
-            f"error: no build products under {family}/out — "
-            f"run `just build {family}` first"
+            f"error: no build products under {base} — "
+            f"run `just build {family}` (or a cell) first"
         )
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -510,7 +527,6 @@ def write_family(repo_root: Path, family: str, out_dir: Path,
 
     index = []
     written = []
-    base = repo_root / family / "out"
     for product in products:
         rel = product.relative_to(base)
         text = fingerprint_font(product, str(rel), full=full)
@@ -523,8 +539,14 @@ def write_family(repo_root: Path, family: str, out_dir: Path,
     return written
 
 
-def check_family(repo_root: Path, family: str, baseline_dir: Path,
-                 full: bool = False) -> int:
+def check_family(
+    repo_root: Path,
+    family: str,
+    baseline_dir: Path,
+    full: bool = False,
+    products_dir: Path | None = None,
+    partial: bool = False,
+) -> int:
     if not (baseline_dir / "INDEX").exists():
         print(
             f"notice: no fingerprint baseline at {baseline_dir}. "
@@ -535,13 +557,21 @@ def check_family(repo_root: Path, family: str, baseline_dir: Path,
 
     tmp = Path(tempfile.mkdtemp(prefix=f"fp-{family}-"))
     try:
-        write_family(repo_root, family, tmp, full=full)
+        write_family(
+            repo_root, family, tmp, full=full, products_dir=products_dir,
+        )
         baseline_files = {p.name for p in baseline_dir.glob("*.fp")}
         current_files = {p.name for p in tmp.glob("*.fp")}
 
         failed = False
         unbaselined = False
         for name in sorted(baseline_files - current_files):
+            # A cell job only materialises one (profile, region). The rest of
+            # the family's baseline products are not missing — they live in
+            # sibling matrix jobs. `--partial` is that contract (KIT-305).
+            if partial:
+                print(f"SKIP     {name} — not in this cell (partial check)")
+                continue
             print(f"MISSING  {name} — product disappeared from this build")
             failed = True
         # A product that has no baseline entry yet is the same situation as a
@@ -600,14 +630,26 @@ def main() -> int:
         "sides when a digest goes red and you need to localise the change."
     )
 
+    products_help = (
+        "directory of products to fingerprint (default: <family>/out). "
+        "Cell jobs pass <family>/out-<profile>-<region> (KIT-305)."
+    )
+    partial_help = (
+        "only compare products present in this build; baseline products that "
+        "belong to other matrix cells are SKIP, not MISSING (KIT-305)"
+    )
+
     p_write = sub.add_parser("write", help="write/update a family's baseline")
     p_write.add_argument("family", choices=FAMILIES)
     p_write.add_argument("--out")
+    p_write.add_argument("--products-dir", type=Path, help=products_help)
     p_write.add_argument("--full", action="store_true", help=full_help)
 
     p_check = sub.add_parser("check", help="compare a family against its baseline")
     p_check.add_argument("family", choices=FAMILIES)
     p_check.add_argument("--baseline")
+    p_check.add_argument("--products-dir", type=Path, help=products_help)
+    p_check.add_argument("--partial", action="store_true", help=partial_help)
     p_check.add_argument("--full", action="store_true", help=full_help)
 
     p_dump = sub.add_parser("dump", help="print one font's fingerprint to stdout")
@@ -623,6 +665,9 @@ def main() -> int:
         return 0
 
     default_dir = repo_root / "fingerprints" / args.family
+    products_dir = (
+        Path(args.products_dir).resolve() if getattr(args, "products_dir", None) else None
+    )
 
     if args.command == "write":
         # The one irreversible thing this tool does. A baseline authored off
@@ -646,14 +691,20 @@ def main() -> int:
             )
             return 2
         out_dir = Path(args.out) if args.out else default_dir
-        written = write_family(repo_root, args.family, out_dir, full=args.full)
+        written = write_family(
+            repo_root, args.family, out_dir, full=args.full,
+            products_dir=products_dir,
+        )
         print(f"wrote {len(written)} fingerprint(s) to {out_dir}")
         for name in written:
             print(f"  {name}")
         return 0
 
     baseline = Path(args.baseline) if args.baseline else default_dir
-    return check_family(repo_root, args.family, baseline, full=args.full)
+    return check_family(
+        repo_root, args.family, baseline, full=args.full,
+        products_dir=products_dir, partial=args.partial,
+    )
 
 
 if __name__ == "__main__":

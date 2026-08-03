@@ -155,65 +155,132 @@ every run publishes its own numbers.
 
 ### Layers
 
-| layer | key | measured size | why separate |
-| --- | --- | --- | --- |
-| sources | `hashFiles('*/font.toml')` | ~490 MiB + 304 MiB Sarasa | biggest, changes least |
-| toolchain | `hashFiles('flake.lock', 'flake.nix')` | measured per run | changes on flake bumps only |
-| products | — | not cached yet | see below |
+| layer | key | measured size (x86_64-linux runner) | why separate |
+| --- | --- | ---: | --- |
+| sources | digest of `tools/sources-cache-key.py` | **770 MB** closure / **~1.3 GB** store on disk (GHA entry ~715 MiB) | biggest, changes least |
+| toolchain | `hashFiles('flake.lock', 'flake.nix')` | **1.7 GB** closure / **~2.1 GB** store (GHA entry ~612 MiB) | changes on flake bumps only |
+| intermediates | digest of `tools/intermediates-cache-key.py` | measured every run (see job summary) | selective shared steps |
+| products | — | not cached | see below |
 
-Sizes above are closure sizes measured with `nix path-info -S` on
-aarch64-darwin. They are downloads, so they carry across platforms; the
-toolchain closure does not, which is why the runner measures itself every run
-(`tools/cache-report.sh`) and prints the result into the job summary. The number
-that actually counts against the 10 GB ceiling is `/nix/store` on disk, not the
-sum of the layers — `nix build` drags build dependencies in too — so that is
-reported alongside.
+Sources + toolchain numbers from run `30430655485` (2026-07-29), via
+`tools/cache-report.sh`. The number that counts against the 10 GB ceiling is
+what GHA stores (compressed), not the sum of closures — but `/nix/store` on disk
+is what the action uploads, so both are reported.
 
 `flake.nix` is in the toolchain key as well as `flake.lock`, because the
 harfbuzz-with-cairo override lives in `flake.nix` and editing it rebuilds the
 shell without moving the lock.
 
+### Sources key is a projection, not `hashFiles('*/font.toml')`
+
+A pure metadata bump of `[naming] version` across seven manifests used to
+invalidate the entire sources layer (v1.0.0-beta.1 release: wall clock jumped
+from ~14 m warm to ~25 m cold for the matrix, ~31 m for the release run). The
+fetched bytes had not changed — only the key had.
+
+`tools/sources-cache-key.py` projects only what the source layer realises:
+
+* every `[sources.*]` table
+* every `[nerd]` table (font-patcher pin)
+* the fetchers themselves (`nix/sources/`, `nix/lib/manifest.nix`,
+  `nix/source-cache.nix`, `tools/fetch_zip_member.py`)
+
+CI hashes that projection into `nix-src-…`. A version-only bump leaves it — and
+the ~715 MiB layer — untouched. (`hashFiles` is fixed at job start, so the
+digest is computed in a step rather than via `hashFiles` on a generated file.)
+
 ### Only the warmers save
 
-Two small jobs (`sources`, `toolchain`) save. The seven family jobs restore both
-layers and save nothing.
+Three small jobs save: `sources`, `toolchain`, `intermediates`. The matrix cell
+jobs restore all three and save nothing.
 
-This is the single most important line in the workflow. Seven family jobs each
+This is the single most important line in the workflow. Fourteen cell jobs each
 writing its own multi-gigabyte store snapshot would exhaust the repository
 budget on one push and evict the layers that pay for themselves.
 
 **The release workflow restores too, and also saves nothing** (Phase 8,
-KIT-283). `release.yml` builds the family from source, so it wants both layers
-and takes them with the same keys and the same `CACHE_EPOCH` as `build-matrix.yml`
-— the two must be bumped together or the release run silently misses. It does
-not write a layer of its own: a release is rare and a push is not, so the right
-thing for it to do is ride the layers a push already paid for rather than evict
-them to save one that will be seven days stale before the next release. A cold
-release simply takes longer, which is the correct trade for the rarer event.
+KIT-283; simplified to a single tag-driven flow). `release-on-tag.yml` builds
+from source, so it takes the same three layers with the same keys and the same
+`CACHE_EPOCH` as `build-matrix.yml` — both must be bumped together or a release
+silently misses. A cold release simply takes longer, which is the correct trade
+for the rarer event.
+
+### Layer 3 — selective intermediates (KIT-304)
+
+Nix already skips untouched steps *inside* a run. Across runs the store was
+empty every time, because family jobs save nothing. The full products layer does
+not fit next to sources + toolchain; the cut that does is per-step, not
+per-family:
+
+| step | cold cost (measured) | closure | why cache |
+| --- | ---: | ---: | --- |
+| `latin-prepared-*` (casual × 2, handwriting × 5) | ~1 s each | a few MB of TTF | region-independent; one face serves every region cell |
+| `serif-sarasa` (`nix build .#serif-sarasa`) | multi-minute on cold; serif job wall ~10–17 m | two TTFs (+ build-time npm deps GC'd after save) | only rebuilds when Sarasa pin / patches / CJK prep inputs move |
+
+`nix build .#ci-intermediates` is the single GC root the warmer keeps
+(`nix/intermediates.nix`). Its GHA key is the digest of
+`tools/intermediates-cache-key.py`, which hashes the *real* inputs of those
+steps (`sources` / `grid` / `calibration` / `options` / `build` from the three
+manifests, the family nix files, prepare scripts, serif patches, flake pins) and
+deliberately **omits** `[naming]` and `[merge]` so a version stamp does not
+evict a multi-minute Sarasa build.
+
+On a hit, cell jobs restore the store paths and `nix build` is a no-op for
+those steps. On a miss, the intermediates job pays once; the cell jobs still
+do not write.
+
+**Steady-state budget estimate** (one entry per layer, GHA compressed sizes):
+
+| layer | ~GHA size |
+| --- | ---: |
+| sources | 715 MiB |
+| toolchain | 612 MiB |
+| intermediates | ≪ 500 MiB (outputs are small; `gc-max-store-size-linux: 1.5G`) |
+| **total** | **≲ 2 GiB** of the 10 GiB ceiling |
+
+The 99 % reading on 2026-07-29 was not three full layers — it was **many
+duplicate `nix-src-v1-*` / `nix-tool-v1-*` keys** left by pin bumps and PR
+scopes. `CACHE_EPOCH: v2` starts a clean prefix; the cache-budget job also drops
+orphan `v1` entries so they stop competing for the ceiling.
 
 ### What is deliberately not cached
 
-**The products layer.** Phase 1 deferred this because the families built into
-`<family>/work/` with shell scripts, and caching a work directory is exactly the
-output-hash caching this repo must not do (§4). Phase 3 removed that objection —
-every step is a derivation now, so a products layer would be store-shaped and
-legitimate.
+**The products layer** (merged / nerd / packaged faces). Closures of the seven
+families do not fit the remaining budget, and a `packaged` zip is worth far less
+per byte than a shared intermediate: it is only reused by that one family on an
+identical input set. Candidates that *might* join layer 3 later, once the
+intermediates job prints their sizes:
 
-It is still not here, for a different and smaller reason: the six families'
-closures do not fit the remaining budget alongside the source and toolchain
-layers, and the numbers to decide what does fit come from the first green
-seven-family run on this graph. Deciding before measuring is what produced the
-"seven jobs each saving a snapshot" design this document exists to argue
-against. When the numbers land, the natural cut is per-step rather than
-per-family: `latin-prepared` is shared across regions and `cjk-prepared` across
-profiles, so those two are worth far more per byte than a `packaged` zip.
+* `cjk-prepared` for families that share it across profiles
+* nothing else without a measured table
 
-**The region axis barely touches this layer.** KIT-282 added three IBM Plex Sans
-masters (TC / JP / KR, ~14 MiB each hinted) for sans, and nothing at all for
-pixel — its four regional flavours are members of the archive it already pulls.
-The `gc-max-store-size-linux: 3G` cap on the source layer is unchanged and still
-has room. What the region axis *does* grow is the family jobs' build time, which
-is why `build-matrix.yml` raised their timeout; those jobs save no cache.
+**Final product closures stay out** unless a future measurement shows they fit
+without crowding sources + toolchain + intermediates.
+
+**The region axis barely touches the source layer.** KIT-282 added three IBM
+Plex Sans masters (TC / JP / KR, ~14 MiB each hinted) for sans, and nothing at
+all for pixel — its four regional flavours are members of the archive it already
+pulls. The `gc-max-store-size-linux: 3G` cap on the source layer is unchanged.
+
+**Region / profile as matrix dimensions (KIT-305).** After Phase 7 the region
+axis lived *inside* a family job: sans serially built sc/tc/jp/kr and was the
+critical path at ~14.1 m. The CI matrix is now one job per
+`(family, profile, region)` cell (14 jobs from `.#lib.matrix`), so those regions
+run in parallel. That only stays free if the region-independent work is not
+recomputed per job — which is why the intermediates layer (KIT-304) has to land
+first: `latin-prepared` and `serif-sarasa` are warmed once, cell jobs restore
+them. Weight is deliberately *not* a matrix axis: same-region weights share
+Latin prep, and splitting them would amplify total CPU for almost no wall-clock
+gain.
+
+| path | before (family matrix) | after (cell matrix) |
+| --- | ---: | ---: |
+| critical path | sans ~14.1 m (4 regions serial) | serif ~10.2 m (Sarasa; lower with mid hit) |
+| cell jobs | 7 | 14 |
+| timeout | 300 m (no measured number) | 60 m |
+
+Cell jobs still save no cache; the wall-clock win is parallelism, not a new
+layer.
 
 **Prefix fallback on the source layer.** A partial source set from an older pin
 list is worse than a clean fetch: it gets carried forward, counted against the
@@ -221,6 +288,24 @@ budget and never read.
 
 The `cache-budget` job prints every cache entry, its size, and the total as a
 percentage of 10 GiB, and warns above 80 %.
+
+### Binary cache tradeoff (not implemented)
+
+GHA's 10 GB ceiling is what forced "family jobs save nothing" in the first
+place. Selective intermediates reclaim the wins that fit. A hosted Nix binary
+cache (cachix / attic) would store *every* derivation output with no 10 GB
+cap, at the cost of an account, a secret, and a bill.
+
+| option | what you get | what it costs |
+| --- | --- | --- |
+| **Selective GHA layers (current)** | sources + toolchain + chosen intermediates across runs | free; 10 GB ceiling; must pick steps by size |
+| **Binary cache** | every store path, including `merged` / `nerd` / `packaged` | hosted service + secret in CI; ongoing storage/bandwidth |
+
+**Decision: stay on selective GHA layers for now.** The measured steady state is
+under ~2 GiB with layer 3 in place. Revisit binary cache only if a future
+measurement shows a step that is both (a) multi-minute cold and (b) too large
+or too numerous to fit the remaining budget — write the numbers here before
+wiring anything up.
 
 ---
 

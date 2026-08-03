@@ -98,12 +98,27 @@
         # `just build` says the same thing in a sentence.
         //
         nixpkgs.lib.optionalAttrs (isBuildSystem pkgs) (
-          families.outputs
-          // families.cells
-          // families.releases
-          // families.steps
-          // families.extras
-          // families.verifies
+          let
+            familyPkgs =
+              families.outputs
+              // families.cells
+              // families.releases
+              // families.steps
+              // families.extras
+              // families.verifies
+              // families.cellVerifies;
+          in
+          familyPkgs
+          // {
+            # Selective cross-run cache of expensive shared intermediates
+            # (latin-prepared + serif-sarasa). See nix/intermediates.nix and
+            # docs/caching.md §3.
+            ci-intermediates = import ./nix/intermediates.nix {
+              inherit pkgs;
+              inherit (pkgs) lib;
+              families = familyPkgs;
+            };
+          }
         ));
 
       # `just check` (nix flake check) builds fontkit, which runs its pytest

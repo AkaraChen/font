@@ -8,6 +8,8 @@
 #   just dev                    → enter the pinned toolchain shell
 #   just build sans             → nix build .#sans, materialised into sans/out
 #   just build sans coding tc   → nix build .#sans-coding-tc, one matrix cell
+#                                 (this is what CI builds — one job per cell,
+#                                 KIT-305; the bare form still builds every cell)
 #   just matrix                 → every cell every family declares
 #   just fingerprint sans       → (re)write sans' regression baseline
 #   just verify sans            → compare a fresh build against the baseline
@@ -91,6 +93,14 @@ graph:
 # Report the closure size of a cache layer (what CI counts against the 10 GB cap).
 cache-report layer +results:
     @tools/cache-report.sh {{layer}} {{results}}
+
+# Digest that keys the CI sources layer (sources-only projection of font.toml).
+sources-cache-key:
+    @python3 tools/sources-cache-key.py --digest
+
+# Digest that keys the CI intermediates layer (latin-prepared + serif-sarasa).
+intermediates-cache-key:
+    @python3 tools/intermediates-cache-key.py --digest
 
 # Build one family and materialise its products under <family>/out.
 #
