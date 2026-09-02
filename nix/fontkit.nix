@@ -19,7 +19,7 @@
 }:
 
 let
-  families = [ "casual" "handwriting" "pixel" "rounded" "sans" "serif" "typewriter" ];
+  families = [ "casual" "handwriting" "pixel" "rounded" "sans" "serif" "typewriter" "work" ];
 in
 buildPythonPackage {
   pname = "fontkit";
@@ -27,7 +27,7 @@ buildPythonPackage {
   pyproject = true;
 
   # Unit tests live under lib/, while manifest integration tests intentionally
-  # read the seven repo-level font.toml files. Include exactly those fixtures;
+  # read the repo-level font.toml files. Include exactly those fixtures;
   # sourceRoot keeps packaging rooted at lib/ and avoids making README changes
   # invalidate the fontkit derivation.
   src = lib.fileset.toSource {

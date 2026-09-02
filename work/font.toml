@@ -1,0 +1,140 @@
+schema_version = 1
+family = "work"
+
+[build]
+profiles = ["coding"]
+regions = ["sc"]
+weights = ["light", "regular", "bold"]
+formats = ["ttf", "woff2"]
+slopes = ["upright"]
+
+[[build.matrix]]
+profile = "coding"
+regions = ["sc"]
+weights = ["light", "regular", "bold"]
+formats = ["ttf", "woff2"]
+slopes = ["upright"]
+
+# Pre-patched Nerd Fonts v3.5.1 CascadiaCode.zip — Mono members so icons sit on
+# the half cell (NFM). ExtraLight / SemiLight / SemiBold / italics are in the
+# zip and are not products of this family.
+[sources.cascadia]
+role = "latin"
+repository = "https://github.com/ryanoasis/nerd-fonts"
+version = "v3.5.1"
+
+[sources.cascadia.artifacts.light]
+file = "CaskaydiaCoveNerdFontMono-Light.ttf"
+fetch = "zip-member"
+url = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/CascadiaCode.zip"
+sha256 = "ba2fbfec7093e9d726d3030ada76833f40806f13fcf4dccb3ea18252fb863cbd"
+member = "CaskaydiaCoveNerdFontMono-Light.ttf"
+
+[sources.cascadia.artifacts.regular]
+file = "CaskaydiaCoveNerdFontMono-Regular.ttf"
+fetch = "zip-member"
+url = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/CascadiaCode.zip"
+sha256 = "4e1e371b188bca589ec1ee7df494ca7bbb187c1c38228c059e5705f4029a9dc0"
+member = "CaskaydiaCoveNerdFontMono-Regular.ttf"
+
+[sources.cascadia.artifacts.bold]
+file = "CaskaydiaCoveNerdFontMono-Bold.ttf"
+fetch = "zip-member"
+url = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/CascadiaCode.zip"
+sha256 = "fadc873712c25c12f1135709a6675f3a929bd624ddb77aecec3adb8db070592c"
+member = "CaskaydiaCoveNerdFontMono-Bold.ttf"
+
+# Alibaba PuHuiTi 3.01, GB18030-2022 Level 1+2 (not RegularL3). Official zip
+# host returned 403; these jsDelivr pins are content-addressed and match the
+# official OSS file sizes (Light 8559848, Regular 8532824, SemiBold 8375164).
+[sources.puhuiti]
+role = "cjk"
+repository = "https://www.alibabafonts.com"
+version = "3.01"
+regions = ["sc"]
+
+[sources.puhuiti.artifacts.light]
+file = "AlibabaPuHuiTi-3-45-Light.ttf"
+url = "https://cdn.jsdelivr.net/npm/@fontpkg/alibaba-pu-hui-ti-3-0@3.1.2/AlibabaPuHuiTi-3-45-Light.ttf"
+sha256 = "2f92bac7082def2703a72c4ff2c87cb2e635ecdaad0bbeb3b9aa0ce5b181de6b"
+
+[sources.puhuiti.artifacts.regular]
+file = "AlibabaPuHuiTi-3-55-Regular.ttf"
+url = "https://cdn.jsdelivr.net/npm/@fontpkg/alibaba-pu-hui-ti-3-0@3.1.2/AlibabaPuHuiTi-3-55-Regular.ttf"
+sha256 = "be33bc8d45ced30fa5c542f6f056565baf85003d4e079522110d76016f8a04e2"
+
+# Bold's CJK master. Scanline vertical-stem medians on the product grid:
+# PuHuiTi 85 Bold is +8.5 vs Cascadia Bold; 75 SemiBold + s=3 is Δ +0.5.
+[sources.puhuiti.artifacts.medium]
+file = "AlibabaPuHuiTi-3-75-SemiBold.ttf"
+url = "https://cdn.jsdelivr.net/npm/@fontpkg/alibaba-pu-hui-ti-3-0@3.1.2/AlibabaPuHuiTi-3-75-SemiBold.ttf"
+sha256 = "463818f16d73e8bca7c4a1478db0304bd0aaaaeb6c689476744d4713aa0bd7dc"
+
+# Cascadia 1200/2048 → UPM 1000 cell 586 → X-scale to 500. PuHuiTi Han is 984
+# at UPM 1000 and lands on the 1000 full cell by side bearing.
+[grid]
+en_adv = 500
+cjk_adv = 1000
+upm = 1000
+latin_src_adv = 1200
+latin_src_upm = 2048
+latin_target_upm = 1000
+
+[naming]
+version = "1.0.0-beta.1"
+house = "AKR"
+style = "Work"
+variant = "NFM"
+rfn_note = "Cascadia Code and CaskaydiaCove are reserved font names; Alibaba, PuHuiTi and 普惠体 are Alibaba trademarks. This product carries none of them in its family name. Donors are credited in name IDs 5 and 10."
+redistribution = "The Latin / Nerd side (Cascadia Code via Nerd Fonts v3.5.1) is SIL OFL 1.1. The CJK side (Alibaba PuHuiTi 3.0) is not OFL — it remains under Alibaba's own legal notice, recorded in licenses/Alibaba-PuHuiTi.txt. This merge is a modification of that font software."
+
+[merge]
+version = "1.000"
+sources_note = "CaskaydiaCove Nerd Font Mono + Alibaba PuHuiTi 3.0"
+# latin-prepared already dropped hints after 2048→1000 and landed the cell on 500.
+latin = "none"
+cjk = "require-same-upm"
+drop_hinting = true
+import_policy = "east-asian-width"
+placement = "fit"
+glyph_prefix = "ph."
+required_sample = "中文荷塘月色"
+set_weight_class = true
+recalc_bounds = true
+widen_wide_base_glyphs = true
+drop_vertical_metrics = true
+check_glyph_budget = true
+latin_subset = "none"
+
+[metrics.coding]
+hhea_ascent = 1050
+hhea_descent = -300
+hhea_line_gap = 0
+os2_typo_ascender = 880
+os2_typo_descender = -220
+os2_typo_line_gap = 0
+os2_win_ascent = 1100
+os2_win_descent = 340
+
+# Measured on the product grid (Cascadia X-scaled to 500 @ UPM 1000 vs PuHuiTi
+# native 1000). Vertical-stem medians, same seven glyphs as the other families:
+#
+#   Cascadia Light    55.0     PuHuiTi 45 Light      57.5   Δ +2.5  → s=0
+#   Cascadia Regular  87.5     PuHuiTi 55 Regular    79.5   Δ −8.0  → s=4 (Δ 0)
+#   Cascadia Bold    110.0     PuHuiTi 85 Bold      118.5   Δ +8.5  too heavy
+#                              PuHuiTi 75 SemiBold  104.5   Δ −5.5  → s=3 (Δ +0.5)
+#
+# Light and Regular keep their named masters. Bold steps down one notch, the
+# same reason handwriting's Regular takes WenKai Medium: a real design weight
+# plus a small stroke beats a mismatched named Bold.
+[calibration.light]
+source_weight = "light"
+embolden = 0
+
+[calibration.regular]
+source_weight = "regular"
+embolden = 4
+
+[calibration.bold]
+source_weight = "medium"
+embolden = 3

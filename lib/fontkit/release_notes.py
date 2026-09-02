@@ -87,10 +87,16 @@ def _sources_section(manifest: Manifest) -> list[str]:
             f"| icons | [nerd-fonts](https://github.com/ryanoasis/nerd-fonts) | "
             f"`{manifest.nerd.version}` ({manifest.nerd.commit[:12]}) |"
         )
+    credit = (
+        manifest.naming.redistribution
+        or (
+            "Donors are credited in name ID 5 and name ID 10 of every product, in the "
+            "bundled `README.txt`, and here. Redistributed under the SIL OFL 1.1."
+        )
+    )
     lines += [
         "",
-        "Donors are credited in name ID 5 and name ID 10 of every product, in the "
-        "bundled `README.txt`, and here. Redistributed under the SIL OFL 1.1.",
+        credit,
         "",
     ]
     return lines

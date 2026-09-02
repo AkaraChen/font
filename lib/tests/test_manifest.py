@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from fontkit.manifest import Manifest, legacy_environment, load_manifest
 
 ROOT = Path(__file__).parents[2]
-FAMILIES = ("casual", "handwriting", "pixel", "rounded", "sans", "serif", "typewriter")
+FAMILIES = ("casual", "handwriting", "pixel", "rounded", "sans", "serif", "typewriter", "work")
 FETCHED_FILES = {
     "casual": {"ArrowType-Recursive.zip", "Yozai-Regular.ttf", "Yozai-Medium.ttf"},
     "handwriting": {
@@ -45,6 +45,14 @@ FETCHED_FILES = {
         "CourierPrime-Regular.ttf",
         "CourierPrime-Bold.ttf",
         "ZhuqueFangsong.zip",
+    },
+    "work": {
+        "CaskaydiaCoveNerdFontMono-Light.ttf",
+        "CaskaydiaCoveNerdFontMono-Regular.ttf",
+        "CaskaydiaCoveNerdFontMono-Bold.ttf",
+        "AlibabaPuHuiTi-3-45-Light.ttf",
+        "AlibabaPuHuiTi-3-55-Regular.ttf",
+        "AlibabaPuHuiTi-3-75-SemiBold.ttf",
     },
 }
 
@@ -238,7 +246,8 @@ def test_no_upstream_reserved_name_survives_in_a_family_name(family: str) -> Non
     reserved = (
         "iosevka", "monaspace", "radon", "lilex", "plex", "lxgw", "wenkai",
         "sarasa", "recursive", "yozai", "courier", "zhuque", "fusion",
-        "resourcehan", "neozhisong",
+        "resourcehan", "neozhisong", "cascadia", "caskaydia", "alibaba",
+        "puhuiti",
     )
     manifest = load_manifest(ROOT / family / "font.toml")
     for profile in manifest.build.profiles:

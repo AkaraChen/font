@@ -4,7 +4,7 @@
 
 # font
 
-**Seven CJK coding fonts, built from source, reproducibly.**
+**Eight CJK coding fonts, built from source, reproducibly.**
 
 Latin designs married to CJK masters on a strict 2:1 grid, patched with Nerd
 Font icons, hinted, gated and fingerprinted — every family is a Nix derivation,
@@ -35,6 +35,7 @@ Every product is named **`AKR <Style> <Region> <Variant> [<Weight>]`**.
 | **`AKR Hand SC NFM`** · [`handwriting/`](handwriting) | Monaspace Radon | 霞鹜文楷 LXGW | 500 / 1000 | Regular · Bold |
 | **`AKR Hand SC Text`** · [`handwriting/`](handwriting) | Monaspace Radon | 霞鹜文楷 LXGW | reading face | Light · Regular · Bold |
 | **`AKR Casual SC Dual`** · [`casual/`](casual) | Recursive Mono Casual | Yozai 悠哉 | 2:1 | Regular · Bold |
+| **`AKR Work SC NFM`** · [`work/`](work) | Cascadia Code (Nerd Fonts v3.5.1) | 阿里巴巴普惠体 3.0 | 500 / 1000 | Light · Regular · Bold |
 
 `<Region>` is a build axis, not a separate recipe: `SC` `TC` `HK` `JP` `KR` come
 out of one Latin build and several CJK masters. `<Variant>` is `NFM` (Nerd Font
@@ -112,9 +113,10 @@ font menu.
 ## License & attribution
 
 Recipes and tooling: [MIT](LICENSE). The fonts they build are derivatives of
-their upstreams and ship under **SIL OFL 1.1**. Upstream attribution lives where
-the OFL expects it — name ID 5 (version string), name ID 10 (description), each
-family's README, and the release notes.
+their upstreams and, except `work/`, ship under **SIL OFL 1.1**. `work/`'s CJK
+donor (Alibaba PuHuiTi) stays under Alibaba's own legal notice — not OFL — and
+that notice is recorded next to the recipe. Upstream attribution lives in name
+ID 5, name ID 10, each family's README, and the release notes.
 
 Upstreams, with thanks: [Iosevka](https://github.com/be5invis/Iosevka) ·
 [Monaspace](https://github.com/githubnext/monaspace) ·
@@ -129,4 +131,6 @@ Upstreams, with thanks: [Iosevka](https://github.com/be5invis/Iosevka) ·
 [Yozai](https://github.com/lxgw/yozai-font) ·
 [Fusion Pixel](https://github.com/TakWolf/fusion-pixel-font) ·
 [Resource Han Rounded](https://github.com/CyanoHao/Resource-Han-Rounded) ·
-[Nerd Fonts](https://github.com/ryanoasis/nerd-fonts)
+[Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) ·
+[Cascadia Code](https://github.com/microsoft/cascadia-code) ·
+[阿里巴巴普惠体](https://www.alibabafonts.com)

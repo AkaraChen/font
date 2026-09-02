@@ -1,0 +1,9 @@
+// AKR Work SC NFM · Cascadia Code × 普惠体 · EN 500 / CJK 1000 · Light/Regular/Bold
+fn walk(path: &str) -> Result<(), Error> {
+  if x != y && a <= b || c >= d { log("path=%s ==> ok", path); }
+}
+// 两个英文字母严格对齐一个汉字：
+aa中bb文cc混dd排ee齐ff检gg查
+|a|b|中|c|d|文|e|f|混|g|h|排|
+const 宽度对齐 = "字体 font"; // != === <= >=
+这几天心里颇不宁静。今晚在 courtyard 里坐着乘凉，忽然想起 day by day 走过的荷塘。
