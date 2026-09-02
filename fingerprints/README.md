@@ -10,6 +10,10 @@ Re-adopted from run
 [30420407248](https://github.com/AkaraChen/font/actions/runs/30420407248)
 (`x86_64-linux`, PR #41). **43** product fingerprints across seven families.
 
+`work/` (AKR Work SC NFM Light/Regular/Bold) was adopted from run
+[33631796239](https://github.com/AkaraChen/font/actions/runs/33631796239)
+(`x86_64-linux`, PR #53): **46** product fingerprints across eight families.
+
 The previous 22 baselines (from
 [30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683)) went
 stale at once: Phase 7 renamed every family (`LilexSansSC NFM` → `AKR Sans SC
