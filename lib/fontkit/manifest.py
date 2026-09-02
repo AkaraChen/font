@@ -133,6 +133,9 @@ class Naming(StrictModel):
     base_variant: str | None = None
     version: str = "0.1.0"
     product_name_zh: str | None = None
+    # Overrides the default "Redistributed under the SIL OFL 1.1" sentence in
+    # release notes. Needed when a donor is not OFL (Alibaba PuHuiTi).
+    redistribution: str | None = None
     # `[naming.text]` — the coding profile is the base and has no override.
     text: NamingOverride | None = None
 
@@ -509,7 +512,7 @@ def naming_for(manifest: Manifest, profile: str, region: str) -> ResolvedNaming:
     """
     base = manifest.naming
     override = getattr(base, profile, None) if profile != "coding" else None
-    segments = base.model_dump(exclude={"text"})
+    segments = base.model_dump(exclude={"text", "redistribution"})
     if override is not None:
         segments.update({k: v for k, v in override.model_dump().items() if v is not None})
     segments["region"] = region

@@ -1,4 +1,4 @@
-# The seven families, all of them building from source in Nix.
+# The families, all of them building from source in Nix.
 #
 # serif joined last (KIT-280): it runs the upstream Sarasa toolchain — quilt
 # stack, npm build, its own CJK master swapped into sources/shs — and that took
@@ -45,6 +45,7 @@ let
     sans = ./sans.nix;
     serif = ./serif.nix;
     typewriter = ./typewriter.nix;
+    dwg = ./dwg.nix;
   };
 
   built = lib.mapAttrs

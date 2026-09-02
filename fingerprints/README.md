@@ -10,6 +10,10 @@ Re-adopted from run
 [30420407248](https://github.com/AkaraChen/font/actions/runs/30420407248)
 (`x86_64-linux`, PR #41). **43** product fingerprints across seven families.
 
+`dwg/` (AKR DWG SC NFM / 大弯勾 Light/Regular/Bold) is bootstrapped from CI
+on PR #53 after the Work→DWG rename; the name table change invalidates the
+previous Work baselines.
+
 The previous 22 baselines (from
 [30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683)) went
 stale at once: Phase 7 renamed every family (`LilexSansSC NFM` → `AKR Sans SC

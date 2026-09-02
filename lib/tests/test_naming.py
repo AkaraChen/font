@@ -146,6 +146,26 @@ def test_the_unique_id_stays_unique_across_the_split(font):
     assert light != _names(font)[3]
 
 
+def test_dwg_light_uses_the_ribbi_split_on_the_real_family_name():
+    """Three-weight coding face: Light is ID 1, not ID 2."""
+    from pathlib import Path
+
+    from fontkit.manifest import load_manifest, naming_for
+
+    manifest = load_manifest(Path(__file__).resolve().parents[2] / "dwg" / "font.toml")
+    names = naming_for(manifest, "coding", "sc")
+    assert names.family == "AKR DWG SC NFM"
+    assert names.product_name_zh == "大弯勾"
+    assert naming.legacy_family(names.family, "Light") == "AKR DWG SC NFM Light"
+    assert naming.ribbi_split("Light") == ("Light", "Regular")
+    assert naming.ribbi_split("Regular") == ("", "Regular")
+    assert naming.ribbi_split("Bold") == ("", "Bold")
+    assert len(naming.legacy_family(names.family, "Light")) <= naming.WINDOWS_FAMILY_LIMIT
+    flat = names.family.replace(" ", "").lower()
+    for token in ("cascadia", "caskaydia", "alibaba", "puhuiti"):
+        assert token not in flat
+
+
 def test_a_name_id_1_over_the_windows_budget_is_an_error(font):
     """Caught at build time rather than by a user reading a truncated menu."""
     spec = _spec(family="A" * 28)  # 28 + " Light" = 34

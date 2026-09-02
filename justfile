@@ -21,7 +21,7 @@ set shell := ["bash", "-uc"]
 # explicitly so a fresh checkout works without editing nix.conf first.
 nix := "nix --extra-experimental-features 'nix-command flakes'"
 
-families := "casual handwriting pixel rounded sans serif typewriter"
+families := "casual dwg handwriting pixel rounded sans serif typewriter"
 
 _default:
     @just --list --unsorted

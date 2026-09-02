@@ -270,7 +270,7 @@ def test_a_missing_sample_glyph_fails_the_build(tmp_path, make_font):
 # the manifests the repo actually ships
 # --------------------------------------------------------------------------- #
 
-MERGING_FAMILIES = ["casual", "handwriting", "rounded", "sans", "typewriter"]
+MERGING_FAMILIES = ["casual", "dwg", "handwriting", "rounded", "sans", "typewriter"]
 
 
 @pytest.mark.parametrize("family", MERGING_FAMILIES)
@@ -301,6 +301,26 @@ def test_calibration_is_per_weight_not_regulars_reused(family):
         return
     with pytest.raises(SystemExit, match="calibration"):
         merge.spec_from_manifest(manifest, "Light")
+
+
+def test_dwg_resolves_light_regular_bold_from_their_own_calibration():
+    """The three-weight coding family cannot reuse Regular's CJK master or stroke."""
+    manifest = load_manifest(REPO / "dwg" / "font.toml")
+    assert list(manifest.build.weights) == ["light", "regular", "bold"]
+    light = merge.spec_from_manifest(manifest, "Light")
+    regular = merge.spec_from_manifest(manifest, "Regular")
+    bold = merge.spec_from_manifest(manifest, "Bold")
+    assert light.en_adv * 2 == light.cjk_adv == 1000
+    assert light.family == regular.family == bold.family == "AKR DWG SC NFM"
+    assert manifest.calibration["light"].source_weight == "light"
+    assert manifest.calibration["regular"].source_weight == "regular"
+    assert manifest.calibration["bold"].source_weight == "medium"
+    assert manifest.calibration["light"].embolden != manifest.calibration["regular"].embolden
+    assert manifest.calibration["bold"].embolden != manifest.calibration["regular"].embolden
+    cascadia = manifest.sources["cascadia"]
+    assert str(cascadia.artifacts["regular"].url).startswith(
+        "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/CascadiaCode.zip"
+    )
 
 
 # --------------------------------------------------------------------------- #

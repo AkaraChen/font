@@ -244,6 +244,10 @@ in
         "fusion"
         "resourcehan"
         "neozhisong"
+        "cascadia"
+        "caskaydia"
+        "alibaba"
+        "puhuiti"
       ];
       composed = lib.concatMap
         (f:
