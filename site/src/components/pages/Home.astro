@@ -19,14 +19,22 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   'name': t('site.title'),
+  'url': Astro.site?.href,
   'applicationCategory': 'DesignApplication',
   'operatingSystem': 'Windows, macOS, Linux',
   'description': t('site.description'),
   'license': 'https://scripts.sil.org/OFL',
   'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
-  'author': { '@type': 'Person', 'name': 'AkaraChen' },
+  'author': {
+    '@type': 'Person',
+    'name': 'AkaraChen',
+    'url': 'https://github.com/AkaraChen',
+    'sameAs': ['https://github.com/AkaraChen'],
+  },
   'softwareVersion': manifest.tag || undefined,
   'downloadUrl': manifest.releaseUrl,
+  'codeRepository': `https://github.com/${manifest.repo}`,
+  'isAccessibleForFree': true,
 }
 ---
 

@@ -57,3 +57,5 @@ venv/
 
 # Fingerprint working dir (CI writes the current run here)
 fingerprints-current/
+.vercel
+.env*

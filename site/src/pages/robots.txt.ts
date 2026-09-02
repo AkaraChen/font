@@ -1,15 +1,9 @@
 import type { APIRoute } from 'astro'
-import { absolute } from '../i18n/urls'
+import { robotsTxt } from '../data/geo'
 
-// Generated rather than static so the sitemap URL follows SITE_URL.
-export const GET: APIRoute = ({ site }) => {
-  const body = [
-    'User-agent: *',
-    'Allow: /',
-    '',
-    `Sitemap: ${absolute(site, '/sitemap-index.xml')}`,
-    '',
-  ].join('\n')
-
-  return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+// Generated so SITE_URL and crawler policy stay in one place (src/data/geo.ts).
+export const GET: APIRoute = () => {
+  return new Response(robotsTxt(), {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  })
 }
