@@ -56,7 +56,7 @@ FAMILIES = [
     "sans",
     "serif",
     "typewriter",
-    "work",
+    "dwg",
 ]
 
 # `.woff2` is deliberately absent, and it is not an oversight (KIT-283): a WOFF2

@@ -1,5 +1,5 @@
 schema_version = 1
-family = "work"
+family = "dwg"
 
 [build]
 profiles = ["coding"]
@@ -83,8 +83,9 @@ latin_target_upm = 1000
 [naming]
 version = "1.0.0-beta.1"
 house = "AKR"
-style = "Work"
+style = "DWG"
 variant = "NFM"
+product_name_zh = "大弯勾"
 rfn_note = "Cascadia Code and CaskaydiaCove are reserved font names; Alibaba, PuHuiTi and 普惠体 are Alibaba trademarks. This product carries none of them in its family name. Donors are credited in name IDs 5 and 10."
 redistribution = "The Latin / Nerd side (Cascadia Code via Nerd Fonts v3.5.1) is SIL OFL 1.1. The CJK side (Alibaba PuHuiTi 3.0) is not OFL — it remains under Alibaba's own legal notice, recorded in licenses/Alibaba-PuHuiTi.txt. This merge is a modification of that font software."
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fresh fontTools consumer for the work family products.
+"""Fresh fontTools consumer for the dwg (大弯勾) family products.
 
 Not a second merge engine: opens each built TTF and asserts the contract the
 family advertises — mixed Latin+Han from one face, 2:1 advances, Nerd PUA from
@@ -59,9 +59,9 @@ def check_one(path: Path, half: int) -> list[str]:
         id2 = name_of(font, 2) or ""
         id16 = name_of(font, 16) or ""
         id17 = name_of(font, 17) or ""
-        stem = path.stem  # AKRWorkSCNFM-Light
+        stem = path.stem  # AKRDWGSCNFM-Light
         subfamily = stem.rsplit("-", 1)[-1]
-        expected_id1 = naming.legacy_family(id16 or "AKR Work SC NFM", subfamily)
+        expected_id1 = naming.legacy_family(id16 or "AKR DWG SC NFM", subfamily)
         _, expected_id2 = naming.ribbi_split(subfamily)
         if id1 != expected_id1:
             errors.append(f"{path.name}: name ID 1 {id1!r} != {expected_id1!r}")

@@ -1,8 +1,10 @@
-# work — AKR Work SC NFM
+# dwg — AKR DWG SC NFM · 大弯勾
 
 Coding dual-width face: **CaskaydiaCove Nerd Font Mono** (Cascadia Code Latin +
 Nerd icons, Nerd Fonts v3.5.1) × **阿里巴巴普惠体 3.0** (CJK, Level 1+2),
 strict **2:1**, **three weights** (Light / Regular / Bold), upright only.
+
+中文名 **大弯勾**，英文名 **DWG**.
 
 The Latin donor is the pre-patched zip the family pins — there is no second
 `font-patcher` pass. The CJK donor is **not OFL**; see
@@ -14,18 +16,18 @@ The Latin donor is the pre-patched zip the family pins — there is no second
 | CJK | [阿里巴巴普惠体 3.0](https://www.alibabafonts.com) Level 1+2 TTF | **3.01** Light / Regular / SemiBold |
 | Grid | EN cell / CJK cell | **500 / 1000** (UPM 1000) |
 | Weight match | measured vertical stems | Light: 45 Light **s=0** · Regular: 55 Regular **s=4** · Bold: 75 SemiBold **s=3** |
-| Product | Light + Regular + Bold | `out/AKRWorkSCNFM-{Light,Regular,Bold}.ttf` |
+| Product | Light + Regular + Bold | `out/AKRDWGSCNFM-{Light,Regular,Bold}.ttf` |
 
 ```bash
-just build work
-# → out/AKRWorkSCNFM-{Light,Regular,Bold}.{ttf,woff2}
+just build dwg
+# → out/AKRDWGSCNFM-{Light,Regular,Bold}.{ttf,woff2}
 ```
 
 ## Why this pairing
 
 Cascadia Code is a ligature-bearing coding mono (Windows Terminal / VS Code).
-PuHuiTi is a modern 黑体. Together they are a workhorse Latin×CJK coding face,
-distinct from `sans/` (Lilex × Plex Sans).
+PuHuiTi is a modern 黑体. Together they are a Latin×CJK coding face, distinct
+from `sans/` (Lilex × Plex Sans).
 
 ## What the build solves
 
@@ -55,7 +57,7 @@ Scanline vertical-stem medians @ UPM 1000 after Latin is on the product grid:
 ### 3. Three-weight RIBBI
 
 Windows name ID 2 only understands Regular / Bold / Italic / Bold Italic. Light
-moves into name ID 1 (`AKR Work SC NFM Light`) and ID 2 stays `Regular`. IDs
+moves into name ID 1 (`AKR DWG SC NFM Light`) and ID 2 stays `Regular`. IDs
 16/17 carry the real grouping.
 
 ## Name recipe
@@ -63,13 +65,14 @@ moves into name ID 1 (`AKR Work SC NFM Light`) and ID 2 stays `Regular`. IDs
 | Token | Meaning |
 | --- | --- |
 | **AKR** | this repository's house name |
-| **Work** | Cascadia Code Latin × 阿里巴巴普惠体 CJK |
+| **DWG** | 大弯勾 — Cascadia Code Latin × 阿里巴巴普惠体 CJK |
 | **SC** | Simplified Chinese CJK master (Level 1+2) |
 | **NFM** | Nerd Font Mono product (icons at one cell, from the zip) |
 
-- Family (name ID 16): `AKR Work SC NFM`
-- Light name ID 1: `AKR Work SC NFM Light` (20 chars, Windows ≤ 31)
-- PostScript / file stem: `AKRWorkSCNFM`
+- Family (name ID 16): `AKR DWG SC NFM`
+- Chinese name: `大弯勾`
+- Light name ID 1: `AKR DWG SC NFM Light` (20 chars, Windows ≤ 31)
+- PostScript / file stem: `AKRDWGSCNFM`
 - Not an official Cascadia / Nerd Fonts / Alibaba face.
 
 ## Licence

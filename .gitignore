@@ -30,10 +30,10 @@ casual/work/
 casual/out/
 casual/dist/
 casual/samples/rendered/
-work/work/
-work/out/
-work/dist/
-work/samples/rendered/
+dwg/work/
+dwg/out/
+dwg/dist/
+dwg/samples/rendered/
 **/.pc/
 **/node_modules/
 *.ttf

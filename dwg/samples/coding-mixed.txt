@@ -1,4 +1,4 @@
-// AKR Work SC NFM · Cascadia Code × 普惠体 · EN 500 / CJK 1000 · Light/Regular/Bold
+// AKR DWG SC NFM · 大弯勾 · Cascadia Code × 普惠体 · EN 500 / CJK 1000 · Light/Regular/Bold
 fn walk(path: &str) -> Result<(), Error> {
   if x != y && a <= b || c >= d { log("path=%s ==> ok", path); }
 }

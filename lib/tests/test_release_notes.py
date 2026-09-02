@@ -29,7 +29,7 @@ FAMILIES = [
     "sans",
     "serif",
     "typewriter",
-    "work",
+    "dwg",
 ]
 
 
@@ -155,17 +155,17 @@ def test_the_migration_doc_and_the_manifests_agree():
     assert declared == documented
 
 
-def test_work_notes_do_not_stamp_ofl_on_puhuiti():
+def test_dwg_notes_do_not_stamp_ofl_on_puhuiti():
     """Alibaba's CJK donor is not OFL; the notes have to say so."""
-    work = load_manifest(REPO_ROOT / "work" / "font.toml")
-    entry = work.build.matrix[0]
-    text = _render(work, entry, "sc")
-    assert "AKR Work SC NFM" in text
+    dwg = load_manifest(REPO_ROOT / "dwg" / "font.toml")
+    entry = dwg.build.matrix[0]
+    text = _render(dwg, entry, "sc")
+    assert "AKR DWG SC NFM" in text
     assert "not OFL" in text
     assert "Alibaba PuHuiTi" in text
     assert "Redistributed under the SIL OFL 1.1." not in text
-    assert str(work.sources["cascadia"].repository).rstrip("/") in text
-    assert str(work.sources["puhuiti"].repository).rstrip("/") in text
+    assert str(dwg.sources["cascadia"].repository).rstrip("/") in text
+    assert str(dwg.sources["puhuiti"].repository).rstrip("/") in text
 
 
 def test_a_cell_that_does_not_exist_is_an_error(tmp_path, capsys):

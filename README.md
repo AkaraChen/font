@@ -35,7 +35,7 @@ Every product is named **`AKR <Style> <Region> <Variant> [<Weight>]`**.
 | **`AKR Hand SC NFM`** · [`handwriting/`](handwriting) | Monaspace Radon | 霞鹜文楷 LXGW | 500 / 1000 | Regular · Bold |
 | **`AKR Hand SC Text`** · [`handwriting/`](handwriting) | Monaspace Radon | 霞鹜文楷 LXGW | reading face | Light · Regular · Bold |
 | **`AKR Casual SC Dual`** · [`casual/`](casual) | Recursive Mono Casual | Yozai 悠哉 | 2:1 | Regular · Bold |
-| **`AKR Work SC NFM`** · [`work/`](work) | Cascadia Code (Nerd Fonts v3.5.1) | 阿里巴巴普惠体 3.0 | 500 / 1000 | Light · Regular · Bold |
+| **`AKR DWG SC NFM`** · 大弯勾 · [`dwg/`](dwg) | Cascadia Code (Nerd Fonts v3.5.1) | 阿里巴巴普惠体 3.0 | 500 / 1000 | Light · Regular · Bold |
 
 `<Region>` is a build axis, not a separate recipe: `SC` `TC` `HK` `JP` `KR` come
 out of one Latin build and several CJK masters. `<Variant>` is `NFM` (Nerd Font
@@ -113,7 +113,7 @@ font menu.
 ## License & attribution
 
 Recipes and tooling: [MIT](LICENSE). The fonts they build are derivatives of
-their upstreams and, except `work/`, ship under **SIL OFL 1.1**. `work/`'s CJK
+their upstreams and, except `dwg/`, ship under **SIL OFL 1.1**. `dwg/`'s CJK
 donor (Alibaba PuHuiTi) stays under Alibaba's own legal notice — not OFL — and
 that notice is recorded next to the recipe. Upstream attribution lives in name
 ID 5, name ID 10, each family's README, and the release notes.

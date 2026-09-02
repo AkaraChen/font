@@ -5,7 +5,7 @@ Official terms: https://www.yuque.com/yiguang-wkqc2/puhuiti/nus9wiinq4aeiegy
 Official site:  https://www.alibabafonts.com
 
 This file records Alibaba's own terms for the CJK donor. It is not SIL OFL.
-The AKR Work merge is a modification of that font software. Do not treat the
+The AKR DWG (大弯勾) merge is a modification of that font software. Do not treat the
 CJK side as redistributable under OFL; a public GitHub Release of the
 derivative may be legally blocked even when the build is technically correct.
 

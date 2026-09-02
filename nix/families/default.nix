@@ -45,7 +45,7 @@ let
     sans = ./sans.nix;
     serif = ./serif.nix;
     typewriter = ./typewriter.nix;
-    work = ./work.nix;
+    dwg = ./dwg.nix;
   };
 
   built = lib.mapAttrs

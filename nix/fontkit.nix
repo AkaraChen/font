@@ -19,7 +19,7 @@
 }:
 
 let
-  families = [ "casual" "handwriting" "pixel" "rounded" "sans" "serif" "typewriter" "work" ];
+  families = [ "casual" "dwg" "handwriting" "pixel" "rounded" "sans" "serif" "typewriter" ];
 in
 buildPythonPackage {
   pname = "fontkit";

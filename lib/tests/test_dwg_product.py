@@ -1,6 +1,6 @@
-"""Consumer checks for the work family — the real script the Nix gate runs.
+"""Consumer checks for the dwg (大弯勾) family — the real script the Nix gate runs.
 
-`work/scripts/verify-product.py` is what `work-verify` invokes on built TTFs.
+`dwg/scripts/verify-product.py` is what `dwg-verify` invokes on built TTFs.
 These tests drive that function, not a reimplementation, so a broken RIBBI or
 2:1 assertion cannot go green here and red only after a three-hour font build.
 
@@ -21,24 +21,24 @@ from fontkit import merge, naming
 from conftest import CP_A, CP_ZHONG
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "work" / "scripts" / "verify-product.py"
+SCRIPT = ROOT / "dwg" / "scripts" / "verify-product.py"
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("work_verify_product", SCRIPT)
+    spec = importlib.util.spec_from_file_location("dwg_verify_product", SCRIPT)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
 
 
-pytestmark = pytest.mark.skipif(not SCRIPT.is_file(), reason="work/scripts not in fontkit src")
+pytestmark = pytest.mark.skipif(not SCRIPT.is_file(), reason="dwg/scripts not in fontkit src")
 
 
 def _spec():
     return merge.MergeSpec(
-        family="AKR Work SC NFM",
-        family_ps="AKRWorkSCNFM",
+        family="AKR DWG SC NFM",
+        family_ps="AKRDWGSCNFM",
         version="1.000",
         sources_note="test",
         en_adv=500,
@@ -68,7 +68,7 @@ def _spec():
 
 def _product(make_font, tmp_path, subfamily: str, *, nerd=0xE0A0, han_adv=1000):
     path = make_font(
-        name=f"AKRWorkSCNFM-{subfamily}.ttf",
+        name=f"AKRDWGSCNFM-{subfamily}.ttf",
         glyphs={
             "A": (500, (50, 0, 450, 700)),
             "zhong": (han_adv, (50, 0, 950, 800)),
@@ -111,7 +111,7 @@ def test_consumer_rejects_cjk_advance_that_is_not_double_latin(make_font, tmp_pa
 def test_consumer_requires_han_and_nerd_from_the_cascadia_zip(make_font, tmp_path):
     mod = _load()
     path = make_font(
-        name="AKRWorkSCNFM-Regular.ttf",
+        name="AKRDWGSCNFM-Regular.ttf",
         glyphs={"A": (500, (50, 0, 450, 700))},
         cmap={CP_A: "A"},
     )
@@ -124,6 +124,6 @@ def test_consumer_requires_han_and_nerd_from_the_cascadia_zip(make_font, tmp_pat
     assert any("Nerd" in e for e in errors)
 
 
-def test_legacy_family_for_work_light_stays_inside_the_windows_budget():
-    assert naming.legacy_family("AKR Work SC NFM", "Light") == "AKR Work SC NFM Light"
-    assert len("AKR Work SC NFM Light") <= naming.WINDOWS_FAMILY_LIMIT
+def test_legacy_family_for_dwg_light_stays_inside_the_windows_budget():
+    assert naming.legacy_family("AKR DWG SC NFM", "Light") == "AKR DWG SC NFM Light"
+    assert len("AKR DWG SC NFM Light") <= naming.WINDOWS_FAMILY_LIMIT
