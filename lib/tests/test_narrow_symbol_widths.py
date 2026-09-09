@@ -167,6 +167,48 @@ def test_narrow_shared_skip_keeps_the_old_behaviour(make_font):
     font.close()
 
 
+CP_CIRCLE_THREE = 0x2462  # ③ EAW=A
+CP_DINGBAT_THREE = 0x2782  # ➂ EAW=N — RHR aliases this onto ③
+
+
+def test_ambiguous_circled_digit_is_forked_from_its_neutral_dingbat(make_font):
+    """①/③ must keep the full cell when ➀/➂ share the outline.
+
+    RHR (and several other CJK donors) map both to one full-cell circle.
+    The N dingbat has to occupy one terminal cell; narrowing in place was
+    how Round's ③ became a 500×500 bead after a correct CJK import.
+    """
+    path = make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "three": (FULL, (50, 50, 950, 950)),
+        },
+        cmap={
+            CP_A: "A",
+            CP_ZHONG: "zhong",
+            CP_CIRCLE_THREE: "three",
+            CP_DINGBAT_THREE: "three",
+        },
+    )
+    nsw.narrow_font(path, None)
+
+    font = TTFont(path)
+    cmap = font.getBestCmap()
+    hmtx = font["hmtx"]
+    assert cmap[CP_CIRCLE_THREE] != cmap[CP_DINGBAT_THREE]
+    assert hmtx[cmap[CP_CIRCLE_THREE]][0] == FULL
+    glyph = font["glyf"][cmap[CP_CIRCLE_THREE]]
+    assert abs((glyph.yMax - glyph.yMin) / (glyph.xMax - glyph.xMin) - 1.0) < 0.05
+    assert hmtx[cmap[CP_DINGBAT_THREE]][0] == HALF
+    dingbat = font["glyf"][cmap[CP_DINGBAT_THREE]]
+    dw = dingbat.xMax - dingbat.xMin
+    dh = dingbat.yMax - dingbat.yMin
+    assert dw <= HALF
+    assert abs(dh / dw - 1.0) < 0.08, (dw, dh)
+    font.close()
+
+
 def test_neutral_circled_zero_is_fitted_uniformly(make_font):
     """⓪ must occupy one cell, but X-only fit would make it twice as tall as wide."""
     path = make_font(

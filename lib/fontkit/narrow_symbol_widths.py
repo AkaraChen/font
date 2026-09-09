@@ -30,7 +30,9 @@ Two behaviours differ per family and are therefore flags, not forks:
                         shares one outline across N and A codepoints far more
                         often, and squashing those regresses the A set for CJK
                         users. Elsewhere half wins on a shared N/A outline,
-                        because a terminal gives N exactly one cell.
+                        because a terminal gives N exactly one cell — except
+                        enclosed stamps (①/➂): the Ambiguous circle stays on
+                        the full cell and the Neutral dingbat gets a fork.
   --widen-shared        what to do when an EAW=W/F glyph at half advance shares
                         its outline with a half-required codepoint (Nerd PUA,
                         N/Na/H):
@@ -110,15 +112,30 @@ def _bounds(glyph_set, gname: str):
     return bp.bounds
 
 
-def _wide_names(cmap: dict) -> set[str]:
-    """Glyph names reachable from an EAW=W/F codepoint.
+def _needs_full_cell(cp: int) -> bool:
+    """codepoints whose ink must stay on the two-cell slot.
 
-    Narrowing one of these in place would squash a character that genuinely
-    needs two cells, so they are never narrowed in place. They can still be
-    *forked* — see `--narrow-shared`, and `_ambiguous_names` for the softer
-    protection that deliberately cannot be.
+    W/F always do. Enclosed Ambiguous stamps (① ③ ❶) do too: CJK typography
+    and this repo's default for EAW=A put them on a square full cell. Resource
+    Han Rounded (and several other CJK donors) then alias the Neutral dingbat
+    ➀/➂ onto the same outline. Treating only W/F as "wide" let the N alias
+    narrow that outline in place and turn ③ into a half-cell bead.
     """
-    return {gname for cp, gname in cmap.items() if _eaw(cp) in WIDE_EAW}
+    eaw = _eaw(cp)
+    if eaw in WIDE_EAW:
+        return True
+    return eaw == "A" and is_enclosed_mark(cp)
+
+
+def _wide_names(cmap: dict) -> set[str]:
+    """Glyph names that must not be narrowed in place.
+
+    Narrowing one of these would squash a character that needs two cells, so
+    they are never narrowed in place. They can still be *forked* — see
+    `--narrow-shared`, and `_ambiguous_names` for the softer protection that
+    deliberately cannot be.
+    """
+    return {gname for cp, gname in cmap.items() if _needs_full_cell(cp)}
 
 
 def _ambiguous_names(
@@ -276,10 +293,11 @@ def narrow_font(
             if gname in untouchable:
                 continue
             if gname in wide_names:
-                # Shared with a codepoint that genuinely needs two cells. In
-                # place is wrong (it squashes the wide one) and skipping is
-                # wrong too (a terminal gives this cp one cell either way), so
-                # the only correct answer is a private narrow copy.
+                # Shared with a codepoint that needs two cells (W/F, or an
+                # enclosed Ambiguous stamp). In place is wrong (it squashes
+                # the wide one) and skipping is wrong too (a terminal gives
+                # this cp one cell either way), so the only correct answer
+                # is a private narrow copy.
                 if narrow_shared == "fork":
                     forks.setdefault(gname, []).append(cp)
                 continue
