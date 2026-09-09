@@ -17,7 +17,7 @@ nix_profile="/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
 #    `--init none`: no systemd here, so we manage the daemon ourselves (step 2).
 if [ ! -e /nix/var/nix/profiles/default/bin/nix ]; then
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
-    | sh -s -- install --no-confirm --init none
+    | sh -s -- install linux --no-confirm --init none
 fi
 
 # shellcheck disable=SC1090
