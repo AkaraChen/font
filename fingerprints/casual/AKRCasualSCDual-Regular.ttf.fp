@@ -122,13 +122,13 @@ subtable	3/10/fmt12	26286	51d7f0e58deda17351ca4e8ced1f0eeeb3f282a245de695a190605
 [advances]
 distinct	5
 histogram	0	72
-histogram	500	2647
-histogram	1000	23769
+histogram	500	2470
+histogram	1000	23946
 histogram	1500	29
 histogram	2000	4
-class	500	2647	040c6d0426bca283837ce1b3662343666842826e0a65a1d7ef5c761ecf27a93d
-class	1000	23769	1cf53c08483cf898be0c70b98a3a6cecc8ab099be298cdecb88965d00b7fcb73
-digest	3af3e3e02dafdf0716406bd65c849e22787b6c6b14d72fca265901f829e94427
+class	500	2470	81e95686786f3ea26f782abac81f1f9bd77462b90798bd3e5e69af8afcc22029
+class	1000	23946	94cc0be6ad6889abb2208d7d3ff65cec957d22d4d2937a0762e1121222b097e6
+digest	12aba230f43143e78b8fba55a9c47419fa99f7965e2c77fc879416fba41b87e2
 offclass	105
   acutecombviet.case	0	-39
   and_and_and.code	1500	96
@@ -238,7 +238,7 @@ offclass	105
 [outlines]
 source	glyf
 glyphs	26521
-digest	0121f9f084501073bfb7a2fc0b6762b6032f41d07276ef9f2f10bdc17b13fe6e
+digest	753da80c98eae94858f6933cbfb54413e56297002d62b99dc1066d1178923d02
 [GSUB]
 script	DFLT	dflt	aalt,afrc,case,ccmp,dlig,dnom,frac,numr,ordn,pnum,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,ss11,ss12,ss20,sups,titl,zero
 script	latn	CAT 	aalt,afrc,case,ccmp,dlig,dnom,frac,locl,numr,ordn,pnum,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,ss11,ss12,ss20,sups,titl,zero

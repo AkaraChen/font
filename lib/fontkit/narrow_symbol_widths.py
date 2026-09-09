@@ -30,7 +30,9 @@ Two behaviours differ per family and are therefore flags, not forks:
                         shares one outline across N and A codepoints far more
                         often, and squashing those regresses the A set for CJK
                         users. Elsewhere half wins on a shared N/A outline,
-                        because a terminal gives N exactly one cell.
+                        because a terminal gives N exactly one cell — except
+                        enclosed stamps (①/➂): the Ambiguous circle stays on
+                        the full cell and the Neutral dingbat gets a fork.
   --widen-shared        what to do when an EAW=W/F glyph at half advance shares
                         its outline with a half-required codepoint (Nerd PUA,
                         N/Na/H):
@@ -67,6 +69,8 @@ try:
 except ImportError as exc:  # pragma: no cover
     print("error: fontTools is required (pip install fonttools)", file=sys.stderr)
     raise SystemExit(2) from exc
+
+from fontkit.merge import is_enclosed_mark
 
 
 NARROW_EAW = ("N", "Na", "H")  # terminals always give these exactly 1 cell
@@ -108,15 +112,30 @@ def _bounds(glyph_set, gname: str):
     return bp.bounds
 
 
-def _wide_names(cmap: dict) -> set[str]:
-    """Glyph names reachable from an EAW=W/F codepoint.
+def _needs_full_cell(cp: int) -> bool:
+    """codepoints whose ink must stay on the two-cell slot.
 
-    Narrowing one of these in place would squash a character that genuinely
-    needs two cells, so they are never narrowed in place. They can still be
-    *forked* — see `--narrow-shared`, and `_ambiguous_names` for the softer
-    protection that deliberately cannot be.
+    W/F always do. Enclosed Ambiguous stamps (① ③ ❶) do too: CJK typography
+    and this repo's default for EAW=A put them on a square full cell. Resource
+    Han Rounded (and several other CJK donors) then alias the Neutral dingbat
+    ➀/➂ onto the same outline. Treating only W/F as "wide" let the N alias
+    narrow that outline in place and turn ③ into a half-cell bead.
     """
-    return {gname for cp, gname in cmap.items() if _eaw(cp) in WIDE_EAW}
+    eaw = _eaw(cp)
+    if eaw in WIDE_EAW:
+        return True
+    return eaw == "A" and is_enclosed_mark(cp)
+
+
+def _wide_names(cmap: dict) -> set[str]:
+    """Glyph names that must not be narrowed in place.
+
+    Narrowing one of these would squash a character that needs two cells, so
+    they are never narrowed in place. They can still be *forked* — see
+    `--narrow-shared`, and `_ambiguous_names` for the softer protection that
+    deliberately cannot be.
+    """
+    return {gname for cp, gname in cmap.items() if _needs_full_cell(cp)}
 
 
 def _ambiguous_names(
@@ -274,10 +293,11 @@ def narrow_font(
             if gname in untouchable:
                 continue
             if gname in wide_names:
-                # Shared with a codepoint that genuinely needs two cells. In
-                # place is wrong (it squashes the wide one) and skipping is
-                # wrong too (a terminal gives this cp one cell either way), so
-                # the only correct answer is a private narrow copy.
+                # Shared with a codepoint that needs two cells (W/F, or an
+                # enclosed Ambiguous stamp). In place is wrong (it squashes
+                # the wide one) and skipping is wrong too (a terminal gives
+                # this cp one cell either way), so the only correct answer
+                # is a private narrow copy.
                 if narrow_shared == "fork":
                     forks.setdefault(gname, []).append(cp)
                 continue
@@ -292,7 +312,15 @@ def narrow_font(
         def fit_narrow(dst: str, src: str, donor_cp: int) -> str:
             """Draw `src` into `dst` at half advance. dst may equal src."""
             donor_name = donor_cmap.get(donor_cp) if donor_cmap else None
-            if donor_name is not None and donor_hmtx[donor_name][0] == half:
+            # Enclosed stamps (⓪ ➀) are circles. Sarasa Term draws them as
+            # half-cell *ovals* (X-only squash). Transplanting that outline
+            # reintroduces the bug the uniform fit exists to prevent.
+            use_donor = (
+                donor_name is not None
+                and donor_hmtx[donor_name][0] == half
+                and not is_enclosed_mark(donor_cp)
+            )
+            if use_donor:
                 glyf[dst] = _draw_glyph(donor_set, donor_name)
                 how = "donor"
             else:
@@ -303,13 +331,27 @@ def narrow_font(
                     glyf[dst] = _draw_glyph(glyph_set, src)
                     how = "blank"
                 else:
-                    x0, _y0, x1, _y1 = bounds
+                    x0, y0, x1, y1 = bounds
                     width = x1 - x0
                     scale = min(1.0, half / width) if width > 0 else 1.0
-                    new_w = width * scale
-                    dx = (half - new_w) / 2.0 - x0 * scale
-                    glyf[dst] = _draw_glyph(glyph_set, src, (scale, 0, 0, 1, dx, 0))
-                    how = "fitted" if scale < 1.0 else "recentred"
+                    if is_enclosed_mark(donor_cp) and scale < 1.0:
+                        # ⓪ ➀ are EAW=N so they must occupy one cell, but
+                        # X-only scale turns the circle into a tall oval.
+                        cx = (x0 + x1) / 2.0
+                        cy = (y0 + y1) / 2.0
+                        dx = half / 2.0 - cx * scale
+                        dy = cy - cy * scale
+                        glyf[dst] = _draw_glyph(
+                            glyph_set, src, (scale, 0, 0, scale, dx, dy)
+                        )
+                        how = "fitted-uniform"
+                    else:
+                        new_w = width * scale
+                        dx = (half - new_w) / 2.0 - x0 * scale
+                        glyf[dst] = _draw_glyph(
+                            glyph_set, src, (scale, 0, 0, 1, dx, 0)
+                        )
+                        how = "fitted" if scale < 1.0 else "recentred"
             glyf[dst].recalcBounds(glyf)
             lsb = glyf[dst].xMin if glyf[dst].numberOfContours else 0
             hmtx[dst] = (half, lsb)

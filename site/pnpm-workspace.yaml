@@ -1,0 +1,9 @@
+# pnpm blocks dependency build scripts until they are explicitly approved. esbuild
+# (pulled in by Vite/Astro) ships one; without approval `pnpm install` exits
+# non-zero on a clean checkout. esbuild's platform binary is delivered as a
+# regular package, so this only silences the gate — approve it both ways so the
+# install is green on the pnpm 10 CI uses and the newer pnpm corepack resolves.
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild

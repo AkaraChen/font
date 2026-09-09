@@ -2,9 +2,9 @@
 # level: compact
 
 [meta]
-path	AKRHandSCText-Light.ttf
-sfntVersion	00010000
-tables	GDEF,GSUB,GlyphOrder,OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+path	AKRHandSCText-Light.otf
+sfntVersion	4f54544f
+tables	CFF ,GDEF,GSUB,GlyphOrder,OS/2,cmap,head,hhea,hmtx,maxp,name,post
 numGlyphs	35359
 glyphorder	499f2134c07d2c40b443d853f01dc470253ef0de29e361e16cc9b3343defd5f0
 [head]
@@ -73,26 +73,13 @@ usBreakChar	32
 usMaxContext	5
 panose	0,0,2,0,0,0,0,0,0,0
 [post]
-formatType	2
+formatType	3
 italicAngle	0
 underlinePosition	-32
 underlineThickness	32
 isFixedPitch	0
 [maxp]
 numGlyphs	35359
-maxPoints	940
-maxContours	56
-maxCompositePoints	247
-maxCompositeContours	10
-maxZones	1
-maxTwilightPoints	0
-maxStorage	0
-maxFunctionDefs	0
-maxInstructionDefs	0
-maxStackElements	0
-maxSizeOfInstructions	0
-maxComponentElements	1
-maxComponentDepth	1
 [name]
 1/0/0x0000/1	AKR Hand SC Text Light
 1/0/0x0000/2	Regular
@@ -147,9 +134,9 @@ offclass	11
   katakanahiraganasemivoicedsoundmarkcomb	0	-184
   katakanahiraganavoicedsoundmarkcomb	0	-191
 [outlines]
-source	glyf
+source	CFF 
 glyphs	35359
-digest	1324a0140c47674dbbd4044062388e18513e26985fce31a956eb353737d627c5
+digest	5de7a4b8901a25c2308197d71ed8dfd417b7714d5ae3026040fdd3ba07b0096e
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups
 script	cyrl	BGR 	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,locl,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups

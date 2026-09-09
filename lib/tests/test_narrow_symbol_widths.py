@@ -7,6 +7,8 @@ from fontkit import narrow_symbol_widths as nsw
 
 from conftest import CP_A, CP_AMBIGUOUS, CP_NEUTRAL, CP_WIDE, CP_ZHONG, FULL, HALF
 
+CP_CIRCLE_ZERO = 0x24EA  # ⓪ EAW=N
+
 
 def _shared_neutral_and_ambiguous(make_font):
     """One outline reachable from both ⏵ (EAW=N) and ▶ (EAW=A), at full width."""
@@ -162,4 +164,97 @@ def test_narrow_shared_skip_keeps_the_old_behaviour(make_font):
     cmap = font.getBestCmap()
     assert cmap[CP_FF64] == cmap[CP_FE51]
     assert font["hmtx"][cmap[CP_FF64]][0] == FULL
+    font.close()
+
+
+CP_CIRCLE_THREE = 0x2462  # ③ EAW=A
+CP_DINGBAT_THREE = 0x2782  # ➂ EAW=N — RHR aliases this onto ③
+
+
+def test_ambiguous_circled_digit_is_forked_from_its_neutral_dingbat(make_font):
+    """①/③ must keep the full cell when ➀/➂ share the outline.
+
+    RHR (and several other CJK donors) map both to one full-cell circle.
+    The N dingbat has to occupy one terminal cell; narrowing in place was
+    how Round's ③ became a 500×500 bead after a correct CJK import.
+    """
+    path = make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "three": (FULL, (50, 50, 950, 950)),
+        },
+        cmap={
+            CP_A: "A",
+            CP_ZHONG: "zhong",
+            CP_CIRCLE_THREE: "three",
+            CP_DINGBAT_THREE: "three",
+        },
+    )
+    nsw.narrow_font(path, None)
+
+    font = TTFont(path)
+    cmap = font.getBestCmap()
+    hmtx = font["hmtx"]
+    assert cmap[CP_CIRCLE_THREE] != cmap[CP_DINGBAT_THREE]
+    assert hmtx[cmap[CP_CIRCLE_THREE]][0] == FULL
+    glyph = font["glyf"][cmap[CP_CIRCLE_THREE]]
+    assert abs((glyph.yMax - glyph.yMin) / (glyph.xMax - glyph.xMin) - 1.0) < 0.05
+    assert hmtx[cmap[CP_DINGBAT_THREE]][0] == HALF
+    dingbat = font["glyf"][cmap[CP_DINGBAT_THREE]]
+    dw = dingbat.xMax - dingbat.xMin
+    dh = dingbat.yMax - dingbat.yMin
+    assert dw <= HALF
+    assert abs(dh / dw - 1.0) < 0.08, (dw, dh)
+    font.close()
+
+
+def test_enclosed_neutral_ignores_an_oval_donor(make_font, tmp_path):
+    """serif's Sarasa Term donor ships ⓪ as a half-cell oval — do not transplant it."""
+    path = make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "zero": (FULL, (50, 50, 950, 950)),
+        },
+        cmap={CP_A: "A", CP_ZHONG: "zhong", CP_CIRCLE_ZERO: "zero"},
+    )
+    donor = make_font(
+        name="donor.ttf",
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zero": (HALF, (50, 50, 200, 900)),
+        },
+        cmap={CP_A: "A", CP_CIRCLE_ZERO: "zero"},
+    )
+    nsw.narrow_font(path, donor)
+
+    font = TTFont(path)
+    glyph = font["glyf"]["zero"]
+    width = glyph.xMax - glyph.xMin
+    height = glyph.yMax - glyph.yMin
+    assert font["hmtx"]["zero"][0] == HALF
+    assert abs(height / width - 1.0) < 0.08, (width, height)
+    font.close()
+
+
+def test_neutral_circled_zero_is_fitted_uniformly(make_font):
+    """⓪ must occupy one cell, but X-only fit would make it twice as tall as wide."""
+    path = make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "zero": (FULL, (50, 50, 950, 950)),
+        },
+        cmap={CP_A: "A", CP_ZHONG: "zhong", CP_CIRCLE_ZERO: "zero"},
+    )
+    nsw.narrow_font(path, None)
+
+    font = TTFont(path)
+    glyph = font["glyf"]["zero"]
+    assert font["hmtx"]["zero"][0] == HALF
+    width = glyph.xMax - glyph.xMin
+    height = glyph.yMax - glyph.yMin
+    assert width <= HALF
+    assert abs(height / width - 1.0) < 0.08, (width, height)
     font.close()

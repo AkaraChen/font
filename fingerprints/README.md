@@ -14,6 +14,12 @@ Re-adopted from run
 [33637769781](https://github.com/AkaraChen/font/actions/runs/33637769781)
 (`x86_64-linux`, PR #53).
 
+Circled-digit width/aspect changes (PR #54) re-adopted `casual`, `dwg`,
+`handwriting`, `rounded`, `sans` and `serif` from run
+[34325676706](https://github.com/AkaraChen/font/actions/runs/34325676706)
+(`x86_64-linux`). `pixel` and `typewriter` did not move. Handwriting also
+gained the three `text` OTF baselines that job first produced.
+
 The previous 22 baselines (from
 [30357631683](https://github.com/AkaraChen/font/actions/runs/30357631683)) went
 stale at once: Phase 7 renamed every family (`LilexSansSC NFM` → `AKR Sans SC

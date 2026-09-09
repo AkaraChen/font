@@ -5,8 +5,8 @@
 path	AKRRoundSCDual-Bold.ttf
 sfntVersion	00010000
 tables	GDEF,GPOS,GSUB,GlyphOrder,OS/2,cmap,cvt ,fpgm,gasp,glyf,head,hhea,hmtx,loca,maxp,name,post,prep
-numGlyphs	32855
-glyphorder	332c88aa5b40cbc846b93a140a5846dc3ae4c2edbb67f684de6ffea8cd9533ff
+numGlyphs	33045
+glyphorder	e4c2c1887c11ce0bf7cbb306e614449d9324401b7107c1f303de4149d85239b9
 [head]
 tableVersion	1
 fontRevision	34.079987
@@ -33,7 +33,7 @@ caretSlopeRise	1
 caretSlopeRun	0
 caretOffset	0
 metricDataFormat	0
-numberOfHMetrics	32654
+numberOfHMetrics	33026
 [OS/2]
 version	4
 xAvgCharWidth	500
@@ -79,7 +79,7 @@ underlinePosition	-50
 underlineThickness	50
 isFixedPitch	1
 [maxp]
-numGlyphs	32855
+numGlyphs	33045
 maxPoints	588
 maxContours	62
 maxCompositePoints	188
@@ -125,10 +125,10 @@ subtable	3/10/fmt12	32466	dbb18ab7e8fd6bf4455e8b1bc6021beecadfea27e0ab560e0c6b55
 distinct	3
 histogram	0	325
 histogram	500	3403
-histogram	1000	29127
+histogram	1000	29317
 class	500	3403	744cfcf6b1244feafbf2a7cbac4dd6188538f7805a4a3cbd61c307acf95d84a3
-class	1000	29127	036f3cd005e2d02f2c6cde9a780893c9a561d8b19f62aea31dc22c4ff9f96f62
-digest	58c4f895fb4991313a10840887f4c465fc9ca01ec527513d87eba6525450c819
+class	1000	29317	2f1d72453bcd313ae26a873fd44ec127f0e7769449af7acfcafd1b48ffd6bc0d
+digest	de8cf6f37b22b8a9502fdb297a41b808121023af3fbad8ad374167d4f0b01819
 offclass	325
   glyph01096	0	-374
   glyph01097	0	-324
@@ -457,8 +457,8 @@ offclass	325
   uni2064	0	0
 [outlines]
 source	glyf
-glyphs	32855
-digest	051259829f238d59c6c5cf7be9e48feb1e88f81a5f437f85b8b8d35480e1116f
+glyphs	33045
+digest	37b9977cb7c14f9fd8f85feea0ee77d9b51ccd1bd22393aad02dc7a79aa5737d
 [GSUB]
 script	DFLT	dflt	calt,ccmp,dlig
 script	cyrl	BGR 	calt,ccmp,dlig,locl

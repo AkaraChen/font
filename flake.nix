@@ -166,6 +166,23 @@
             mesonFlags =
               (builtins.filter (f: f != (pkgs.lib.mesonEnable "cairo" false)) old.mesonFlags)
               ++ [ (pkgs.lib.mesonEnable "cairo" true) ];
+
+            # nixpkgs splits the core `libharfbuzz.so.0` into the base `harfbuzz`
+            # derivation; the cairo build only re-adds the utilities (hb-view /
+            # hb-shape / hb-subset / hb-info) in the `dev` output, and their RPATH
+            # points at this derivation's own lib (the -cairo/-subset/-icu libs)
+            # but not at the core library. So the tool this override exists to
+            # provide lands on PATH unable to load `libharfbuzz.so.0`. Add the
+            # core lib dir back to their RPATH — `pkgs.harfbuzz` is already a
+            # runtime dependency here, so this pulls in nothing new. devShell-only;
+            # no build derivation or fingerprint depends on it.
+            nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.patchelf ];
+            postFixup = (old.postFixup or "") + ''
+              for bin in "$dev"/bin/hb-*; do
+                [ -f "$bin" ] || continue
+                patchelf --add-rpath ${pkgs.lib.makeLibraryPath [ pkgs.harfbuzz ]} "$bin"
+              done
+            '';
           });
 
           # System tools. Everything here was previously discovered with `need_cmd`

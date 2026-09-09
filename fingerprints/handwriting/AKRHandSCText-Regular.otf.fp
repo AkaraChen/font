@@ -2,9 +2,9 @@
 # level: compact
 
 [meta]
-path	AKRHandSCText-Light.ttf
-sfntVersion	00010000
-tables	GDEF,GSUB,GlyphOrder,OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+path	AKRHandSCText-Regular.otf
+sfntVersion	4f54544f
+tables	CFF ,GDEF,GSUB,GlyphOrder,OS/2,cmap,head,hhea,hmtx,maxp,name,post
 numGlyphs	35359
 glyphorder	499f2134c07d2c40b443d853f01dc470253ef0de29e361e16cc9b3343defd5f0
 [head]
@@ -13,9 +13,9 @@ fontRevision	1.399994
 flags	1
 unitsPerEm	1000
 xMin	-1447
-yMin	-424
-xMax	2951
-yMax	1063
+yMin	-422
+xMax	2955
+yMax	1069
 macStyle	0
 lowestRecPPEM	7
 fontDirectionHint	2
@@ -27,8 +27,8 @@ descent	-220
 lineGap	200
 advanceWidthMax	1000
 minLeftSideBearing	-1447
-minRightSideBearing	-2451
-xMaxExtent	2951
+minRightSideBearing	-2455
+xMaxExtent	2955
 caretSlopeRise	1
 caretSlopeRun	0
 caretOffset	0
@@ -37,7 +37,7 @@ numberOfHMetrics	33190
 [OS/2]
 version	4
 xAvgCharWidth	948
-usWeightClass	300
+usWeightClass	400
 usWidthClass	5
 fsType	8
 ySubscriptXSize	524
@@ -66,60 +66,47 @@ ulUnicodeRange3	33554452
 ulUnicodeRange4	0
 ulCodePageRange1	1610613151
 ulCodePageRange2	0
-sxHeight	456
+sxHeight	462
 sCapHeight	657
 usDefaultChar	0
 usBreakChar	32
 usMaxContext	5
 panose	0,0,2,0,0,0,0,0,0,0
 [post]
-formatType	2
+formatType	3
 italicAngle	0
 underlinePosition	-32
 underlineThickness	32
 isFixedPitch	0
 [maxp]
 numGlyphs	35359
-maxPoints	940
-maxContours	56
-maxCompositePoints	247
-maxCompositeContours	10
-maxZones	1
-maxTwilightPoints	0
-maxStorage	0
-maxFunctionDefs	0
-maxInstructionDefs	0
-maxStackElements	0
-maxSizeOfInstructions	0
-maxComponentElements	1
-maxComponentDepth	1
 [name]
-1/0/0x0000/1	AKR Hand SC Text Light
+1/0/0x0000/1	AKR Hand SC Text
 1/0/0x0000/2	Regular
-1/0/0x0000/3	AKR Hand SC Text: Light
-1/0/0x0000/4	AKR Hand SC Text Light
+1/0/0x0000/3	AKR Hand SC Text: Regular
+1/0/0x0000/4	AKR Hand SC Text
 1/0/0x0000/5	1.000;KIT;AKR Hand SC Text merge (Monaspace Radon + LXGW WenKai 7.5° slant; EN 500 / CJK 1000)
-1/0/0x0000/6	AKRHandSCText-Light
+1/0/0x0000/6	AKRHandSCText-Regular
 1/0/0x0000/7	Copyright 2023 GitHub, Inc. (https://github.com/githubnext/monaspace), with Reserved Font Names 'Monaspace', 'Monaspace Argon', 'Monaspace Neon', 'Monaspace Xenon', 'Monaspace Radon', and 'Monaspace Krypton'.
 1/0/0x0000/8	Lettermatic
 1/0/0x0000/9	Riley Cran & the Lettermatic Team
 1/0/0x0000/11	https://lettermatic.com
 1/0/0x0000/13	SIL Open Font License 1.1 https://github.com/githubnext/monaspace/blob/main/LICENSE
 1/0/0x0000/16	AKR Hand SC Text
-1/0/0x0000/17	Light
-3/1/0x0409/1	AKR Hand SC Text Light
+1/0/0x0000/17	Regular
+3/1/0x0409/1	AKR Hand SC Text
 3/1/0x0409/2	Regular
-3/1/0x0409/3	AKR Hand SC Text: Light
-3/1/0x0409/4	AKR Hand SC Text Light
+3/1/0x0409/3	AKR Hand SC Text: Regular
+3/1/0x0409/4	AKR Hand SC Text
 3/1/0x0409/5	1.000;KIT;AKR Hand SC Text merge (Monaspace Radon + LXGW WenKai 7.5° slant; EN 500 / CJK 1000)
-3/1/0x0409/6	AKRHandSCText-Light
+3/1/0x0409/6	AKRHandSCText-Regular
 3/1/0x0409/7	Copyright 2023 GitHub, Inc. (https://github.com/githubnext/monaspace), with Reserved Font Names 'Monaspace', 'Monaspace Argon', 'Monaspace Neon', 'Monaspace Xenon', 'Monaspace Radon', and 'Monaspace Krypton'.
 3/1/0x0409/8	Lettermatic
 3/1/0x0409/9	Riley Cran & the Lettermatic Team
 3/1/0x0409/11	https://lettermatic.com
 3/1/0x0409/13	SIL Open Font License 1.1 https://github.com/githubnext/monaspace/blob/main/LICENSE
 3/1/0x0409/16	AKR Hand SC Text
-3/1/0x0409/17	Light
+3/1/0x0409/17	Regular
 [cmap]
 subtable	0/3/fmt4	31855	14674678d0eca332fc4b37b62bd5baa6bd47b6430572ed68a7a3d2da9e14c0b5
 subtable	0/4/fmt12	34231	4838a3c34c84f06f0ba5599a610fac6eae386fcaa4308b5806261d7c7efb3824
@@ -133,23 +120,23 @@ histogram	600	5
 histogram	1000	31673
 class	500	3675	cd070d979c9f570c93eefce4641561fd92c0ffb0853312c5abb984c2888adc55
 class	1000	31673	bb19a6c6e2d8491f146f0411184f786ffb1efb75517172c40af18b07deff6b16
-digest	2ee6d8b98199c8fe96064f39d9b42943eb77626f3eb7c1c1cf734ed44d10af04
+digest	dde4ecf18381acb9dc71d76e20f108a034dc24f55c73eb6a5601c7323abbf49d
 offclass	11
-  finalg-bopomofo	600	96
-  finalh-bopomofo	600	21
-  finalk-bopomofo	600	58
-  finalp-bopomofo	600	97
-  finalt-bopomofo	600	34
-  ideographicdepartingtonemarkcomb	0	-110
-  ideographicenteringtonemarkcomb	0	-265
-  ideographicleveltonemarkcomb	0	-1084
-  ideographicrisingtonemarkcomb	0	-929
-  katakanahiraganasemivoicedsoundmarkcomb	0	-184
-  katakanahiraganavoicedsoundmarkcomb	0	-191
+  finalg-bopomofo	600	90
+  finalh-bopomofo	600	13
+  finalk-bopomofo	600	52
+  finalp-bopomofo	600	90
+  finalt-bopomofo	600	27
+  ideographicdepartingtonemarkcomb	0	-116
+  ideographicenteringtonemarkcomb	0	-272
+  ideographicleveltonemarkcomb	0	-1091
+  ideographicrisingtonemarkcomb	0	-935
+  katakanahiraganasemivoicedsoundmarkcomb	0	-190
+  katakanahiraganavoicedsoundmarkcomb	0	-198
 [outlines]
-source	glyf
+source	CFF 
 glyphs	35359
-digest	1324a0140c47674dbbd4044062388e18513e26985fce31a956eb353737d627c5
+digest	af21e3e3043f4561a3a5d711b7d817741e215470e003bb3052b4c0cbeea2774c
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups
 script	cyrl	BGR 	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,locl,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups

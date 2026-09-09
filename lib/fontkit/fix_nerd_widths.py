@@ -14,10 +14,17 @@ Run as: python3 -m fontkit.fix_nerd_widths FONT.ttf [...]
 from __future__ import annotations
 
 import argparse
+import copy
 from pathlib import Path
 
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables._g_l_y_f import GlyphCoordinates
+
+from fontkit.narrow_symbol_widths import (
+    _ensure_glyph_slot,
+    _remap_codepoints,
+    _unique_glyph_name,
+)
 
 # BMP PUA + Supplementary Private Use Area-A (Material Design Icons, etc.)
 PUA_RANGES = (
@@ -71,12 +78,35 @@ def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
 
         # unique glyph names that need fixing (one glyph may map to many cps)
         to_fix: dict[str, int] = {}  # gname -> current advance
+        rev: dict[str, list[int]] = {}
         for cp, gname in cmap.items():
+            rev.setdefault(gname, []).append(cp)
             if not in_pua(cp):
                 continue
             adv = hmtx[gname][0]
             if adv != half:
                 to_fix[gname] = adv
+
+        # A PUA codepoint that shares ③'s outline must not X-scale the circle
+        # in place (Sans TC: U+F6B1 and U+2462 were one glyph). Fork first.
+        forked = 0
+        for gname, adv in list(to_fix.items()):
+            others = [cp for cp in rev.get(gname, []) if not in_pua(cp)]
+            if not others:
+                continue
+            pua_cps = [cp for cp in rev[gname] if in_pua(cp)]
+            new_name = _unique_glyph_name(glyf, gname, prefix="nerd")
+            _ensure_glyph_slot(font, new_name)
+            glyf[new_name] = copy.deepcopy(glyf[gname])
+            hmtx.metrics[new_name] = hmtx[gname]
+            _remap_codepoints(font, pua_cps, new_name)
+            for cp in pua_cps:
+                cmap[cp] = new_name
+            rev[new_name] = pua_cps
+            rev[gname] = others
+            to_fix.pop(gname)
+            to_fix[new_name] = adv
+            forked += 1
 
         fixed = 0
         for gname, adv in to_fix.items():
@@ -115,7 +145,9 @@ def fix_font(path: Path, *, dry_run: bool = False) -> list[str]:
 
         lines.append(
             f"{path.name}: nerd/PUA width fix — {fixed} glyphs → advance {half} "
-            f"(scanned {len(to_fix)} non-half PUA glyphs)"
+            f"(scanned {len(to_fix)} non-half PUA glyphs"
+            + (f", forked {forked} shared with non-PUA" if forked else "")
+            + ")"
         )
         if not dry_run:
             font.save(path)

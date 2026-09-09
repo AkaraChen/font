@@ -132,17 +132,17 @@ subtable	3/10/fmt12	41429	75d2bcc22767c221e9d669246d3304437cf30435eec984fe665287
 [advances]
 distinct	3
 histogram	0	1
-histogram	500	15082
-histogram	1000	28241
-class	500	15082	f84dd357c87ec12325974b2fc830760177ae1087bf3f8a2fcde9a2585ee2d163
-class	1000	28241	0039b81ebc9c589104720bfb51e7accb1a04ed8991875042fa0723403be9d296
-digest	6b0768f43d7e9488e8800cece9d0134f58ecc940bb4d52d653fef4154953e0c0
+histogram	500	15032
+histogram	1000	28291
+class	500	15032	d719011ad1093e74673d72fb1011e0238c7361417a3006278c7b49c293155649
+class	1000	28291	a57a3defd7c5f41d367d559c2f91744818e7ec1266d16cfd866807189b718c4e
+digest	82a7e47200652101c4989a80241c813416af3abb3bec5e9dc9b1174dc949185c
 offclass	1
   .null	0	0
 [outlines]
 source	glyf
 glyphs	43324
-digest	3d479fece2a3a2f3167db6369170e015a538fffa8d95223fb72064a8c10decc0
+digest	1775fd8f5c52e3d9a6b5bc8b854d4da0b646be3971b30378d4340b2f3914a148
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,dnom,fina,frac,init,medi,numr,ordn,rclt,rlig,sinf,ss02,ss19,ss20,subs,sups,zero
 script	arab	URD 	aalt,calt,case,ccmp,dnom,fina,frac,init,locl,medi,numr,ordn,rclt,rlig,sinf,ss02,ss19,ss20,subs,sups,zero
