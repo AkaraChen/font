@@ -312,7 +312,15 @@ def narrow_font(
         def fit_narrow(dst: str, src: str, donor_cp: int) -> str:
             """Draw `src` into `dst` at half advance. dst may equal src."""
             donor_name = donor_cmap.get(donor_cp) if donor_cmap else None
-            if donor_name is not None and donor_hmtx[donor_name][0] == half:
+            # Enclosed stamps (⓪ ➀) are circles. Sarasa Term draws them as
+            # half-cell *ovals* (X-only squash). Transplanting that outline
+            # reintroduces the bug the uniform fit exists to prevent.
+            use_donor = (
+                donor_name is not None
+                and donor_hmtx[donor_name][0] == half
+                and not is_enclosed_mark(donor_cp)
+            )
+            if use_donor:
                 glyf[dst] = _draw_glyph(donor_set, donor_name)
                 how = "donor"
             else:

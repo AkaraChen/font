@@ -209,6 +209,35 @@ def test_ambiguous_circled_digit_is_forked_from_its_neutral_dingbat(make_font):
     font.close()
 
 
+def test_enclosed_neutral_ignores_an_oval_donor(make_font, tmp_path):
+    """serif's Sarasa Term donor ships ⓪ as a half-cell oval — do not transplant it."""
+    path = make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "zero": (FULL, (50, 50, 950, 950)),
+        },
+        cmap={CP_A: "A", CP_ZHONG: "zhong", CP_CIRCLE_ZERO: "zero"},
+    )
+    donor = make_font(
+        name="donor.ttf",
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zero": (HALF, (50, 50, 200, 900)),
+        },
+        cmap={CP_A: "A", CP_CIRCLE_ZERO: "zero"},
+    )
+    nsw.narrow_font(path, donor)
+
+    font = TTFont(path)
+    glyph = font["glyf"]["zero"]
+    width = glyph.xMax - glyph.xMin
+    height = glyph.yMax - glyph.yMin
+    assert font["hmtx"]["zero"][0] == HALF
+    assert abs(height / width - 1.0) < 0.08, (width, height)
+    font.close()
+
+
 def test_neutral_circled_zero_is_fitted_uniformly(make_font):
     """⓪ must occupy one cell, but X-only fit would make it twice as tall as wide."""
     path = make_font(
