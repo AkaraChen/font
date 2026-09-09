@@ -5,8 +5,8 @@
 path	AKRHandSCNFM-Regular.ttf
 sfntVersion	00010000
 tables	GDEF,GSUB,GlyphOrder,OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
-numGlyphs	57962
-glyphorder	f1065ddacb69ed45cec894b164085e1ca820c0793c91d2e2649944c2ce2e3f14
+numGlyphs	58013
+glyphorder	96a5090575c5bd258368ac9d7fad7155efb749318ee7795b431bfcea877ab46b
 [head]
 tableVersion	1
 fontRevision	1.399994
@@ -33,7 +33,7 @@ caretSlopeRise	1
 caretSlopeRun	0
 caretOffset	0
 metricDataFormat	0
-numberOfHMetrics	57962
+numberOfHMetrics	58013
 [OS/2]
 version	4
 xAvgCharWidth	500
@@ -79,7 +79,7 @@ underlinePosition	-32
 underlineThickness	32
 isFixedPitch	1
 [maxp]
-numGlyphs	57962
+numGlyphs	58013
 maxPoints	2713
 maxContours	70
 maxCompositePoints	245
@@ -121,26 +121,26 @@ maxComponentDepth	1
 3/1/0x0409/16	AKR Hand SC NFM
 3/1/0x0409/17	Regular
 [cmap]
-subtable	0/3/fmt4	46580	4be071c8fd6f8b7d84b847aeb0cd42c1b3daf74f4db41d558c8a10475dff0466
-subtable	0/4/fmt12	56600	46aecf74e9db73b06ccabf44b950b90e7b8b481440a4a4e983f29bb147baddd6
-subtable	3/1/fmt4	46580	4be071c8fd6f8b7d84b847aeb0cd42c1b3daf74f4db41d558c8a10475dff0466
-subtable	3/10/fmt12	56600	46aecf74e9db73b06ccabf44b950b90e7b8b481440a4a4e983f29bb147baddd6
+subtable	0/3/fmt4	46580	30f92afbffd6ffc00809b1f6fdf3470762f7b593254a043dc2b34b8ee26d1f66
+subtable	0/4/fmt12	56600	71ecf9c558a1d1de9449a34d850c61c3510a4a4c70bbdc89a99e380a2d7b91d2
+subtable	3/1/fmt4	46580	30f92afbffd6ffc00809b1f6fdf3470762f7b593254a043dc2b34b8ee26d1f66
+subtable	3/10/fmt12	56600	71ecf9c558a1d1de9449a34d850c61c3510a4a4c70bbdc89a99e380a2d7b91d2
 [advances]
 distinct	4
 histogram	0	1
 histogram	350	1
-histogram	500	14302
-histogram	1000	43658
-class	500	14302	505bbe0327060e9956b211525ebfa99bc6096787dfe4555019ca2eed922c7f85
-class	1000	43658	6a0cdae8038ad34fde26bc7db69b235007ce042a6884a91d5af433b6623f926a
-digest	534fe621b358c25743fe6fbe9cf18adcef344d5650ee9ae8fe654756e7665c29
+histogram	500	14176
+histogram	1000	43835
+class	500	14176	949647799eaa1f81670294433dc411fba5e92aa3c67e0ed1c6826dffb6e1dd73
+class	1000	43835	2adc586cb3a48374aaa2205bc9ac980b2dc9858e701e643d1f623fc008f6eb1b
+digest	38b674467aceb621d9f57228ae17ab6f35c9ff38977e0d47db64475b86313f14
 offclass	2
   acutecomb.1	0	174
   wk.slash	350	-50
 [outlines]
 source	glyf
-glyphs	57962
-digest	8b0ae11b11fb8ca0163691b9d4673702e89bb9a1f15b7223769a44c056008ad7
+glyphs	58013
+digest	1c8eeee24ae5548a97bf69b22a85afeced5ab687061db6fa399ca9e6ee67ba71
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups
 script	cyrl	BGR 	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,locl,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups

@@ -5,8 +5,8 @@
 path	nerd/AKRSansTCNFM-Regular.ttf
 sfntVersion	00010000
 tables	GDEF,GPOS,GSUB,GlyphOrder,OS/2,PfEd,cmap,cvt ,fpgm,gasp,glyf,head,hhea,hmtx,loca,maxp,name,post,prep
-numGlyphs	32439
-glyphorder	1d94c86cfe29294ee033f222fa1d21a08c525e0ac3894a17199a5fe2a5101caa
+numGlyphs	32476
+glyphorder	ad0a9e446a9b56e85de7f19bcfd8ef3e4ce9ed0b2a3fc1a3615f2225cd70ef28
 [head]
 tableVersion	1
 fontRevision	1
@@ -14,7 +14,7 @@ flags	29
 unitsPerEm	1000
 xMin	-1572
 yMin	-372
-xMax	1055
+xMax	1056
 yMax	1193
 macStyle	0
 lowestRecPPEM	6
@@ -28,12 +28,12 @@ lineGap	0
 advanceWidthMax	1100
 minLeftSideBearing	-1572
 minRightSideBearing	-227
-xMaxExtent	1055
+xMaxExtent	1056
 caretSlopeRise	1
 caretSlopeRun	0
 caretOffset	0
 metricDataFormat	0
-numberOfHMetrics	27835
+numberOfHMetrics	27789
 [OS/2]
 version	4
 xAvgCharWidth	550
@@ -79,7 +79,7 @@ underlinePosition	-140
 underlineThickness	60
 isFixedPitch	1
 [maxp]
-numGlyphs	32439
+numGlyphs	32476
 maxPoints	751
 maxContours	45
 maxCompositePoints	120
@@ -123,20 +123,20 @@ maxComponentDepth	1
 3/1/0x0409/16	AKR Sans TC NFM
 3/1/0x0409/17	Regular
 [cmap]
-subtable	0/3/fmt4	23734	008238f171cbe9b73be1d7905f45562956a50b9604fcc291ec724163d9b32994
-subtable	0/4/fmt12	32366	a27172a2228dfda9f29ddef9ae8b0e95dc19537be02a5e6cb0b056ac3fdb65cc
+subtable	0/3/fmt4	23734	45e654ea1bd3afc0f550ee18a8e5c88276294026527362d601ee77405d8319b7
+subtable	0/4/fmt12	32366	ec2be6969fc3b3fbc320e4490c453255047978a1edbeba35fd79e91dbf6d6e2e
 subtable	1/0/fmt6	225	244ab86a1b3dbc8840f6d037c220650d519a608cb62e886cd3795dec15aed47e
-subtable	3/1/fmt4	23734	008238f171cbe9b73be1d7905f45562956a50b9604fcc291ec724163d9b32994
-subtable	3/10/fmt12	32366	a27172a2228dfda9f29ddef9ae8b0e95dc19537be02a5e6cb0b056ac3fdb65cc
+subtable	3/1/fmt4	23734	45e654ea1bd3afc0f550ee18a8e5c88276294026527362d601ee77405d8319b7
+subtable	3/10/fmt12	32366	ec2be6969fc3b3fbc320e4490c453255047978a1edbeba35fd79e91dbf6d6e2e
 [advances]
 distinct	4
 histogram	0	24
 histogram	333	1
 histogram	550	14201
-histogram	1100	18213
-class	550	14201	8a657efb007e4a4616df7566608584e683613154e707c61acf04fdee617607c7
-class	1100	18213	b9d2b33c1d707bc581f11646559840894db1f78fd7fc1b0bab05870e9536fc78
-digest	9c7550b6f4583bd44b244995ab4fd716d13ef57b0768e0f8e7a0f0492be0a3ce
+histogram	1100	18250
+class	550	14201	142543609d19e1738153a52f68acc22d27e0802e05490f5a704e69e548988fc9
+class	1100	18250	298714ebb2b06850c4b88e762b8ccc1bd0da25871321c8c0c2082b3fd97a5fd3
+digest	ec699fe2096cc6fc6b1bc86428803e137b147e932fae20688dc28f976d15f23f
 offclass	25
   .null	0	0
   acutecomb	0	-41
@@ -165,8 +165,8 @@ offclass	25
   uni2029	0	0
 [outlines]
 source	glyf
-glyphs	32439
-digest	badb6d4ff4d1bd132551f3b77fe432e76ec299dd0a7eaf67980dd798e635c6ae
+glyphs	32476
+digest	c22f86e1db3b3e9666395114b09eca6e7d314316bae1f6e21ef4987c8e70899d
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv03,cv04,cv05,cv06,cv07,cv08,cv09,cv10,cv11,cv12,cv13,cv14,cv15,dnom,frac,numr,onum,ordn,sinf,ss01,ss02,ss03,ss04,subs,sups,zero
 script	cyrl	BGR 	locl

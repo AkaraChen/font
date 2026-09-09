@@ -129,7 +129,7 @@ histogram	2000	1
 histogram	3000	1
 class	500	19685	f4cbc35a2debfb843324a99165751ea455dca01a9b67e6abb730c78f0dd130f5
 class	1000	32409	4279b0a6bbc91b398101e10b65d8ba1311c9be4956ff9ce0c0879f318145c0b2
-digest	a850b9c24ed3d4bda7ec43571b00079d3623d160f0117961920c7ab9e0f9aa79
+digest	6e6de50c23fe4c913f0c2b027b8e3e01f13d65cde715f128d23e96fab9e8af94
 offclass	702
   .null	0	0
   acutecomb	0	-308
@@ -836,7 +836,7 @@ offclass	702
 [outlines]
 source	glyf
 glyphs	52796
-digest	0392c6d32190a287f89399c77f1ef4ef600a522d19253a077b4e24cbc17776f1
+digest	58675eb458e3e73649e6fd04a85e67cc16f79eaba54cdf07dce4c034a4ad60aa
 [GSUB]
 script	DFLT	dflt	APLF,CLIK,COQX,DFNY,ELMX,ERLA,FSHP,FSTA,HSKL,IDRS,JLIA,JSPT,MLXX,MOSC,MTLB,NWID,PHPX,PURS,RAKU,SWFT,THND,VRLG,WFLM,WWID,calt,ccmp,dlig,dnom,frac,fwid,hwid,liga,lnum,nalt,numr,onum,ruby,sups,vert,zero
 script	bopo	dflt	APLF,CLIK,COQX,DFNY,ELMX,ERLA,FSHP,FSTA,HSKL,IDRS,JLIA,JSPT,MLXX,MOSC,MTLB,NWID,PHPX,PURS,RAKU,SWFT,THND,VRLG,WFLM,WWID,calt,ccmp,dlig,dnom,frac,fwid,hwid,liga,lnum,nalt,numr,onum,ruby,sups,vert,zero

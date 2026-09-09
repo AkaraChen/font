@@ -5,8 +5,8 @@
 path	AKRHandSCText-Bold.ttf
 sfntVersion	00010000
 tables	GDEF,GSUB,GlyphOrder,OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
-numGlyphs	35169
-glyphorder	2d136322979ec524de318b113ea4e60e1b92be13e7e5cdf3e5ea308bc0ac262a
+numGlyphs	35359
+glyphorder	1a974a0c89966d869917beaa165a01eb93662b37399dc6a089419c32316a97a5
 [head]
 tableVersion	1
 fontRevision	1.399994
@@ -33,7 +33,7 @@ caretSlopeRise	1
 caretSlopeRun	0
 caretOffset	0
 metricDataFormat	0
-numberOfHMetrics	32987
+numberOfHMetrics	33177
 [OS/2]
 version	4
 xAvgCharWidth	948
@@ -79,7 +79,7 @@ underlinePosition	-32
 underlineThickness	32
 isFixedPitch	0
 [maxp]
-numGlyphs	35169
+numGlyphs	35359
 maxPoints	781
 maxContours	56
 maxCompositePoints	0
@@ -121,19 +121,19 @@ maxComponentDepth	0
 3/1/0x0409/16	AKR Hand SC Text
 3/1/0x0409/17	Bold
 [cmap]
-subtable	0/3/fmt4	31716	5701523a2ad267ab6234d72c892cba51dfd8db9e18d03423e95933c85d3f7657
-subtable	0/4/fmt12	34092	6fedb2a7b7bea1c8c6d88e18bd7fca7e12ad764c31023930180f5d3fed3cecd4
-subtable	3/1/fmt4	31716	5701523a2ad267ab6234d72c892cba51dfd8db9e18d03423e95933c85d3f7657
-subtable	3/10/fmt12	34092	6fedb2a7b7bea1c8c6d88e18bd7fca7e12ad764c31023930180f5d3fed3cecd4
+subtable	0/3/fmt4	31855	14674678d0eca332fc4b37b62bd5baa6bd47b6430572ed68a7a3d2da9e14c0b5
+subtable	0/4/fmt12	34231	4838a3c34c84f06f0ba5599a610fac6eae386fcaa4308b5806261d7c7efb3824
+subtable	3/1/fmt4	31855	14674678d0eca332fc4b37b62bd5baa6bd47b6430572ed68a7a3d2da9e14c0b5
+subtable	3/10/fmt12	34231	4838a3c34c84f06f0ba5599a610fac6eae386fcaa4308b5806261d7c7efb3824
 [advances]
 distinct	4
 histogram	0	6
 histogram	500	3675
 histogram	600	5
-histogram	1000	31483
+histogram	1000	31673
 class	500	3675	cd070d979c9f570c93eefce4641561fd92c0ffb0853312c5abb984c2888adc55
-class	1000	31483	ee51d3f8cb57922521eeea4dc1698e5a29f55cbeae1fa083107cd4c6faa6657b
-digest	14488baa0ca4134a364f9ab90f3103a7db17b978d3aa3a02392f63c9037ace45
+class	1000	31673	bb19a6c6e2d8491f146f0411184f786ffb1efb75517172c40af18b07deff6b16
+digest	9228dbf92f3c5d90bd55c43543ebd48ef14ccafe3f135a76c5f500c62d3929ba
 offclass	11
   finalg-bopomofo	600	90
   finalh-bopomofo	600	13
@@ -148,8 +148,8 @@ offclass	11
   katakanahiraganavoicedsoundmarkcomb	0	-198
 [outlines]
 source	glyf
-glyphs	35169
-digest	4f8c3d6f60450d3f86712009a1aff5914f91e6fe587edaf403713ff0a3d930d4
+glyphs	35359
+digest	e64f96fb261d6184f7ab0d3f24a9cf2152caaeb02ca470fc6cb22f548698a7de
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups
 script	cyrl	BGR 	aalt,calt,case,ccmp,cv01,cv02,cv10,cv12,cv13,cv30,cv31,cv32,cv33,cv60,cv61,cv62,dnom,fina,frac,fwid,init,ital,liga,locl,medi,numr,ordn,sinf,ss01,ss02,ss03,ss04,ss05,ss06,ss07,ss08,ss09,ss10,subs,sups

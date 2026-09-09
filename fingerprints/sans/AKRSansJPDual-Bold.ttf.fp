@@ -154,7 +154,7 @@ offclass	21
 [outlines]
 source	glyf
 glyphs	9026
-digest	4d653bcbe4e2d54f64bae0e8dce09b6dd18615183c067f66f47e37518d7de03b
+digest	2a6d1b649bdf2eb0446964eb43a3c7892a6f1259a1cfe0d1c95278ddf8e6f373
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv03,cv04,cv05,cv06,cv07,cv08,cv09,cv10,cv11,cv12,cv13,cv14,cv15,dnom,frac,numr,onum,ordn,sinf,ss01,ss02,ss03,ss04,subs,sups,zero
 script	cyrl	BGR 	locl

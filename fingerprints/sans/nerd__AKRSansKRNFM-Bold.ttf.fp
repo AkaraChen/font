@@ -182,7 +182,7 @@ offclass	32
 [outlines]
 source	glyf
 glyphs	23848
-digest	a768b58540de7c4ac58249c6709628bdfd7792e74b8ac919aa1d09e1f64d3830
+digest	22f2657c5b721d9e8f49aab3c907f415c2e79cfba6d70016561ab76063bcdc81
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv03,cv04,cv05,cv06,cv07,cv08,cv09,cv10,cv11,cv12,cv13,cv14,cv15,dnom,frac,numr,onum,ordn,sinf,ss01,ss02,ss03,ss04,subs,sups,zero
 script	cyrl	BGR 	locl

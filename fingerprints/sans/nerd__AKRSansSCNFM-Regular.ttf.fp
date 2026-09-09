@@ -6,7 +6,7 @@ path	nerd/AKRSansSCNFM-Regular.ttf
 sfntVersion	00010000
 tables	GDEF,GPOS,GSUB,GlyphOrder,OS/2,PfEd,cmap,cvt ,fpgm,gasp,glyf,head,hhea,hmtx,loca,maxp,name,post,prep
 numGlyphs	40482
-glyphorder	cb47acf56b5083c6c1d41f9b1f32f2d678c699020b675aca1e103df54bfc8fc0
+glyphorder	ceee642f74a77dbe99555fc10dc76c0207e5271d75d1ad11c49e2003dfe4d2ae
 [head]
 tableVersion	1
 fontRevision	1
@@ -33,7 +33,7 @@ caretSlopeRise	1
 caretSlopeRun	0
 caretOffset	0
 metricDataFormat	0
-numberOfHMetrics	40381
+numberOfHMetrics	40335
 [OS/2]
 version	4
 xAvgCharWidth	550
@@ -123,20 +123,20 @@ maxComponentDepth	1
 3/1/0x0409/16	AKR Sans SC NFM
 3/1/0x0409/17	Regular
 [cmap]
-subtable	0/3/fmt4	33219	97a68fa2d304a48261c3683ed27ef571aa5234ae225460666b51b1af7c3129d5
-subtable	0/4/fmt12	40319	4295b8b7fa6401fd5a22c218d257f125dce745f4950e38a59495c6ccec412b0a
+subtable	0/3/fmt4	33219	fa191514e21b55778880f98e0b338e03351431699e7eafb37d11c0079aa67150
+subtable	0/4/fmt12	40319	369a3a69558405ba24d86a53ba128c70f22cd5a8d9de72635f1620eb56c01a14
 subtable	1/0/fmt6	225	244ab86a1b3dbc8840f6d037c220650d519a608cb62e886cd3795dec15aed47e
-subtable	3/1/fmt4	33219	97a68fa2d304a48261c3683ed27ef571aa5234ae225460666b51b1af7c3129d5
-subtable	3/10/fmt12	40319	4295b8b7fa6401fd5a22c218d257f125dce745f4950e38a59495c6ccec412b0a
+subtable	3/1/fmt4	33219	fa191514e21b55778880f98e0b338e03351431699e7eafb37d11c0079aa67150
+subtable	3/10/fmt12	40319	369a3a69558405ba24d86a53ba128c70f22cd5a8d9de72635f1620eb56c01a14
 [advances]
 distinct	4
 histogram	0	24
 histogram	333	1
 histogram	550	11919
 histogram	1100	28538
-class	550	11919	06a3e6e00333e83ea26a6af7b21b709d77fc1048edd0598da368ac72674c87c3
-class	1100	28538	417ba8a5106cdf624aeda6a10740785d48bd74cc89e46f8dcd1486c48b99c8f1
-digest	0c44018e81dd4c41aa399ad69d94c1e8cb23ef978613c92a65864c9541ecfe2d
+class	550	11919	3eee34c2476ef9fcbe8f18ecd8dd5d0cfa0f1b02162a072ccff801cf6249691b
+class	1100	28538	e9bcf20552cb386772adaddd7f0782259c3521ccf258c8f180d85966cceda18b
+digest	683d25be0d3aaeaa080dcf929cbe743225356d8bf1c594da7a305533c1bb93a1
 offclass	25
   .null	0	0
   acutecomb	0	-41
@@ -166,7 +166,7 @@ offclass	25
 [outlines]
 source	glyf
 glyphs	40482
-digest	0b86939a6da045091955616aa9eb3d5bcc8fc931b7d91dd4fc4310d3d2500d0f
+digest	683d893161bbb98dc1f41c80dc0b097a03f7f388fa079dbf458f094aa204886c
 [GSUB]
 script	DFLT	dflt	aalt,calt,case,ccmp,cv01,cv02,cv03,cv04,cv05,cv06,cv07,cv08,cv09,cv10,cv11,cv12,cv13,cv14,cv15,dnom,frac,numr,onum,ordn,sinf,ss01,ss02,ss03,ss04,subs,sups,zero
 script	cyrl	BGR 	locl

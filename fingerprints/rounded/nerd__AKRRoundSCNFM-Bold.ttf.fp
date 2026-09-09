@@ -5,8 +5,8 @@
 path	nerd/AKRRoundSCNFM-Bold.ttf
 sfntVersion	00010000
 tables	GDEF,GPOS,GSUB,GlyphOrder,OS/2,PfEd,cmap,cvt ,fpgm,gasp,glyf,head,hhea,hmtx,loca,maxp,name,post,prep
-numGlyphs	43361
-glyphorder	55387b775ad7c93130999a99d3418bb9c4c2a2471f143a57eae3c49b4fcce5e4
+numGlyphs	43551
+glyphorder	2fe4003b6e5d353a448be645fd120ed02c5ffa550771225cb253f979c4c59378
 [head]
 tableVersion	1
 fontRevision	1
@@ -33,7 +33,7 @@ caretSlopeRise	1
 caretSlopeRun	0
 caretOffset	0
 metricDataFormat	0
-numberOfHMetrics	42882
+numberOfHMetrics	43072
 [OS/2]
 version	4
 xAvgCharWidth	500
@@ -79,7 +79,7 @@ underlinePosition	-50
 underlineThickness	50
 isFixedPitch	1
 [maxp]
-numGlyphs	43361
+numGlyphs	43551
 maxPoints	2611
 maxContours	132
 maxCompositePoints	188
@@ -132,10 +132,10 @@ subtable	3/10/fmt12	42971	747f7f171ce7307c95f3efcdc1cea7220cca8bfe0ff7c620394fd6
 distinct	3
 histogram	0	326
 histogram	500	13908
-histogram	1000	29127
+histogram	1000	29317
 class	500	13908	d596451d8af504bde764c154c3255eb68050bfaf4784e35a2fa3b8c1c0b81e33
-class	1000	29127	7a6e7ec4505a0eb799b568309062e12ef7c8cfdfa0027b7e138a96e5bcd4ee9c
-digest	645bca271d96450546bb9defa5e518e31d662f7aeb36341fe262900595047d30
+class	1000	29317	aff9956e39beb4ea1ca6d33367694a66ddab22ddb0036e2e83c59e379244b3ed
+digest	bf757c81c4c4747ad9d8e412557dea9c14b3a06f2b4c323d92e100b7be398f7a
 offclass	326
   .null	0	0
   glyph1096	0	-374
@@ -465,8 +465,8 @@ offclass	326
   uni2064	0	0
 [outlines]
 source	glyf
-glyphs	43361
-digest	69b3bb69d5fce9898968665539116526af69c1c0772195261e67b02efc2bcf53
+glyphs	43551
+digest	a6da8c2aa3a4222118006143492174568c3ce5b91cc0d1e6e2f7a3f9d9ca3ea1
 [GSUB]
 script	DFLT	dflt	calt,ccmp,dlig
 script	cyrl	BGR 	calt,ccmp,dlig,locl
