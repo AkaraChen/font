@@ -21,6 +21,9 @@ from fontkit.manifest import load_manifest
 
 from conftest import CP_A, CP_NEUTRAL, CP_WIDE, CP_ZHONG
 
+CP_CIRCLE_THREE = 0x2462  # ③ EAW=A
+CP_CIRCLE_ZERO = 0x24EA  # ⓪ EAW=N
+
 REPO = __import__("pathlib").Path(__file__).resolve().parents[2]
 
 
@@ -456,3 +459,109 @@ def test_the_cjk_smoke_test_is_asked_in_the_right_script():
     assert samples["sc"] == samples["tc"] == samples["jp"] == "中文荷塘月色"
     assert samples["kr"] == "한글조판검사"
     assert samples["kr"], "a region override must not be able to empty the gate"
+
+
+# --------------------------------------------------------------------------- #
+# enclosed marks — ③ must stay a circle
+# --------------------------------------------------------------------------- #
+
+
+def test_cjk_full_cell_circled_digit_replaces_the_latin_one():
+    """Every import policy takes the CJK donor's ③ when it is a full-cell circle.
+
+    Latin donors get X-scaled onto the half cell; doing that to a circle is
+    how ③ becomes a tall oval. The CJK drawing is the one that stays round.
+    """
+    latin = {CP_A: "A", CP_CIRCLE_THREE: "three.latin"}
+    cjk = {CP_ZHONG: "zhong", CP_CIRCLE_THREE: "three.cjk"}
+    advances = {"zhong": 1000, "three.cjk": 1000}
+    for policy in (
+        "cjk-side",
+        "cjk-side-or-missing",
+        "east-asian-width",
+        "cjk-side-plus-cjk-punctuation",
+    ):
+        got = merge.codepoints_to_import(
+            _spec(import_policy=policy), latin, cjk, advances
+        )
+        assert got[CP_CIRCLE_THREE] == "three.cjk", policy
+
+
+def test_a_proportional_cjk_circled_digit_is_not_imported():
+    """Same rule as …: a 350-wide ③ is the donor's Latin, not a stamp."""
+    got = merge.codepoints_to_import(
+        _spec(import_policy="cjk-side-or-missing"),
+        {CP_A: "A", CP_CIRCLE_THREE: "three.latin"},
+        {CP_ZHONG: "zhong", CP_CIRCLE_THREE: "three.cjk"},
+        {"zhong": 1000, "three.cjk": 350},
+    )
+    assert CP_CIRCLE_THREE not in got
+
+
+def test_fit_keeps_ambiguous_circled_digits_on_the_full_cell(tmp_path, make_font):
+    """placement=fit used to X-squash ③ onto the half cell (Casual, Hand)."""
+    latin = make_font(
+        name="latin.ttf",
+        glyphs={"A": (500, (50, 0, 450, 700))},
+        cmap={CP_A: "A"},
+    )
+    cjk = make_font(
+        name="cjk.ttf",
+        glyphs={
+            "zhong": (1000, (0, 0, 1000, 800)),
+            "three": (1000, (50, 50, 950, 950)),
+        },
+        cmap={CP_ZHONG: "zhong", CP_CIRCLE_THREE: "three"},
+    )
+    out = tmp_path / "out" / "TestDual-Regular.ttf"
+    merge.merge_pair(
+        latin,
+        cjk,
+        out,
+        "Regular",
+        _spec(import_policy="east-asian-width", placement="fit"),
+    )
+    font = TTFont(out)
+    cmap = font.getBestCmap()
+    g = cmap[CP_CIRCLE_THREE]
+    assert font["hmtx"][g][0] == 1000
+    glyph = font["glyf"][g]
+    width = glyph.xMax - glyph.xMin
+    height = glyph.yMax - glyph.yMin
+    assert abs(height / width - 1.0) < 0.05, (width, height)
+    font.close()
+
+
+def test_neutral_circled_zero_scales_uniformly_into_the_half_cell(tmp_path, make_font):
+    """⓪ is EAW=N — one terminal cell — but it must stay a circle."""
+    latin = make_font(
+        name="latin.ttf",
+        glyphs={"A": (500, (50, 0, 450, 700))},
+        cmap={CP_A: "A"},
+    )
+    cjk = make_font(
+        name="cjk.ttf",
+        glyphs={
+            "zhong": (1000, (0, 0, 1000, 800)),
+            "zero": (1000, (50, 50, 950, 950)),
+        },
+        cmap={CP_ZHONG: "zhong", CP_CIRCLE_ZERO: "zero"},
+    )
+    out = tmp_path / "out" / "TestDual-Regular.ttf"
+    merge.merge_pair(
+        latin,
+        cjk,
+        out,
+        "Regular",
+        _spec(import_policy="east-asian-width", placement="fit"),
+    )
+    font = TTFont(out)
+    cmap = font.getBestCmap()
+    g = cmap[CP_CIRCLE_ZERO]
+    assert font["hmtx"][g][0] == 500
+    glyph = font["glyf"][g]
+    width = glyph.xMax - glyph.xMin
+    height = glyph.yMax - glyph.yMin
+    assert width <= 500
+    assert abs(height / width - 1.0) < 0.08, (width, height)
+    font.close()

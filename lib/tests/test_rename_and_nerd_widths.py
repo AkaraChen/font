@@ -96,3 +96,28 @@ def test_pua_icons_are_scaled_into_the_half_cell(make_font):
     # Non-PUA glyphs are untouched.
     assert font["hmtx"]["zhong"][0] == FULL
     font.close()
+
+
+def test_pua_sharing_a_circled_digit_does_not_squash_the_circle(make_font):
+    """Sans TC: U+F6B1 and ③ were one outline; X-scaling the PUA crushed ③."""
+    cp_three = 0x2462
+    path = make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "three": (FULL, (50, 50, 950, 950)),
+        },
+        cmap={CP_A: "A", CP_ZHONG: "zhong", cp_three: "three", 0xF6B1: "three"},
+    )
+    fnw.fix_font(path)
+
+    font = TTFont(path)
+    cmap = font.getBestCmap()
+    assert cmap[cp_three] != cmap[0xF6B1]
+    three = font["glyf"][cmap[cp_three]]
+    assert font["hmtx"][cmap[cp_three]][0] == FULL
+    tw = three.xMax - three.xMin
+    th = three.yMax - three.yMin
+    assert abs(th / tw - 1.0) < 0.05, (tw, th)
+    assert font["hmtx"][cmap[0xF6B1]][0] == HALF
+    font.close()

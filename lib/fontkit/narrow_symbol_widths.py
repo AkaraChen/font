@@ -68,6 +68,8 @@ except ImportError as exc:  # pragma: no cover
     print("error: fontTools is required (pip install fonttools)", file=sys.stderr)
     raise SystemExit(2) from exc
 
+from fontkit.merge import is_enclosed_mark
+
 
 NARROW_EAW = ("N", "Na", "H")  # terminals always give these exactly 1 cell
 WIDE_EAW = ("W", "F")  # terminals always give these exactly 2 cells
@@ -303,13 +305,27 @@ def narrow_font(
                     glyf[dst] = _draw_glyph(glyph_set, src)
                     how = "blank"
                 else:
-                    x0, _y0, x1, _y1 = bounds
+                    x0, y0, x1, y1 = bounds
                     width = x1 - x0
                     scale = min(1.0, half / width) if width > 0 else 1.0
-                    new_w = width * scale
-                    dx = (half - new_w) / 2.0 - x0 * scale
-                    glyf[dst] = _draw_glyph(glyph_set, src, (scale, 0, 0, 1, dx, 0))
-                    how = "fitted" if scale < 1.0 else "recentred"
+                    if is_enclosed_mark(donor_cp) and scale < 1.0:
+                        # ⓪ ➀ are EAW=N so they must occupy one cell, but
+                        # X-only scale turns the circle into a tall oval.
+                        cx = (x0 + x1) / 2.0
+                        cy = (y0 + y1) / 2.0
+                        dx = half / 2.0 - cx * scale
+                        dy = cy - cy * scale
+                        glyf[dst] = _draw_glyph(
+                            glyph_set, src, (scale, 0, 0, scale, dx, dy)
+                        )
+                        how = "fitted-uniform"
+                    else:
+                        new_w = width * scale
+                        dx = (half - new_w) / 2.0 - x0 * scale
+                        glyf[dst] = _draw_glyph(
+                            glyph_set, src, (scale, 0, 0, 1, dx, 0)
+                        )
+                        how = "fitted" if scale < 1.0 else "recentred"
             glyf[dst].recalcBounds(glyf)
             lsb = glyf[dst].xMin if glyf[dst].numberOfContours else 0
             hmtx[dst] = (half, lsb)

@@ -171,6 +171,17 @@ CJK_PREFERRED_AMBIGUOUS = (
     0x2026,  # … 省略号
 )
 
+# Circled / parenthesized "stamp" marks. Donors draw these as circles (or
+# rounded boxes) on a square cell. An X-only squeeze — `fit_advance` or
+# `narrow_symbol_widths` landing them on the half cell — turns ③ into a
+# half-width oval that is just the original outline with X halved. That is
+# the bug, not a design. CJK-side copies already live in `CJK_RANGES`;
+# the Latin enclosed block and dingbat circled digits do not.
+ENCLOSED_MARK_RANGES = (
+    (0x2460, 0x24FF),  # Enclosed Alphanumerics ①③⑴ⓐ⓪…
+    (0x2776, 0x2793),  # Dingbat circled digits ❶➀➊…
+)
+
 
 @dataclass(frozen=True)
 class ProfileRules:
@@ -222,6 +233,35 @@ def is_wide(cp: int) -> bool:
         return unicodedata.east_asian_width(chr(cp)) in ("W", "F")
     except (ValueError, TypeError):
         return False
+
+
+def is_enclosed_mark(cp: int) -> bool:
+    """Circled / parenthesized stamps whose ink is a circle on a square cell."""
+    if is_cjk_side(cp) and 0x3200 <= cp <= 0x32FF:
+        return True
+    return any(lo <= cp <= hi for lo, hi in ENCLOSED_MARK_RANGES)
+
+
+def _eaw(cp: int) -> str:
+    try:
+        return unicodedata.east_asian_width(chr(cp))
+    except (ValueError, TypeError):
+        return "N"
+
+
+def cell_for_import(cp: int, spec: MergeSpec) -> tuple[int, bool]:
+    """Which cell an import sits on, and whether a squeeze must keep aspect.
+
+    Enclosed marks (③ ⓪ ➀ ㉑) are drawn as circles. X-only compression makes
+    them tall ovals — the reported ③ bug. Ambiguous and wide ones stay on the
+    full cell (CJK typography, and the project's default for EAW=A). Neutral
+    ones (⓪ ➀) get exactly one terminal cell, so they scale uniformly.
+    """
+    if is_enclosed_mark(cp):
+        if _eaw(cp) in ("N", "Na", "H"):
+            return spec.en_adv, True
+        return spec.cjk_adv, False
+    return (spec.cjk_adv if is_wide(cp) else spec.en_adv), False
 
 
 # --------------------------------------------------------------------------- #
@@ -602,7 +642,9 @@ def shift_glyph(glyph, glyf, dx: int) -> None:
     glyph.recalcBounds(glyf)
 
 
-def fit_advance(font: TTFont, glyph_set, name: str, target: int) -> bool:
+def fit_advance(
+    font: TTFont, glyph_set, name: str, target: int, *, uniform: bool = False
+) -> bool:
     """Move an imported glyph onto the target cell. Returns True if compressed.
 
     A glyph already drawn for that cell — a Han glyph on the full cell,
@@ -614,6 +656,10 @@ def fit_advance(font: TTFont, glyph_set, name: str, target: int) -> bool:
     Only glyphs whose native advance differs from the target are touched: the ink
     is x-compressed if it cannot fit the cell (a CJK donor's proportional Latin
     fallbacks), then the glyph is placed in the middle of its new cell.
+
+    ``uniform`` is for stamps that are circles (⓪ ➀): X-only compression turns
+    them into tall ovals. Scale about the ink's centre so the circle stays a
+    circle and does not drop toward the baseline.
     """
     glyf = font["glyf"]
     glyph = glyf[name]
@@ -632,11 +678,23 @@ def fit_advance(font: TTFont, glyph_set, name: str, target: int) -> bool:
         pen = TTGlyphPen(None)
         recording = DecomposingRecordingPen(glyph_set)
         glyph_set[name].draw(recording)
-        recording.replay(TransformPen(pen, Transform(target / ink, 0, 0, 1, 0, 0)))
-        glyph = pen.glyph()
-        glyf[name] = glyph
-        glyph.recalcBounds(glyf)
-        shift = (target - (glyph.xMax - glyph.xMin)) // 2 - glyph.xMin
+        if uniform:
+            cx = (glyph.xMin + glyph.xMax) / 2
+            cy = (glyph.yMin + glyph.yMax) / 2
+            scale = target / ink
+            dx = target / 2 - cx * scale
+            dy = cy - cy * scale
+            recording.replay(TransformPen(pen, Transform(scale, 0, 0, scale, dx, dy)))
+            glyph = pen.glyph()
+            glyf[name] = glyph
+            glyph.recalcBounds(glyf)
+            shift = (target - (glyph.xMax - glyph.xMin)) // 2 - glyph.xMin
+        else:
+            recording.replay(TransformPen(pen, Transform(target / ink, 0, 0, 1, 0, 0)))
+            glyph = pen.glyph()
+            glyf[name] = glyph
+            glyph.recalcBounds(glyf)
+            shift = (target - (glyph.xMax - glyph.xMin)) // 2 - glyph.xMin
     else:
         shift = (target - width) // 2
 
@@ -1033,31 +1091,48 @@ def codepoints_to_import(
             return True
         return cjk_advance.get(glyph, 0) == spec.cjk_adv
 
+    def enclosed_from_cjk(cp: int, glyph: str) -> bool:
+        """Prefer the CJK donor's circular stamp over an X-scaled Latin one."""
+        return is_enclosed_mark(cp) and cjk_draws_for_the_full_cell(glyph)
+
     if spec.import_policy == "cjk-side":
         # The donor's own Latin is discarded: it is a different design.
-        return {cp: g for cp, g in cjk_cmap.items() if is_cjk_side(cp)}
+        # Enclosed marks are the exception: they are not Latin letters, and the
+        # CJK donor draws them as circles on the full cell.
+        return {
+            cp: g
+            for cp, g in cjk_cmap.items()
+            if is_cjk_side(cp) or enclosed_from_cjk(cp, g)
+        }
     if spec.import_policy == "cjk-side-or-missing":
         return {
-            cp: g for cp, g in cjk_cmap.items() if is_cjk_side(cp) or cp not in latin_cmap
+            cp: g
+            for cp, g in cjk_cmap.items()
+            if is_cjk_side(cp) or cp not in latin_cmap or enclosed_from_cjk(cp, g)
         }
     if spec.import_policy == "cjk-side-plus-cjk-punctuation":
         # The reading face. Nothing is taken because the Latin donor happens to
         # lack it — a text face wants its Latin to be one design, not a patchwork
         # of two — so the only addition to the CJK side is the ambiguous-width
-        # punctuation Chinese typography sets full width.
+        # punctuation Chinese typography sets full width, plus circled stamps
+        # the donor actually drew for a whole cell.
         return {
             cp: g
             for cp, g in cjk_cmap.items()
             if is_cjk_side(cp)
             or (cp in CJK_PREFERRED_AMBIGUOUS and cjk_draws_for_the_full_cell(g))
+            or enclosed_from_cjk(cp, g)
         }
     # east-asian-width: also take the donor's drawing for any W/F codepoint the
     # base happens to cover (e.g. 〈 〉) — those need a full cell and the donor
-    # already draws them for one.
+    # already draws them for one. Enclosed marks are the same question.
     return {
         cp: g
         for cp, g in cjk_cmap.items()
-        if is_cjk_side(cp) or is_wide(cp) or cp not in latin_cmap
+        if is_cjk_side(cp)
+        or is_wide(cp)
+        or cp not in latin_cmap
+        or enclosed_from_cjk(cp, g)
     }
 
 
@@ -1117,11 +1192,13 @@ def merge_pair(
     native = spec.placement == "native"
     for i, (cp, src_name) in enumerate(sorted(to_import.items())):
         if by_cell:
-            target = spec.cjk_adv if is_wide(cp) else spec.en_adv
+            target, uniform = cell_for_import(cp, spec)
             dest_name = copy_glyph_deep(
                 cjk, latin, src_name, rename, prefix=spec.glyph_prefix, cell=target
             )
-            compressed += fit_advance(latin, glyph_set, dest_name, target)
+            compressed += fit_advance(
+                latin, glyph_set, dest_name, target, uniform=uniform
+            )
             wide += target == spec.cjk_adv
         elif native:
             # The donor drew this glyph for a cell it chose. `copy_glyph_deep`

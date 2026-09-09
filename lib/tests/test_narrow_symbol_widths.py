@@ -7,6 +7,8 @@ from fontkit import narrow_symbol_widths as nsw
 
 from conftest import CP_A, CP_AMBIGUOUS, CP_NEUTRAL, CP_WIDE, CP_ZHONG, FULL, HALF
 
+CP_CIRCLE_ZERO = 0x24EA  # ⓪ EAW=N
+
 
 def _shared_neutral_and_ambiguous(make_font):
     """One outline reachable from both ⏵ (EAW=N) and ▶ (EAW=A), at full width."""
@@ -162,4 +164,26 @@ def test_narrow_shared_skip_keeps_the_old_behaviour(make_font):
     cmap = font.getBestCmap()
     assert cmap[CP_FF64] == cmap[CP_FE51]
     assert font["hmtx"][cmap[CP_FF64]][0] == FULL
+    font.close()
+
+
+def test_neutral_circled_zero_is_fitted_uniformly(make_font):
+    """⓪ must occupy one cell, but X-only fit would make it twice as tall as wide."""
+    path = make_font(
+        glyphs={
+            "A": (HALF, (20, 0, 480, 700)),
+            "zhong": (FULL, (20, 0, 980, 700)),
+            "zero": (FULL, (50, 50, 950, 950)),
+        },
+        cmap={CP_A: "A", CP_ZHONG: "zhong", CP_CIRCLE_ZERO: "zero"},
+    )
+    nsw.narrow_font(path, None)
+
+    font = TTFont(path)
+    glyph = font["glyf"]["zero"]
+    assert font["hmtx"]["zero"][0] == HALF
+    width = glyph.xMax - glyph.xMin
+    height = glyph.yMax - glyph.yMin
+    assert width <= HALF
+    assert abs(height / width - 1.0) < 0.08, (width, height)
     font.close()
