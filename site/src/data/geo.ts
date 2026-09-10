@@ -207,7 +207,7 @@ open ${RELEASES}
 # https://github.com/AkaraChen/font/releases/tag/${manifest.tag || 'vX.Y.Z'}
 \`\`\`
 
-Product zips are named like \`AKRHandSCNFM-1.0.0-beta.1.zip\` (spaces stripped). Prefer the \`.ttf\` for editors and terminals; \`.woff2\` is the same outlines for the web.
+Product zips are named like \`AKRHandSCNFM-1.1.0.zip\` (spaces stripped). Prefer the \`.ttf\` for editors and terminals; \`.woff2\` is the same outlines for the web.
 
 ## Narrative
 
