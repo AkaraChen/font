@@ -115,7 +115,7 @@ const columns = ['永', '安', '字', 'A', 'g', 'a', '0', '&', '{', '→']
   .wall thead th {
     padding: 0 0 10px;
     text-align: center;
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--fg);
   }
 
   .wall tbody th {
@@ -141,7 +141,7 @@ const columns = ['永', '安', '字', 'A', 'g', 'a', '0', '&', '{', '→']
 
   .wall tbody tr:hover .wall__name,
   .wall tbody tr:hover td {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .wall td {
@@ -157,17 +157,17 @@ const columns = ['永', '安', '字', 'A', 'g', 'a', '0', '&', '{', '→']
   }
 
   .wall__mark {
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--fg);
+    color: var(--bg);
   }
 
   .wall tbody tr:hover .wall__mark {
-    color: var(--paper);
-    background: var(--seal);
+    color: var(--on-mark);
+    background: var(--mark);
   }
 
   .seal {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .spec-table td {

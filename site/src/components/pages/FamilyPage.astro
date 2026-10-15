@@ -8,6 +8,7 @@ import Base from '../../layouts/Base.astro'
 import FontPreview from '../FontPreview.astro'
 import Glyph from '../Glyph.astro'
 import Head from '../Head.astro'
+import TitleBlock from '../TitleBlock.astro'
 import { faceStyle, glyphOf, glyphSet, icons, isProportional, ligatures } from '../../data/specimen'
 
 interface Props {
@@ -83,15 +84,21 @@ const next = () => ++section
     <header class="band band--ink cover">
       <div class="wrap cover__grid">
         <div class="cover__text">
-          <p class="label"><span class="seal">{String(index).padStart(2, '0')}</span> / {String(families.length).padStart(2, '0')} · <b>{family.product}</b></p>
           <h1>{family.name[locale]}</h1>
           <p class="lead">{family.tagline[locale]}</p>
-          <dl class="facts">
-            <div><dt class="label">Latin</dt><dd>{family.latin}</dd></div>
-            <div><dt class="label">CJK</dt><dd>{family.cjk}</dd></div>
-            <div><dt class="label">{t('family.grid')}</dt><dd>{family.grid}</dd></div>
-            <div><dt class="label">{t('family.weights')}</dt><dd>{family.weights.join(' · ')}</dd></div>
-          </dl>
+          <TitleBlock
+            class="cover__tb"
+            title={family.product}
+            sheet={`${String(index).padStart(2, '0')} / ${String(families.length).padStart(2, '0')}`}
+            rows={[
+              { label: 'Latin', value: family.latin },
+              { label: 'CJK', value: family.cjk },
+              { label: t('family.grid'), value: family.grid },
+              { label: t('family.weights'), value: family.weights.join(' · ') },
+              { label: t('common.release'), value: manifest.tag },
+              { label: t('family.source'), value: `${family.dir}/` },
+            ]}
+          />
           <div class="actions">
             {manifest.tag && (
               <a class="button cover__download" href={downloadUrl(manifest.tag, family.product)} rel="noopener">
@@ -229,7 +236,7 @@ const next = () => ++section
 
 <style>
   .seal {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .cover {
@@ -245,7 +252,12 @@ const next = () => ++section
   }
 
   .cover h1 {
-    margin-top: 20px;
+    margin-top: 0;
+  }
+
+  .cover :global(.cover__tb) {
+    margin-bottom: 32px;
+    max-width: 40em;
   }
 
   .cover .lead {
@@ -253,19 +265,19 @@ const next = () => ++section
   }
 
   .cover :global(.cover__glyph) {
-    color: var(--paper);
+    color: var(--fg);
   }
 
   .cover__download {
-    background: var(--seal);
-    border-color: var(--seal);
-    color: var(--paper);
+    background: var(--mark);
+    border-color: var(--mark);
+    color: var(--on-mark);
   }
 
   .cover__download:hover {
-    background: var(--paper);
-    border-color: var(--paper);
-    color: var(--ink);
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
   }
 
   .tag {
@@ -328,8 +340,8 @@ const next = () => ++section
   }
 
   .glyphs__cells span:hover {
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--fg);
+    color: var(--bg);
   }
 
   .ligs {
@@ -437,7 +449,7 @@ const next = () => ++section
   }
 
   .ruled__name:hover {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .ruled__text {

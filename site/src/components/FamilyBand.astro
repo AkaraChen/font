@@ -1,7 +1,7 @@
 ---
-// One family as one page of the specimen: its character large in a 米字格 on
-// one side, its name, recipe and code set in its own face on the other.
-// Bands alternate paper and ink, and flip sides, as they run down a page.
+// One family as one sheet of the drawing set: its character drawn and
+// dimensioned on one side, its name, recipe and code set in its own face on
+// the other. Sheets alternate blueprint and night blue, and flip sides.
 
 import type { Family } from '../data/families'
 import { faceStyle, glyphOf, isPixel, proofLine } from '../data/specimen'
@@ -81,7 +81,7 @@ const href = localePath(locale, `/family/${family.id}`)
   }
 
   .fband__glyph:hover {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .fband__folio {
@@ -89,7 +89,7 @@ const href = localePath(locale, `/family/${family.id}`)
   }
 
   .seal {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .fband h2 {
@@ -102,7 +102,7 @@ const href = localePath(locale, `/family/${family.id}`)
   }
 
   .fband h2 a:hover {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .fband__tagline {
@@ -163,7 +163,7 @@ const href = localePath(locale, `/family/${family.id}`)
     margin-top: 28px;
     color: var(--fg);
     text-decoration: none;
-    border-bottom: 1px solid var(--seal);
+    border-bottom: 1px solid var(--mark);
     padding-bottom: 2px;
   }
 

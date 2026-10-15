@@ -42,8 +42,9 @@ const links = [
 
 <style>
   .nav {
-    background: var(--paper);
-    border-bottom: 1px solid var(--ink);
+    background-color: var(--blueprint-deep);
+    color: var(--white);
+    border-bottom: 1.5px solid var(--white);
     position: relative;
     z-index: 2;
   }
@@ -61,20 +62,21 @@ const links = [
     gap: 12px;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 19px;
+    font-size: 18px;
+    letter-spacing: 0.04em;
     line-height: 1;
     text-decoration: none;
     margin-right: auto;
   }
 
-  /* The seal: a vermilion square with one character, as a printer would sign. */
+  /* The stamp: one character in a chalk square. */
   .nav__seal {
     display: inline-grid;
     place-items: center;
     width: 30px;
     height: 30px;
-    background: var(--seal);
-    color: var(--paper);
+    background: var(--chalk);
+    color: var(--blueprint-deep);
     font-size: 19px;
     line-height: 1;
   }
@@ -90,24 +92,24 @@ const links = [
     font-family: var(--font-label);
     font-size: var(--t-s);
     line-height: 1;
-    color: var(--ink-2);
+    color: rgba(242, 246, 252, 0.72);
     text-decoration: none;
     padding-block: 6px;
   }
 
   .nav__links a:hover,
   .nav__lang:hover {
-    color: var(--seal);
+    color: var(--chalk);
   }
 
   .nav__links a[aria-current='page'] {
-    color: var(--ink);
-    box-shadow: inset 0 -2px 0 var(--seal);
+    color: var(--white);
+    box-shadow: inset 0 -2px 0 var(--chalk);
   }
 
   .nav__lang {
     padding-left: 26px;
-    border-left: 1px solid var(--line);
+    border-left: 1px solid rgba(242, 246, 252, 0.24);
   }
 
   @media (max-width: 860px) {
@@ -126,7 +128,7 @@ const links = [
       gap: 20px;
       margin-top: 12px;
       padding-block: 10px;
-      border-top: 1px solid var(--line);
+      border-top: 1px solid rgba(242, 246, 252, 0.24);
       scrollbar-width: none;
     }
 

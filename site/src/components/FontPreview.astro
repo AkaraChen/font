@@ -200,12 +200,12 @@ export function 排版(文本: string) {
   }
 
   .preview__field select option {
-    color: var(--ink);
+    color: var(--blueprint-deep);
   }
 
   .preview__field input[type='range'] {
     width: 100px;
-    accent-color: var(--seal);
+    accent-color: var(--mark);
   }
 
   .preview--bench .preview__field input[type='range'] {
@@ -213,7 +213,7 @@ export function 排版(文本: string) {
   }
 
   .preview__field input[type='checkbox'] {
-    accent-color: var(--seal);
+    accent-color: var(--mark);
   }
 
   .preview__field output {
@@ -234,31 +234,31 @@ export function 排版(文本: string) {
 
   .preview__field--group button:hover,
   .preview__actions button:hover {
-    border-color: var(--seal);
-    color: var(--seal);
+    border-color: var(--mark);
+    color: var(--mark);
   }
 
   .preview__field--group button[aria-pressed='true'] {
-    background: var(--seal);
-    border-color: var(--seal);
-    color: var(--paper);
+    background: var(--mark);
+    border-color: var(--mark);
+    color: var(--on-mark);
   }
 
-  /* The canvas is a sheet of paper, on whatever band it lies on. */
+  /* The canvas is a sheet of whiteprint laid on whatever band it sits on. */
   .preview__canvas {
     display: block;
     width: 100%;
     border: 0;
     resize: vertical;
     padding: 32px clamp(20px, 3vw, 40px);
-    background: var(--paper);
-    color: var(--ink);
+    background-color: var(--whiteprint);
+    color: var(--blueprint);
     font-family: var(--preview-font, var(--font-mono));
     font-size: var(--preview-size, 20px);
     line-height: var(--preview-leading, 1.9);
     font-feature-settings: var(--preview-features, normal);
     /* Ruled like exercise paper: one hairline under every line of text. */
-    background-image: linear-gradient(transparent calc(100% - 1px), var(--line) 0);
+    background-image: linear-gradient(transparent calc(100% - 1px), rgba(19, 67, 143, 0.16) 0);
     background-size: 100% calc(var(--preview-size, 20px) * var(--preview-leading, 1.9));
     background-position: 0 32px;
     background-attachment: local;
@@ -277,8 +277,8 @@ export function 排版(文本: string) {
   }
 
   .preview[data-dark='true'] .preview__canvas {
-    background-color: #0c0b0a;
-    color: #e8e2d6;
+    background-color: var(--blueprint-deep);
+    color: var(--white);
     background-image: linear-gradient(transparent calc(100% - 1px), rgba(242, 238, 229, 0.08) 0);
   }
 

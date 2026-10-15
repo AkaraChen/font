@@ -22,6 +22,23 @@ export const glyphOf: Record<string, string> = {
  */
 export const cellEm: Record<string, number> = { sans: 0.55, type: 0.6 }
 
+/**
+ * How far to move each face's characters (in em) so their ink sits centred
+ * in a cell drawn with line-height 1. Measured from the release fonts: the
+ * typo ascender and descender place the baseline, the bounding boxes of the
+ * family characters place the ink.
+ */
+export const centreShift: Record<string, number> = {
+  'slab': 0.038,
+  'sans': 0.002,
+  'round': -0.023,
+  'type': -0.046,
+  'pixel': -0.042,
+  'hand': 0.021,
+  'hand-text': 0.021,
+  'casual': 0.031,
+}
+
 export const isPixel = (id: string) => id === 'pixel'
 export const isProportional = (id: string) => id === 'hand-text'
 
@@ -31,11 +48,9 @@ export function faceStyle(id: string, extra = ''): string | undefined {
   return parts.length ? parts.join(';') : undefined
 }
 
-const ZH_NUMERALS = ['壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖', '拾']
-
-/** Section numerals: formal Chinese numerals in Chinese, two digits in English. */
-export function numeral(locale: Locale, n: number): string {
-  return locale === 'zh' ? (ZH_NUMERALS[n - 1] ?? String(n)) : String(n).padStart(2, '0')
+/** Detail numbers, as a drawing calls them out: two digits in either language. */
+export function numeral(_locale: Locale, n: number): string {
+  return String(n).padStart(2, '0')
 }
 
 /** The second line every family band sets under its own sample. */

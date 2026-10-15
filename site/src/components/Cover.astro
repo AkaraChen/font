@@ -1,7 +1,6 @@
 ---
-// The title page every inner page opens on: title and lead on the left, the
-// page's own character standing in its 米字格 on the right — the way a
-// specimen book marks its chapters.
+// The title sheet every inner page opens on: title and lead on the left, the
+// page's own character drawn and dimensioned on the right.
 
 import type { Locale } from '../i18n/ui'
 import Glyph from './Glyph.astro'
@@ -12,13 +11,13 @@ interface Props {
   marks?: (string | undefined)[]
   title: string
   lead?: string
-  /** The chapter character, set in AKR Slab. */
+  /** The chapter character, set in AKR Sans. */
   char: string
   /** Family whose face sets the character. */
   face?: string
 }
 
-const { marks = [], title, lead, char, face = 'slab' } = Astro.props
+const { marks = [], title, lead, char, face = 'sans' } = Astro.props
 ---
 
 <header class="band cover">
@@ -38,7 +37,7 @@ const { marks = [], title, lead, char, face = 'slab' } = Astro.props
 <style>
   .cover {
     padding-block: clamp(48px, 7vw, 96px);
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--fg);
   }
 
   .cover__grid {
@@ -58,7 +57,11 @@ const { marks = [], title, lead, char, face = 'slab' } = Astro.props
   }
 
   .cover__marks li:first-child {
-    color: var(--seal);
+    color: var(--mark);
+  }
+
+  .cover {
+    border-bottom: 1.5px solid var(--fg);
   }
 
   .cover h1 {
@@ -71,7 +74,7 @@ const { marks = [], title, lead, char, face = 'slab' } = Astro.props
   }
 
   .cover :global(.cover__glyph) {
-    color: var(--ink);
+    color: var(--fg);
   }
 
   @media (max-width: 860px) {

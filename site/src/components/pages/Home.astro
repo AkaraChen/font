@@ -43,7 +43,10 @@ const jsonLd = {
 <Base locale={locale} title={t('site.title')} description={t('site.description')} path="/" jsonLd={jsonLd}>
   <section class="band band--ink hero">
     <div class="wrap hero__grid">
-      <Glyph family={hero.id} char="永" size="var(--hero)" class="hero__glyph" />
+      <div class="hero__drawing">
+        <Glyph family={hero.id} char="永" size="var(--hero)" />
+        <Glyph family={hero.id} char="A" cells={1} size="var(--hero)" />
+      </div>
       <div class="hero__title">
         {locale === 'zh'
           ? (
@@ -62,7 +65,7 @@ const jsonLd = {
           <a class="button hero__download" href={manifest.releaseUrl} rel="noopener">{t('home.cta.download')}{manifest.tag && <span class="hero__tag">{manifest.tag}</span>}</a>
           <a class="button button--ghost" href={localePath(locale, '/preview')}>{t('home.cta.preview')}</a>
         </div>
-        <p class="label hero__caption">永 · {hero.product} · {t('family.grid')} {hero.grid}</p>
+        <p class="label hero__caption">永 + A · {hero.product} · {t('family.grid')} {hero.grid}</p>
       </div>
     </div>
   </section>
@@ -125,7 +128,7 @@ const jsonLd = {
 
 <style>
   .hero {
-    --hero: min(calc(100svh - 220px), 46vw);
+    --hero: min(calc(100svh - 320px), 31vw);
     padding-block: clamp(40px, 5vw, 72px);
     min-height: calc(100svh - 64px);
     display: flex;
@@ -141,9 +144,13 @@ const jsonLd = {
     row-gap: 40px;
   }
 
-  .hero :global(.hero__glyph) {
+  /* 永 and A drawn side by side, dimensioned: the 2:1 grid, shown. */
+  .hero__drawing {
     grid-row: 1 / 3;
-    color: var(--paper);
+    align-self: center;
+    display: flex;
+    align-items: flex-start;
+    gap: clamp(20px, 3vw, 40px);
   }
 
   .hero__title {
@@ -152,7 +159,7 @@ const jsonLd = {
   }
 
   .hero h1 {
-    font-size: clamp(40px, 5.6vw, 84px);
+    font-size: clamp(36px, 4.4vw, 68px);
     line-height: 1.12;
     letter-spacing: 0;
   }
@@ -165,10 +172,11 @@ const jsonLd = {
 
   .hero h1:lang(zh) span {
     display: block;
+    white-space: nowrap;
   }
 
   .hero h1:lang(zh) span:last-child {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .hero__foot {
@@ -186,7 +194,7 @@ const jsonLd = {
   }
 
   .hero__marks li:first-child {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .hero .lead {
@@ -195,15 +203,15 @@ const jsonLd = {
   }
 
   .hero__download {
-    background: var(--seal);
-    border-color: var(--seal);
-    color: var(--paper);
+    background: var(--mark);
+    border-color: var(--mark);
+    color: var(--on-mark);
   }
 
   .hero__download:hover {
-    background: var(--paper);
-    border-color: var(--paper);
-    color: var(--ink);
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
   }
 
   .hero__tag {
@@ -261,7 +269,7 @@ const jsonLd = {
   }
 
   .index a:hover .index__name {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   .why__body {
@@ -293,12 +301,12 @@ const jsonLd = {
   }
 
   .try__line:hover span {
-    color: var(--seal);
+    color: var(--mark);
   }
 
   @media (max-width: 860px) {
     .hero {
-      --hero: min(56vw, 320px);
+      --hero: min(38vw, 220px);
       min-height: 0;
     }
 
@@ -308,8 +316,9 @@ const jsonLd = {
       column-gap: 16px;
     }
 
-    .hero :global(.hero__glyph) {
+    .hero__drawing {
       grid-row: 1;
+      gap: 14px;
     }
 
     .hero h1:lang(zh) {

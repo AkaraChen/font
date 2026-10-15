@@ -1,58 +1,65 @@
 /*
- * 字谱 — the site as a type specimen book.
+ * 蓝图 — the site as an engineering drawing.
  *
- * Paper and ink, with one seal colour (朱砂) used the way a printer uses a
- * seal: a mark, never a fill. Pages are built from full-bleed bands that turn
- * between paper and ink like the pages of a specimen, and every family is
- * shown first as one large glyph standing in a 米字格 — the calligrapher's
- * practice grid, whose centre line is also the 2:1 split of a coding cell.
+ * These fonts are measured, not eyeballed: a strict 2:1 grid, slant taken off
+ * the stems, weight off stroke width, every build gated and fingerprinted. So
+ * the site draws them the way a part is drawn: white line on blueprint blue,
+ * over graph paper, with dimension lines, centre lines and a title block.
  *
- * The house is set in its own fonts:
+ * Three grounds, all of them drawing stock:
  *
- *   AKR Slab      — titles. Song CJK, slab Latin.
- *   AKR Hand Text — reading text. The one proportional AKR face.
- *   AKR Sans      — labels, numbers, tables, controls.
+ *   blueprint (default) — cyanotype blue, white line, chalk-yellow marks.
+ *   .band--ink          — the same at night: a deeper blue.
+ *   .band--tint         — whiteprint: cool white stock, blue line, red-pencil
+ *                         marks, for pages that are mostly reading.
  *
+ * One family of type throughout, AKR Sans — drafting lettering is gothic.
  * Only tokens, reset, and the primitives every page shares live here. Page
  * and component styling belongs in the component that owns it.
  */
 
 :root {
-  --paper: #f2eee5;
-  --paper-2: #e8e2d4;
-  --ink: #141311;
-  --ink-2: #3f3a33;
-  --mute: #847a6c;
-  --line: rgba(20, 19, 17, 0.14);
-  --seal: #c23b20;
+  --blueprint: #13438f;
+  --blueprint-deep: #0b2f6b;
+  --whiteprint: #eaf0f8;
+  --chalk: #ffd23f;
+  --redline: #d8362b;
+  --white: #f2f6fc;
 
-  /* Inside an ink band the same names flip, so components never ask which
-     band they are in. */
-  --fg: var(--ink);
-  --fg-2: var(--ink-2);
-  --fg-mute: var(--mute);
-  --bg: var(--paper);
-  --rule: var(--line);
-  --rule-strong: rgba(20, 19, 17, 0.45);
+  /* Ground-relative names. Every band redefines these, so components never
+     ask which stock they are drawn on. */
+  --bg: var(--blueprint);
+  --fg: var(--white);
+  --fg-2: rgba(242, 246, 252, 0.8);
+  --fg-mute: rgba(242, 246, 252, 0.55);
+  --rule: rgba(242, 246, 252, 0.24);
+  --rule-strong: rgba(242, 246, 252, 0.6);
+  --grid-minor: rgba(242, 246, 252, 0.055);
+  --grid-major: rgba(242, 246, 252, 0.12);
+  --mark: var(--chalk);
+  --on-mark: var(--blueprint-deep);
+  /* Kept so older names still resolve. */
+  --paper: var(--white);
+  --ink: var(--blueprint-deep);
 
   --font-label: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-text: 'AKR Hand Text', 'LXGW WenKai', ui-serif, Georgia, 'Songti SC', serif;
-  --font-display: 'AKR Slab', ui-serif, Georgia, 'Songti SC', serif;
-  --font-mono: 'AKR Slab', ui-monospace, SFMono-Regular, Menlo, monospace;
-  /* Kept for components that predate the split. */
+  --font-text: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans: var(--font-label);
 
   --t-xs: 11px;
   --t-s: 13px;
-  --t-m: 17px;
-  --t-l: clamp(19px, 1.7vw, 23px);
-  --t-xl: clamp(30px, 4.2vw, 54px);
-  --t-xxl: clamp(46px, 8vw, 116px);
+  --t-m: 16px;
+  --t-l: clamp(18px, 1.6vw, 21px);
+  --t-xl: clamp(28px, 3.8vw, 48px);
+  --t-xxl: clamp(42px, 7vw, 104px);
 
   --wrap: 1360px;
   --gutter: clamp(20px, 4vw, 56px);
   --band: clamp(64px, 9vw, 128px);
-  --measure: 34em;
+  --measure: 38em;
+  --cell: 8px;
 }
 
 *,
@@ -81,11 +88,11 @@ html {
 
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
+  background-color: var(--blueprint);
+  color: var(--fg);
   font-family: var(--font-text);
   font-size: var(--t-m);
-  line-height: 1.8;
+  line-height: 1.85;
   font-kerning: normal;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -104,8 +111,8 @@ h4 {
 
 h1 {
   font-size: var(--t-xxl);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
 }
 
 h2 {
@@ -129,7 +136,7 @@ a {
 }
 
 a:hover {
-  text-decoration-color: var(--seal);
+  text-decoration-color: var(--mark);
 }
 
 code,
@@ -154,16 +161,16 @@ hr {
 }
 
 ::selection {
-  background: var(--seal);
-  color: var(--paper);
+  background: var(--chalk);
+  color: var(--blueprint-deep);
 }
 
 :focus-visible {
-  outline: 2px solid var(--seal);
+  outline: 2px solid var(--mark);
   outline-offset: 2px;
 }
 
-/* Bands ------------------------------------------------------------------- */
+/* Grounds ---------------------------------------------------------------- */
 
 .wrap,
 .page {
@@ -172,23 +179,47 @@ hr {
   padding-inline: var(--gutter);
 }
 
+/* Graph paper: a hairline every --cell, a heavier one every five. These are
+   ruled lines with hard edges, not shading. */
+.paper-grid,
+.band,
+body {
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
+  background-size:
+    calc(var(--cell) * 5) calc(var(--cell) * 5),
+    calc(var(--cell) * 5) calc(var(--cell) * 5),
+    var(--cell) var(--cell),
+    var(--cell) var(--cell);
+  background-position: -1px -1px;
+}
+
 .band {
   padding-block: var(--band);
-  background: var(--bg);
+  background-color: var(--bg);
   color: var(--fg);
 }
 
-.band--tint {
-  --bg: var(--paper-2);
+.band--ink {
+  --bg: var(--blueprint-deep);
+  --grid-minor: rgba(242, 246, 252, 0.04);
+  --grid-major: rgba(242, 246, 252, 0.09);
 }
 
-.band--ink {
-  --bg: var(--ink);
-  --fg: var(--paper);
-  --fg-2: #cfc8ba;
-  --fg-mute: #8d8577;
-  --rule: rgba(242, 238, 229, 0.16);
-  --rule-strong: rgba(242, 238, 229, 0.5);
+.band--tint {
+  --bg: var(--whiteprint);
+  --fg: var(--blueprint);
+  --fg-2: rgba(19, 67, 143, 0.85);
+  --fg-mute: rgba(19, 67, 143, 0.6);
+  --rule: rgba(19, 67, 143, 0.22);
+  --rule-strong: rgba(19, 67, 143, 0.6);
+  --grid-minor: rgba(19, 67, 143, 0.06);
+  --grid-major: rgba(19, 67, 143, 0.13);
+  --mark: var(--redline);
+  --on-mark: var(--white);
 }
 
 /* Type helpers ------------------------------------------------------------ */
@@ -233,22 +264,29 @@ hr {
   text-orientation: mixed;
 }
 
-/* Section head: a seal-coloured numeral, the title, one rule above both. */
+/* Section head: a detail bubble — the circled number a drawing uses to call
+   out a detail — then the title, on a full-width line. */
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 0.4em 0.6em;
-  padding-top: 18px;
+  gap: 12px 20px;
+  padding-top: 20px;
   border-top: 1px solid var(--fg);
   margin-bottom: clamp(32px, 4vw, 56px);
 }
 
 .head__no {
-  font-family: var(--font-display);
+  display: inline-grid;
+  place-items: center;
+  width: 2.4em;
+  height: 2.4em;
+  border: 1.5px solid var(--mark);
+  border-radius: 50%;
+  font-family: var(--font-label);
+  font-size: 15px;
   font-weight: 700;
-  font-size: var(--t-xl);
-  color: var(--seal);
+  color: var(--mark);
   line-height: 1;
 }
 
@@ -286,9 +324,9 @@ hr {
 }
 
 .button:hover {
-  background: var(--seal);
-  border-color: var(--seal);
-  color: var(--paper);
+  background: var(--mark);
+  border-color: var(--mark);
+  color: var(--on-mark);
 }
 
 .button--ghost {
