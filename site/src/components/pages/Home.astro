@@ -1,12 +1,12 @@
 ---
 import { families } from '../../data/families'
-import { manifest } from '../../data/fonts'
+import { cssFamily, hasFonts, manifest } from '../../data/fonts'
 import { upstreams } from '../../data/upstreams'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
-import Plate from '../Plate.astro'
-import SectionHead from '../SectionHead.astro'
-import SpecimenStrip from '../SpecimenStrip.astro'
+import FamilyBand from '../FamilyBand.astro'
+import Glyph from '../Glyph.astro'
+import Head from '../Head.astro'
 
 interface Props {
   locale: Locale
@@ -41,161 +41,300 @@ const jsonLd = {
 ---
 
 <Base locale={locale} title={t('site.title')} description={t('site.description')} path="/" jsonLd={jsonLd}>
-  <section class="page">
-    <header class="folio page-head hero">
-      <ul class="folio__margin hero__marks">
-        {t('home.eyebrow').split(' · ').map(mark => <li class="label">{mark}</li>)}
-      </ul>
-      <div class="folio__body">
-        <h1>{t('home.heading')}</h1>
+  <section class="band band--ink hero">
+    <div class="wrap hero__grid">
+      <Glyph family={hero.id} char="永" size="var(--hero)" class="hero__glyph" />
+      <div class="hero__title">
+        {locale === 'zh'
+          ? (
+              <h1 class="tate" aria-label={t('home.heading')}>
+                {t('home.heading.columns').split('|').map(column => <span aria-hidden="true">{column}</span>)}
+              </h1>
+            )
+          : <h1>{t('home.heading')}</h1>}
+      </div>
+      <div class="hero__foot">
+        <ul class="hero__marks">
+          {t('home.eyebrow').split(' · ').map(mark => <li class="label">{mark}</li>)}
+        </ul>
         <p class="lead">{t('home.intro')}</p>
         <div class="actions">
-          <a class="button" href={manifest.releaseUrl} rel="noopener">{t('home.cta.download')}{manifest.tag && <span class="hero__tag">{manifest.tag}</span>}</a>
+          <a class="button hero__download" href={manifest.releaseUrl} rel="noopener">{t('home.cta.download')}{manifest.tag && <span class="hero__tag">{manifest.tag}</span>}</a>
           <a class="button button--ghost" href={localePath(locale, '/preview')}>{t('home.cta.preview')}</a>
         </div>
+        <p class="label hero__caption">永 · {hero.product} · {t('family.grid')} {hero.grid}</p>
       </div>
-    </header>
-
-    <Plate
-      family={hero}
-      caption={[hero.product, `${t('family.grid')} ${hero.grid}`]}
-      foot={[`${hero.latin.split(' v')[0]} × ${hero.cjk.split(' v')[0]}`, t('home.specimen.note')]}
-    />
+    </div>
   </section>
 
-  <section class="page section section--first">
-    <SectionHead n="01" label={t('home.specimen')} title={t('home.families.heading')}>
-      <p class="folio__body lead">{t('home.specimen.note')}</p>
-    </SectionHead>
-    <SpecimenStrip locale={locale} />
+  <div id="families">
+    {families.map((family, index) => (
+      <FamilyBand
+        locale={locale}
+        family={family}
+        index={index + 1}
+        total={families.length}
+        tone={index % 2 === 0 ? 'paper' : 'ink'}
+        flip={index % 2 === 1}
+      />
+    ))}
+  </div>
+
+  <section class="band">
+    <div class="wrap">
+      <Head locale={locale} n={1} title={t('home.upstream.heading')}>
+        <a class="label" href={localePath(locale, '/upstream')}>{t('upstream.title')} →</a>
+      </Head>
+      <p class="lead index__lead">{t('home.upstream.intro')}</p>
+      <ul class="index">
+        {upstreams.map(upstream => (
+          <li>
+            <a href={localePath(locale, `/upstream/${upstream.slug}`)}>
+              <span class="index__name">{upstream.name[locale]}</span>
+              <span class="index__dots" aria-hidden="true"></span>
+              <span class="index__where">{upstream.families.map(id => families.find(f => f.id === id)?.name[locale]).filter(Boolean).join('、')}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   </section>
 
-  <section class="page section">
-    <SectionHead n="02" label={t('nav.preview')} title={t('preview.title')} />
-    <div class="folio">
-      <div class="folio__body">
+  <section class="band band--tint why">
+    <div class="wrap why__grid">
+      <Head locale={locale} n={2} title={t('home.why.heading')} />
+      <p class="why__body">{t('home.why.body')}</p>
+    </div>
+  </section>
+
+  <section class="band try">
+    <div class="wrap try__grid">
+      <div>
+        <Head locale={locale} n={3} title={t('preview.title')} />
         <p class="lead">{t('preview.intro')}</p>
-        <a class="button button--ghost" href={localePath(locale, '/preview')}>{t('nav.preview')} →</a>
+        <a class="button" href={localePath(locale, '/preview')}>{t('nav.preview')} →</a>
       </div>
-    </div>
-  </section>
-
-  <section class="page section">
-    <SectionHead n="03" label={t('upstream.title')} title={t('home.upstream.heading')} />
-    <div class="folio">
-      <div class="folio__body">
-        <p class="lead">{t('home.upstream.intro')}</p>
-        <ul class="upstreams">
-          {upstreams.map(upstream => (
-            <li>
-              <a href={localePath(locale, `/upstream/${upstream.slug}`)}>
-                <strong>{upstream.name[locale]}</strong>
-                <span class="label">{upstream.families.map(id => families.find(f => f.id === id)?.name[locale]).filter(Boolean).join(' · ')}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="page section">
-    <SectionHead n="04" label={t('home.why.heading')} />
-    <div class="folio">
-      <p class="folio__body why">{t('home.why.body')}</p>
+      <a class="try__line" href={localePath(locale, '/preview')} aria-hidden="true" tabindex="-1">
+        {families.slice(0, 4).map(family => (
+          <span style={hasFonts ? `font-family:"${cssFamily(family.id)}", ui-monospace, monospace` : undefined}>宽度对齐 Ag</span>
+        ))}
+      </a>
     </div>
   </section>
 </Base>
 
 <style>
-  .hero__marks {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .hero {
+    --hero: min(calc(100svh - 220px), 46vw);
+    padding-block: clamp(40px, 5vw, 72px);
+    min-height: calc(100svh - 64px);
+    display: flex;
+    align-items: center;
   }
 
-  .hero__marks li {
-    padding-block: 6px;
-    border-bottom: 1px solid var(--rule-soft);
+  .hero__grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: clamp(32px, 5vw, 80px);
+    row-gap: 40px;
+  }
+
+  .hero :global(.hero__glyph) {
+    grid-row: 1 / 3;
+    color: var(--paper);
+  }
+
+  .hero__title {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .hero h1 {
+    font-size: clamp(40px, 5.6vw, 84px);
+    line-height: 1.12;
+    letter-spacing: 0;
+  }
+
+  /* Chinese title set vertically, one phrase per column, read right to left. */
+  .hero h1:lang(zh) {
+    letter-spacing: 0.06em;
+    line-height: 1.25;
+  }
+
+  .hero h1:lang(zh) span {
+    display: block;
+  }
+
+  .hero h1:lang(zh) span:last-child {
+    color: var(--seal);
+  }
+
+  .hero__foot {
+    align-self: end;
+  }
+
+  .hero__marks {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    padding: 0 0 14px;
+    margin: 0 0 18px;
+    border-bottom: 1px solid var(--rule);
   }
 
   .hero__marks li:first-child {
-    color: var(--ink);
+    color: var(--seal);
   }
 
   .hero .lead {
-    margin-block: var(--s-3) var(--s-4);
+    font-size: var(--t-m);
+    margin-bottom: 24px;
+  }
+
+  .hero__download {
+    background: var(--seal);
+    border-color: var(--seal);
+    color: var(--paper);
+  }
+
+  .hero__download:hover {
+    background: var(--paper);
+    border-color: var(--paper);
+    color: var(--ink);
   }
 
   .hero__tag {
-    opacity: 0.6;
+    opacity: 0.7;
   }
 
-  .section--first {
-    padding-top: var(--s-6);
+  .hero__caption {
+    margin: 24px 0 0;
   }
 
-  .upstreams {
+  .index__lead {
+    margin-bottom: 40px;
+  }
+
+  .index {
     list-style: none;
+    margin: 0;
     padding: 0;
-    margin: var(--s-4) 0 0;
     columns: 2;
-    column-gap: var(--s-4);
-    border-top: 1px solid var(--rule);
+    column-gap: clamp(32px, 5vw, 80px);
   }
 
-  .upstreams li {
+  .index li {
     break-inside: avoid;
-    border-bottom: 1px solid var(--rule-soft);
   }
 
-  .upstreams a {
+  .index a {
     display: flex;
-    justify-content: space-between;
     align-items: baseline;
-    gap: var(--s-2);
-    padding-block: 14px;
+    gap: 10px;
+    padding-block: 10px;
     text-decoration: none;
   }
 
-  .upstreams strong {
+  .index__name {
     font-family: var(--font-display);
-    font-size: 19px;
     font-weight: 700;
+    font-size: 22px;
+    white-space: nowrap;
   }
 
-  .upstreams .label {
+  /* Dot leaders, as in the index at the back of a book. */
+  .index__dots {
+    flex: 1;
+    min-width: 24px;
+    border-bottom: 2px dotted var(--rule-strong);
+    transform: translateY(-5px);
+  }
+
+  .index__where {
+    font-family: var(--font-label);
+    font-size: var(--t-s);
+    color: var(--fg-2);
     text-align: right;
-    letter-spacing: 0.06em;
   }
 
-  .upstreams a:hover strong {
-    color: var(--accent);
+  .index a:hover .index__name {
+    color: var(--seal);
   }
 
-  .why {
-    font-family: var(--font-text);
-    font-size: clamp(21px, 2.2vw, 28px);
-    line-height: 1.7;
-    max-width: 30em;
+  .why__body {
+    font-size: clamp(22px, 2.6vw, 34px);
+    line-height: 1.65;
+    max-width: 26em;
     margin: 0;
   }
 
+  .try__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 5vw, 80px);
+    align-items: end;
+  }
+
+  .try__line {
+    display: flex;
+    flex-direction: column;
+    font-size: clamp(30px, 4.4vw, 60px);
+    line-height: 1.35;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .try__line span:nth-child(odd) {
+    color: var(--fg-mute);
+  }
+
+  .try__line:hover span {
+    color: var(--seal);
+  }
+
   @media (max-width: 860px) {
-    .hero__marks {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0 14px;
-      margin-bottom: var(--s-2);
+    .hero {
+      --hero: min(56vw, 320px);
+      min-height: 0;
     }
 
-    .hero__marks li {
-      border: 0;
-      padding: 0;
+    .hero__grid {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: 16px;
     }
 
-    .upstreams {
+    .hero :global(.hero__glyph) {
+      grid-row: 1;
+    }
+
+    .hero h1:lang(zh) {
+      font-size: clamp(22px, 6.2vw, 40px);
+    }
+
+    .hero h1:lang(en) {
+      grid-column: 1 / -1;
+    }
+
+    .hero__title:has(h1:lang(en)) {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+    }
+
+    .hero__foot {
+      grid-column: 1 / -1;
+    }
+
+    .index {
       columns: 1;
+    }
+
+    .try__grid {
+      grid-template-columns: 1fr;
     }
   }
 </style>

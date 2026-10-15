@@ -52,6 +52,10 @@ const BASE_CHARS = [
   ...'abcdefghijklmnopqrstuvwxyz{|}~',
   ...'←→↑↓⇒⇐≠≤≥…—–·、。，；：？！“”‘’（）《》【】',
   ...'ÀÁÂÄÈÉÊËÌÍÎÏÒÓÔÖÙÚÛÜàáâäèéêëìíîïòóôöùúûüñçß',
+  // Box drawing, for terminal tables in code samples.
+  ...'─│┌┐└┘├┤┬┴┼',
+  // The Nerd icons a family page shows: GitHub, branch, folder, code, gear, terminal.
+  ...'\uf09b\ue0a0\uf07b\uf121\uf013\uf120',
 ].join('')
 
 async function fetchJson(url) {

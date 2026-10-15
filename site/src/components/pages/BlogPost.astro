@@ -4,6 +4,7 @@ import { render } from 'astro:content'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
 
+
 interface Props {
   locale: Locale
   post: CollectionEntry<'blog'>
@@ -34,76 +35,97 @@ const jsonLd = {
   jsonLd={jsonLd}
   markdown={false}
 >
-  <article class="page">
-    <header class="folio page-head">
-      <div class="folio__margin post__marks">
-        <a class="label" href={localePath(locale, '/blog')}>← {t('blog.title')}</a>
-        <time class="label" datetime={post.data.date.toISOString()}>
-          {post.data.date.toISOString().slice(0, 10)}
-        </time>
-      </div>
-      <div class="folio__body">
+  <article>
+    <header class="band band--ink post__head">
+      <div class="wrap">
+        <p class="label post__marks">
+          <a href={localePath(locale, '/blog')}>← {t('blog.title')}</a>
+          <span aria-hidden="true">·</span>
+          <time datetime={post.data.date.toISOString()}>{post.data.date.toISOString().slice(0, 10)}</time>
+        </p>
         <h1>{post.data.title}</h1>
         <p class="lead">{post.data.description}</p>
       </div>
     </header>
-    <div class="folio post">
-      <div class="folio__body post__body">
-        <Content />
+    <div class="band">
+      <div class="wrap post">
+        <div class="post__body">
+          <Content />
+        </div>
       </div>
     </div>
   </article>
 </Base>
 
 <style>
+  .post__head {
+    padding-block: clamp(48px, 7vw, 104px);
+  }
+
   .post__marks {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    gap: 12px;
+    margin-bottom: 28px;
   }
 
   .post__marks a {
     text-decoration: none;
+    color: var(--seal);
   }
 
-  .post__marks a:hover {
-    color: var(--ink);
+  .post__head h1 {
+    font-size: clamp(38px, 6vw, 84px);
+    max-width: 14em;
   }
 
-  .page-head h1 {
-    font-size: clamp(34px, 5vw, 64px);
+  .post__head .lead {
+    margin: 28px 0 0;
   }
 
   .post {
-    border-top: 1px solid var(--ink);
-    padding-top: var(--s-5);
+    display: flex;
+    justify-content: center;
   }
 
   .post__body {
-    color: var(--ink-muted);
-    max-width: var(--measure);
+    width: 100%;
+    max-width: 36em;
+    color: var(--fg-2);
     font-size: 18px;
-    line-height: 1.9;
+    line-height: 1.95;
   }
 
+  /* The opening paragraph is set larger, its first character a seal-red
+     initial, as a chapter would begin. */
   .post__body > :global(p:first-child) {
-    color: var(--ink);
-    font-size: var(--t-lead);
+    color: var(--fg);
+    font-size: var(--t-l);
+    line-height: 1.8;
+  }
+
+  .post__body > :global(p:first-child::first-letter) {
+    float: left;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 3.6em;
+    line-height: 0.9;
+    margin: 0.08em 0.12em 0 0;
+    color: var(--seal);
   }
 
   .post__body :global(h2) {
-    font-size: clamp(22px, 2.4vw, 28px);
-    margin-top: var(--s-5);
-    margin-bottom: var(--s-2);
-    padding-top: var(--s-2);
-    border-top: 1px solid var(--rule);
-    color: var(--ink);
+    font-size: clamp(24px, 2.6vw, 32px);
+    margin-top: 72px;
+    margin-bottom: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--ink);
+    color: var(--fg);
   }
 
   .post__body :global(h3) {
-    margin-top: var(--s-4);
-    margin-bottom: var(--s-1);
-    color: var(--ink);
+    margin-top: 40px;
+    margin-bottom: 8px;
+    color: var(--fg);
   }
 
   .post__body :global(p) {
@@ -111,42 +133,49 @@ const jsonLd = {
   }
 
   .post__body :global(strong) {
-    color: var(--ink);
+    color: var(--fg);
   }
 
   .post__body :global(table) {
     width: 100%;
     border-collapse: collapse;
     font-size: 15px;
-    margin: var(--s-3) 0 var(--s-4);
-    border-top: 1px solid var(--ink);
+    line-height: 1.6;
+    margin: 32px 0 40px;
   }
 
   .post__body :global(th),
   .post__body :global(td) {
     text-align: left;
-    padding: 10px var(--s-2) 10px 0;
-    border-bottom: 1px solid var(--rule-soft);
+    padding: 10px 16px 10px 0;
+    border-bottom: 1px solid var(--rule);
     vertical-align: baseline;
   }
 
   .post__body :global(th) {
     font-family: var(--font-label);
-    font-size: var(--t-label);
+    font-size: var(--t-xs);
     font-weight: 400;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--ink-faint);
+    color: var(--fg-mute);
+    border-bottom-color: var(--ink);
   }
 
   .post__body :global(pre) {
-    background: var(--dark-bg);
-    color: var(--dark-ink);
-    padding: var(--s-3);
-    margin: var(--s-3) 0 var(--s-4);
+    background: var(--ink) !important;
+    color: var(--paper);
+    padding: 24px;
+    margin: 32px 0 40px;
     overflow-x: auto;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.7;
+    border-left: 3px solid var(--seal);
+  }
+
+  .post__body :global(pre code) {
+    font-family: var(--font-mono);
+    font-size: 1em;
   }
 
   .post__body :global(code) {
@@ -154,9 +183,9 @@ const jsonLd = {
   }
 
   .post__body :global(blockquote) {
-    margin: var(--s-3) 0;
-    padding-left: var(--s-3);
-    border-left: 2px solid var(--accent);
-    color: var(--ink);
+    margin: 32px 0;
+    padding-left: 24px;
+    border-left: 3px solid var(--seal);
+    color: var(--fg);
   }
 </style>

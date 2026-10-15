@@ -21,9 +21,11 @@ interface Props {
   autoload?: boolean
   /** Write the current state into the URL — only the standalone page does this. */
   syncUrl?: boolean
+  /** `bench`: controls in a side rail beside a tall canvas, for /preview. */
+  layout?: 'inline' | 'bench'
 }
 
-const { locale, initial = 'hand', only, autoload = false, syncUrl = false } = Astro.props
+const { locale, initial = 'hand', only, autoload = false, syncUrl = false, layout = 'inline' } = Astro.props
 const t = useTranslations(locale)
 
 const available = families.filter(family => (only ? only.includes(family.id) : true))
@@ -52,7 +54,7 @@ export function 排版(文本: string) {
 ---
 
 <section
-  class="preview"
+  class:list={['preview', `preview--${layout}`]}
   data-preview
   data-autoload={autoload ? 'true' : 'false'}
   data-sync-url={syncUrl ? 'true' : 'false'}
@@ -107,7 +109,7 @@ export function 排版(文本: string) {
     data-preview-canvas
     spellcheck="false"
     aria-label={t('preview.title')}
-    rows={autoload ? 10 : 6}>{samples.code}</textarea>
+    rows={layout === 'bench' ? 14 : 7}>{samples.code}</textarea>
 
   <div class="preview__foot">
     <p class="preview__status" data-preview-status role="status">
@@ -122,104 +124,162 @@ export function 排版(文本: string) {
 
 <style>
   .preview {
-    border: 1px solid var(--ink);
-    background: var(--paper-raised);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border-top: 1px solid var(--fg);
+  }
+
+  .preview--bench {
+    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-rows: 1fr auto;
+    border-top: 0;
   }
 
   .preview__bar {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 20px;
+    gap: 10px 28px;
     align-items: center;
-    padding: 12px 16px;
+    padding-block: 16px;
     border-bottom: 1px solid var(--rule);
+  }
+
+  .preview--bench .preview__bar {
+    grid-row: 1 / 3;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 28px 0 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--rule);
   }
 
   .preview__field {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-family: var(--font-display);
+    gap: 10px;
+    font-family: var(--font-label);
     font-size: 12px;
-    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+    color: var(--fg-mute);
   }
 
-  .preview__field select,
-  .preview__field input[type='range'] {
+  .preview--bench .preview__field {
+    flex-wrap: wrap;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .preview--bench .preview__field > span:first-child {
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: var(--t-xs);
+  }
+
+  .preview--bench .preview__field--check > span:first-child {
+    width: auto;
+  }
+
+  .preview__field select {
     font: inherit;
+    font-size: 13px;
+    color: var(--fg);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--fg);
+    padding: 6px 0;
+    border-radius: 0;
+  }
+
+  .preview--bench .preview__field select {
+    width: 100%;
+    font-family: var(--font-display);
+    font-size: 18px;
+  }
+
+  .preview__field select option {
     color: var(--ink);
-    background: var(--paper);
-    border: 1px solid var(--rule);
-    padding: 4px 6px;
   }
 
   .preview__field input[type='range'] {
-    padding: 0;
-    width: 96px;
-    accent-color: var(--ink);
+    width: 100px;
+    accent-color: var(--seal);
+  }
+
+  .preview--bench .preview__field input[type='range'] {
+    flex: 1;
+  }
+
+  .preview__field input[type='checkbox'] {
+    accent-color: var(--seal);
   }
 
   .preview__field output {
     min-width: 3.5em;
-    color: var(--ink);
+    color: var(--fg);
   }
 
   .preview__field--group button,
   .preview__actions button {
-    font-family: var(--font-display);
+    font-family: var(--font-label);
     font-size: 12px;
-    padding: 5px 11px;
-    border: 1px solid var(--rule);
-    background: var(--paper);
-    color: var(--ink-muted);
+    padding: 7px 12px;
+    border: 1px solid var(--rule-strong);
+    background: transparent;
+    color: var(--fg);
     cursor: pointer;
   }
 
+  .preview__field--group button:hover,
+  .preview__actions button:hover {
+    border-color: var(--seal);
+    color: var(--seal);
+  }
+
   .preview__field--group button[aria-pressed='true'] {
-    background: var(--ink);
-    border-color: var(--ink);
+    background: var(--seal);
+    border-color: var(--seal);
     color: var(--paper);
   }
 
+  /* The canvas is a sheet of paper, on whatever band it lies on. */
   .preview__canvas {
     display: block;
     width: 100%;
     border: 0;
     resize: vertical;
-    padding: 26px 22px;
-    background: transparent;
-    color: inherit;
+    padding: 32px clamp(20px, 3vw, 40px);
+    background: var(--paper);
+    color: var(--ink);
     font-family: var(--preview-font, var(--font-mono));
     font-size: var(--preview-size, 20px);
     line-height: var(--preview-leading, 1.9);
     font-feature-settings: var(--preview-features, normal);
+    /* Ruled like exercise paper: one hairline under every line of text. */
+    background-image: linear-gradient(transparent calc(100% - 1px), var(--line) 0);
+    background-size: 100% calc(var(--preview-size, 20px) * var(--preview-leading, 1.9));
+    background-position: 0 32px;
+    background-attachment: local;
+  }
+
+  .preview--inline .preview__canvas {
+    border-inline: 1px solid var(--rule);
+  }
+
+  .preview--bench .preview__canvas {
+    min-height: 62svh;
   }
 
   .preview__canvas:focus-visible {
     outline-offset: -2px;
   }
 
-  .preview[data-dark='true'] {
-    background: var(--dark-bg);
-    border-color: var(--dark-bg);
-    color: var(--dark-ink);
-  }
-
-  .preview[data-dark='true'] .preview__bar,
-  .preview[data-dark='true'] .preview__foot {
-    border-color: var(--dark-rule);
-  }
-
-  .preview[data-dark='true'] .preview__field,
-  .preview[data-dark='true'] .preview__status {
-    color: var(--dark-muted);
-  }
-
-  .preview[data-dark='true'] select,
-  .preview[data-dark='true'] button {
-    background: #1e1a16;
-    border-color: var(--dark-rule);
-    color: var(--dark-ink);
+  .preview[data-dark='true'] .preview__canvas {
+    background-color: #0c0b0a;
+    color: #e8e2d6;
+    background-image: linear-gradient(transparent calc(100% - 1px), rgba(242, 238, 229, 0.08) 0);
   }
 
   .preview__foot {
@@ -228,11 +288,21 @@ export function 排版(文本: string) {
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    padding: 10px 16px;
-    border-top: 1px solid var(--rule);
-    font-family: var(--font-display);
+    padding-block: 12px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-label);
     font-size: 11.5px;
-    color: var(--ink-faint);
+    color: var(--fg-mute);
+  }
+
+  .preview--bench .preview__foot {
+    padding-left: 28px;
+    border-bottom: 0;
+  }
+
+  .preview--bench .preview__canvas {
+    margin-left: 28px;
+    width: calc(100% - 28px);
   }
 
   .preview__status {
@@ -242,6 +312,41 @@ export function 排版(文本: string) {
   .preview__actions {
     display: flex;
     gap: 8px;
+  }
+
+  @media (max-width: 860px) {
+    .preview--bench {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .preview--bench .preview__bar {
+      grid-row: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0 20px;
+      padding: 0;
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .preview--bench .preview__field {
+      padding-block: 12px;
+      border-bottom: 0;
+    }
+
+    .preview--bench .preview__field > span:first-child {
+      width: auto;
+    }
+
+    .preview--bench .preview__canvas {
+      margin-left: 0;
+      width: 100%;
+      min-height: 50svh;
+    }
+
+    .preview--bench .preview__foot {
+      padding-left: 0;
+    }
   }
 </style>
 

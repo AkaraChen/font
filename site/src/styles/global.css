@@ -1,42 +1,39 @@
 /*
- * Design direction A —「字谱 Specimen」: warm paper, near-black ink, editorial
- * grid, rules instead of boxes. The page furniture stays quiet so the specimens
- * carry the visual weight.
+ * 字谱 — the site as a type specimen book.
  *
- * The house is set in its own fonts, each with one job:
+ * Paper and ink, with one seal colour (朱砂) used the way a printer uses a
+ * seal: a mark, never a fill. Pages are built from full-bleed bands that turn
+ * between paper and ink like the pages of a specimen, and every family is
+ * shown first as one large glyph standing in a 米字格 — the calligrapher's
+ * practice grid, whose centre line is also the 2:1 split of a coding cell.
  *
- *   AKR Slab      — headings. Song CJK, slab Latin: the bookish voice.
- *   AKR Hand Text — running prose. The one proportional AKR face, made for reading.
- *   AKR Sans      — labels, numbers, tables, controls. Small and monospaced.
+ * The house is set in its own fonts:
  *
- * Every page is built from the same few parts: a type scale with five steps,
- * a spacing scale with six, the folio (a margin column for labels beside a body
- * column for content), a numbered section head, and the plate — a ruled frame
- * that holds a specimen. Page components compose these; they do not invent
- * their own sizes.
+ *   AKR Slab      — titles. Song CJK, slab Latin.
+ *   AKR Hand Text — reading text. The one proportional AKR face.
+ *   AKR Sans      — labels, numbers, tables, controls.
  *
- * Only tokens, reset, font faces and these shared primitives live here. Page
+ * Only tokens, reset, and the primitives every page shares live here. Page
  * and component styling belongs in the component that owns it.
  */
 
 :root {
-  --paper: #f8f4ec;
-  --paper-raised: #fdfaf4;
-  --ink: #1a1815;
-  --ink-muted: #4f483f;
-  --ink-faint: #8a8073;
-  --rule: #d8d0c1;
-  --rule-soft: #e8e1d4;
-  --accent: #8a3d1f;
-  /* The 2:1 cell lines drawn behind plates. */
-  --cell: rgba(138, 61, 31, 0.22);
+  --paper: #f2eee5;
+  --paper-2: #e8e2d4;
+  --ink: #141311;
+  --ink-2: #3f3a33;
+  --mute: #847a6c;
+  --line: rgba(20, 19, 17, 0.14);
+  --seal: #c23b20;
 
-  /* The dark surface stays scoped to code and the preview canvas — it never
-     takes over a page. */
-  --dark-bg: #14120f;
-  --dark-ink: #e8e2d6;
-  --dark-muted: #8f877a;
-  --dark-rule: #2a2621;
+  /* Inside an ink band the same names flip, so components never ask which
+     band they are in. */
+  --fg: var(--ink);
+  --fg-2: var(--ink-2);
+  --fg-mute: var(--mute);
+  --bg: var(--paper);
+  --rule: var(--line);
+  --rule-strong: rgba(20, 19, 17, 0.45);
 
   --font-label: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-text: 'AKR Hand Text', 'LXGW WenKai', ui-serif, Georgia, 'Songti SC', serif;
@@ -45,29 +42,17 @@
   /* Kept for components that predate the split. */
   --font-sans: var(--font-label);
 
-  /* Type scale. Labels and meta are fixed; the steps above body scale with
-     the viewport between a phone and a 1440 desktop. */
-  --t-label: 11px;
-  --t-meta: 13px;
-  --t-body: 17px;
-  --t-lead: clamp(18px, 1.6vw, 21px);
-  --t-h2: clamp(26px, 3.2vw, 38px);
-  --t-h1: clamp(40px, 6.4vw, 84px);
-  --t-plate: clamp(96px, 25vw, 330px);
+  --t-xs: 11px;
+  --t-s: 13px;
+  --t-m: 17px;
+  --t-l: clamp(19px, 1.7vw, 23px);
+  --t-xl: clamp(30px, 4.2vw, 54px);
+  --t-xxl: clamp(46px, 8vw, 116px);
 
-  /* Spacing scale. Sections are always --s-6 apart; nothing in between. */
-  --s-1: 8px;
-  --s-2: 16px;
-  --s-3: 24px;
-  --s-4: 40px;
-  --s-5: 64px;
-  --s-6: clamp(72px, 9vw, 120px);
-
-  --measure: 36em;
-  --page: 1240px;
-  --gutter: clamp(20px, 5vw, 48px);
-  --margin-col: minmax(0, 3fr);
-  --body-col: minmax(0, 9fr);
+  --wrap: 1360px;
+  --gutter: clamp(20px, 4vw, 56px);
+  --band: clamp(64px, 9vw, 128px);
+  --measure: 34em;
 }
 
 *,
@@ -99,7 +84,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-text);
-  font-size: var(--t-body);
+  font-size: var(--t-m);
   line-height: 1.8;
   font-kerning: normal;
   -webkit-font-smoothing: antialiased;
@@ -112,24 +97,24 @@ h3,
 h4 {
   font-family: var(--font-display);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   text-wrap: balance;
   margin: 0;
 }
 
 h1 {
-  font-size: var(--t-h1);
-  line-height: 1.05;
+  font-size: var(--t-xxl);
+  line-height: 1.02;
   letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: var(--t-h2);
+  font-size: var(--t-xl);
   letter-spacing: -0.02em;
 }
 
 h3 {
-  font-size: 19px;
+  font-size: 20px;
 }
 
 p {
@@ -140,11 +125,11 @@ a {
   color: inherit;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
-  text-decoration-color: var(--rule);
+  text-decoration-color: var(--rule-strong);
 }
 
 a:hover {
-  text-decoration-color: currentColor;
+  text-decoration-color: var(--seal);
 }
 
 code,
@@ -169,194 +154,146 @@ hr {
 }
 
 ::selection {
-  background: var(--ink);
+  background: var(--seal);
   color: var(--paper);
 }
 
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--seal);
   outline-offset: 2px;
 }
 
-/* Shared primitives ------------------------------------------------------- */
+/* Bands ------------------------------------------------------------------- */
 
+.wrap,
 .page {
-  max-width: var(--page);
-  margin: 0 auto;
+  max-width: var(--wrap);
+  margin-inline: auto;
   padding-inline: var(--gutter);
 }
 
-/* The folio: a margin column for labels and numbers, a body column for the
-   content. Every page header and section sits on it, so the left edges of
-   every page line up with every other page. */
-.folio {
-  display: grid;
-  grid-template-columns: var(--margin-col) var(--body-col);
-  column-gap: var(--s-4);
+.band {
+  padding-block: var(--band);
+  background: var(--bg);
+  color: var(--fg);
 }
 
-.folio > .folio__margin {
-  grid-column: 1;
+.band--tint {
+  --bg: var(--paper-2);
 }
 
-.folio > .folio__body,
-.folio > :not(.folio__margin) {
-  grid-column: 2;
-  min-width: 0;
+.band--ink {
+  --bg: var(--ink);
+  --fg: var(--paper);
+  --fg-2: #cfc8ba;
+  --fg-mute: #8d8577;
+  --rule: rgba(242, 238, 229, 0.16);
+  --rule-strong: rgba(242, 238, 229, 0.5);
 }
 
-.folio > .folio__wide {
-  grid-column: 1 / -1;
-}
+/* Type helpers ------------------------------------------------------------ */
 
-@media (max-width: 860px) {
-  .folio {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .folio > .folio__margin,
-  .folio > .folio__body,
-  .folio > :not(.folio__margin),
-  .folio > .folio__wide {
-    grid-column: 1;
-  }
-}
-
-/* Small capitals of the house: what a thing is, where it sits. */
 .label {
   display: block;
   font-family: var(--font-label);
-  font-size: var(--t-label);
+  font-size: var(--t-xs);
   font-weight: 400;
-  line-height: 1.6;
+  line-height: 1.7;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--fg-mute);
 }
 
 .label b,
 .label strong {
-  color: var(--ink);
+  color: var(--fg);
   font-weight: 400;
 }
 
-/* Kept as an alias so older markup still reads as a label. */
-.eyebrow {
-  display: block;
-  font-family: var(--font-label);
-  font-size: var(--t-label);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: var(--s-2);
-}
-
-.num {
-  font-family: var(--font-label);
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-
-/* Page head: the label in the margin, the title and lead in the body. */
-.page-head {
-  padding-block: var(--s-5) var(--s-5);
-  row-gap: var(--s-2);
-}
-
-.page-head .folio__margin {
-  padding-top: 0.9em;
-}
-
-.page-head h1 {
-  max-width: 14em;
-}
-
-.page-head .lead {
-  margin-top: var(--s-3);
-}
-
-@media (max-width: 860px) {
-  .page-head {
-    padding-block: var(--s-4);
-  }
-}
-
-/* Section: a full-width ink rule, the number and label in the margin, the
-   heading in the body. Sections are the only vertical rhythm a page has. */
-.section {
-  padding-block: 0 var(--s-6);
-}
-
-.section-head {
-  border-top: 1px solid var(--ink);
-  padding-top: var(--s-2);
-  margin-bottom: var(--s-4);
-  row-gap: var(--s-1);
-  align-items: baseline;
-}
-
-.section-head--bare {
-  margin-bottom: var(--s-2);
-}
-
-.section-head .label {
-  display: flex;
-  gap: 1.2em;
-}
-
-.section-head .num {
-  letter-spacing: 0.04em;
-}
-
-.section-head h2 {
-  max-width: 18em;
-}
-
 .lead {
-  color: var(--ink-muted);
-  font-size: var(--t-lead);
+  font-size: var(--t-l);
   line-height: 1.75;
+  color: var(--fg-2);
   max-width: var(--measure);
 }
 
 .prose {
   max-width: var(--measure);
-  color: var(--ink-muted);
+  color: var(--fg-2);
 }
 
 .prose strong,
 .prose b {
-  color: var(--ink);
-  font-weight: 700;
+  color: var(--fg);
 }
 
+/* Vertical setting for Chinese titles. English keeps horizontal lines. */
+.tate:lang(zh) {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Section head: a seal-coloured numeral, the title, one rule above both. */
+.head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4em 0.6em;
+  padding-top: 18px;
+  border-top: 1px solid var(--fg);
+  margin-bottom: clamp(32px, 4vw, 56px);
+}
+
+.head__no {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-xl);
+  color: var(--seal);
+  line-height: 1;
+}
+
+.head h2 {
+  line-height: 1;
+}
+
+.head__aside {
+  margin-left: auto;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .head__aside {
+    margin-left: 0;
+    text-align: left;
+    width: 100%;
+  }
+}
+
+/* Links that read as actions. */
 .button {
   display: inline-flex;
   align-items: center;
-  gap: 0.6em;
+  gap: 0.7em;
   font-family: var(--font-label);
-  font-size: var(--t-meta);
+  font-size: var(--t-s);
   line-height: 1;
-  letter-spacing: 0.02em;
-  padding: 14px 22px;
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+  letter-spacing: 0.04em;
+  padding: 15px 24px;
+  border: 1px solid var(--fg);
+  background: var(--fg);
+  color: var(--bg);
   text-decoration: none;
 }
 
 .button:hover {
-  background: #000;
+  background: var(--seal);
+  border-color: var(--seal);
+  color: var(--paper);
 }
 
 .button--ghost {
   background: transparent;
-  color: var(--ink);
-}
-
-.button--ghost:hover {
-  background: var(--ink);
-  color: var(--paper);
+  color: var(--fg);
 }
 
 .actions {
@@ -365,60 +302,7 @@ hr {
   gap: 10px;
 }
 
-/* The plate: a ruled frame around one specimen. A caption runs along the top
-   rule, the glyphs sit in the middle, and on coding faces the 2:1 cells are
-   drawn behind them, one Latin cell apart. --cell-w is that cell in em (most
-   faces are 0.5em; the Plate component sets the exceptions). Set --cells: none
-   to drop them on proportional faces. */
-.plate {
-  border-block: 1px solid var(--ink);
-}
-
-.plate__caption {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--s-1) var(--s-3);
-  padding-block: 10px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.plate__glyphs {
-  margin: 0;
-  padding-block: var(--s-3);
-  font-size: var(--t-plate);
-  line-height: 1.12;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.plate__glyphs > span {
-  display: inline-block;
-  background-image: var(
-    --cells,
-    repeating-linear-gradient(to right, var(--cell) 0 1px, transparent 1px var(--cell-w, 0.5em))
-  );
-  box-shadow:
-    inset 0 1px 0 var(--cell),
-    inset 0 -1px 0 var(--cell),
-    inset -1px 0 0 var(--cell);
-}
-
-.plate__foot {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--s-1) var(--s-3);
-  padding-block: 10px;
-  border-top: 1px solid var(--rule);
-}
-
-/* Bitmap faces only look right at whole multiples of their pixel size. */
-.is-pixel {
-  -webkit-font-smoothing: none;
-  font-smooth: never;
-}
-
+/* Tables: ruled, never boxed. */
 .spec-table {
   width: 100%;
   border-collapse: collapse;
@@ -428,29 +312,29 @@ hr {
 .spec-table th,
 .spec-table td {
   text-align: left;
-  padding: 12px var(--s-2) 12px 0;
-  border-bottom: 1px solid var(--rule-soft);
+  padding: 14px 20px 14px 0;
+  border-bottom: 1px solid var(--rule);
   vertical-align: baseline;
-}
-
-.spec-table tr:first-child > * {
-  border-top: 1px solid var(--rule);
 }
 
 .spec-table th {
   font-family: var(--font-label);
-  font-size: var(--t-label);
+  font-size: var(--t-xs);
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--fg-mute);
   white-space: nowrap;
-  width: 11em;
 }
 
 .spec-table thead th {
-  border-top: 0;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--fg);
+}
+
+/* Bitmap faces only look right at whole multiples of their pixel size. */
+.is-pixel {
+  -webkit-font-smoothing: none;
+  font-smooth: never;
 }
 
 .skip-link {

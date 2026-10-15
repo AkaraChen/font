@@ -21,8 +21,11 @@ const links = [
 ---
 
 <header class="nav">
-  <div class="page nav__inner">
-    <a class="nav__logo" href={localePath(locale, '/')}>AKR {locale === 'zh' ? '字体' : 'Fonts'}</a>
+  <div class="wrap nav__inner">
+    <a class="nav__logo" href={localePath(locale, '/')}>
+      <span class="nav__seal" aria-hidden="true">字</span>
+      <span>AKR {locale === 'zh' ? '字体' : 'Fonts'}</span>
+    </a>
     <nav class="nav__links" aria-label={locale === 'zh' ? '主导航' : 'Main'}>
       {links.map(link => (
         <a href={localePath(locale, link.href)} aria-current={path.startsWith(link.href) ? 'page' : undefined}>
@@ -39,71 +42,96 @@ const links = [
 
 <style>
   .nav {
+    background: var(--paper);
     border-bottom: 1px solid var(--ink);
+    position: relative;
+    z-index: 2;
   }
 
   .nav__inner {
     display: flex;
-    align-items: baseline;
-    gap: var(--s-3);
-    padding-block: 22px 18px;
+    align-items: center;
+    gap: 28px;
+    min-height: 64px;
   }
 
   .nav__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 20px;
+    font-size: 19px;
     line-height: 1;
-    letter-spacing: -0.01em;
     text-decoration: none;
     margin-right: auto;
   }
 
+  /* The seal: a vermilion square with one character, as a printer would sign. */
+  .nav__seal {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    background: var(--seal);
+    color: var(--paper);
+    font-size: 19px;
+    line-height: 1;
+  }
+
   .nav__links {
     display: flex;
-    gap: var(--s-3);
+    gap: 26px;
     flex-wrap: wrap;
   }
 
   .nav__links a,
   .nav__lang {
     font-family: var(--font-label);
-    font-size: var(--t-meta);
+    font-size: var(--t-s);
     line-height: 1;
-    color: var(--ink-muted);
+    color: var(--ink-2);
     text-decoration: none;
-    padding-bottom: 4px;
-    border-bottom: 1px solid transparent;
+    padding-block: 6px;
   }
 
   .nav__links a:hover,
   .nav__lang:hover {
-    color: var(--ink);
+    color: var(--seal);
   }
 
   .nav__links a[aria-current='page'] {
     color: var(--ink);
-    border-bottom-color: var(--ink);
+    box-shadow: inset 0 -2px 0 var(--seal);
   }
 
   .nav__lang {
-    padding-left: var(--s-3);
-    border-left: 1px solid var(--rule);
+    padding-left: 26px;
+    border-left: 1px solid var(--line);
   }
 
   @media (max-width: 860px) {
     .nav__inner {
       flex-wrap: wrap;
-      row-gap: var(--s-2);
-      padding-block: 18px 14px;
+      gap: 0 20px;
+      padding-block: 14px 0;
     }
 
     .nav__links {
       order: 3;
       width: 100%;
-      gap: 6px 18px;
-      padding-top: 12px;
-      border-top: 1px solid var(--rule-soft);
+      min-width: 0;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 20px;
+      margin-top: 12px;
+      padding-block: 10px;
+      border-top: 1px solid var(--line);
+      scrollbar-width: none;
+    }
+
+    .nav__links a {
+      white-space: nowrap;
     }
 
     .nav__lang {

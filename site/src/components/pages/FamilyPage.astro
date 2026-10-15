@@ -1,13 +1,14 @@
 ---
 import type { Family } from '../../data/families'
 import { families } from '../../data/families'
-import { cssFamily, downloadUrl, hasFonts, manifest } from '../../data/fonts'
+import { downloadUrl, manifest } from '../../data/fonts'
 import { upstreams } from '../../data/upstreams'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
 import FontPreview from '../FontPreview.astro'
-import Plate from '../Plate.astro'
-import SectionHead from '../SectionHead.astro'
+import Glyph from '../Glyph.astro'
+import Head from '../Head.astro'
+import { faceStyle, glyphOf, glyphSet, icons, isProportional, ligatures } from '../../data/specimen'
 
 interface Props {
   locale: Locale
@@ -58,31 +59,42 @@ const faqJsonLd = family.faq.length
 const jsonLdBlocks = faqJsonLd ? [jsonLd, faqJsonLd] : [jsonLd]
 
 const pixel = family.id === 'pixel'
+const proportional = isProportional(family.id)
+const index = families.findIndex(f => f.id === family.id) + 1
 // The waterfall: the same line at the sizes a coding face actually lives at.
 // Pixel only renders cleanly at whole multiples of its 12px bitmap.
-const waterfall = pixel ? [12, 24, 36, 48] : [13, 16, 22, 32, 44]
-const face = hasFonts ? `font-family:"${cssFamily(family.id)}", ui-monospace, monospace` : undefined
+const waterfall = pixel ? [12, 24, 36, 48, 72] : [13, 16, 22, 32, 48, 72]
+const face = faceStyle(family.id)
+
+const rows = [
+  { label: 'A–Z', chars: glyphSet.upper },
+  { label: 'a–z', chars: glyphSet.lower },
+  { label: '0–9', chars: glyphSet.figures + glyphSet.marks },
+  { label: locale === 'zh' ? '汉字' : 'CJK', chars: glyphSet.cjk + glyphSet.cjkMarks },
+  ...(family.nerd ? [{ label: 'Nerd', chars: icons.join('') }] : []),
+]
 
 let section = 0
-const next = () => String(++section).padStart(2, '0')
+const next = () => ++section
 ---
 
 <Base locale={locale} title={title} description={description} path={`/family/${family.id}`} jsonLd={jsonLdBlocks}>
   <article>
-    <div class="page">
-      <header class="folio page-head">
-        <ul class="folio__margin marks">
-          <li class="label"><b>{family.product}</b></li>
-          <li class="label">{t('family.grid')} {family.grid}</li>
-          <li class="label">{family.weights.join(' / ')}</li>
-          {family.nerd && <li class="label">{t('family.nerd')}</li>}
-        </ul>
-        <div class="folio__body">
+    <header class="band band--ink cover">
+      <div class="wrap cover__grid">
+        <div class="cover__text">
+          <p class="label"><span class="seal">{String(index).padStart(2, '0')}</span> / {String(families.length).padStart(2, '0')} · <b>{family.product}</b></p>
           <h1>{family.name[locale]}</h1>
           <p class="lead">{family.tagline[locale]}</p>
+          <dl class="facts">
+            <div><dt class="label">Latin</dt><dd>{family.latin}</dd></div>
+            <div><dt class="label">CJK</dt><dd>{family.cjk}</dd></div>
+            <div><dt class="label">{t('family.grid')}</dt><dd>{family.grid}</dd></div>
+            <div><dt class="label">{t('family.weights')}</dt><dd>{family.weights.join(' · ')}</dd></div>
+          </dl>
           <div class="actions">
             {manifest.tag && (
-              <a class="button" href={downloadUrl(manifest.tag, family.product)} rel="noopener">
+              <a class="button cover__download" href={downloadUrl(manifest.tag, family.product)} rel="noopener">
                 {t('family.download')}<span class="tag">{manifest.tag}</span>
               </a>
             )}
@@ -92,60 +104,88 @@ const next = () => String(++section).padStart(2, '0')
             </a>
           </div>
         </div>
-      </header>
-
-      <Plate
-        family={family}
-        caption={[family.product, `${t('family.grid')} ${family.grid}`]}
-        foot={[`${family.latin} × ${family.cjk}`, family.weights.join(' · ')]}
-      />
-
-      <div class="folio intro">
-        <p class="folio__body">{family.intro[locale]}</p>
+        <Glyph family={family.id} char={glyphOf[family.id] ?? '永'} size={pixel ? 'var(--px)' : 'clamp(220px, 36vw, 500px)'} class="cover__glyph" />
       </div>
-    </div>
+    </header>
 
-    <section class="page section">
-      <SectionHead n={next()} label={t('home.specimen')} />
-      <ol class="waterfall" style={face}>
-        {waterfall.map(size => (
-          <li class="folio">
-            <span class="folio__margin label">{size}px</span>
-            <span class:list={['folio__body', 'waterfall__line', { 'is-pixel': pixel }]} style={`font-size:${size}px`}>{family.sample}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
-
-    <section class="page section">
-      <SectionHead n={next()} label={t('family.spec')} title={t('family.spec')} />
-      <div class="folio">
-        <table class="spec-table">
-          <tbody>
-            {family.spec.map(row => (
-              <tr>
-                <th scope="row">{row.label[locale]}</th>
-                <td>{row.value[locale]}</td>
-              </tr>
-            ))}
-            <tr>
-              <th scope="row">{t('family.weights')}</th>
-              <td>{family.weights.join(' · ')}</td>
-            </tr>
-          </tbody>
-        </table>
+    <section class="band">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('family.glyphs')}>
+          <span class="label">{family.product} · Regular</span>
+        </Head>
+        <div class="glyphs" style={face}>
+          {rows.map(row => (
+            <div class="glyphs__row">
+              <span class="label glyphs__label">{row.label}</span>
+              <div class:list={['glyphs__cells', { 'is-pixel': pixel }]}>
+                {[...row.chars].map(ch => <span>{ch}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
 
-    <section class="page section">
-      <SectionHead n={next()} label={t('family.preview')} title={t('family.preview')} />
-      <FontPreview locale={locale} initial={family.id} only={[family.id]} />
+    {!proportional && (
+      <section class="band band--tint">
+        <div class="wrap">
+          <Head locale={locale} n={next()} title={t('preview.ligatures')}>
+            <span class="label">calt</span>
+          </Head>
+          <div class:list={['ligs', { 'is-pixel': pixel }]} style={face}>
+            <span class="label">{t('family.calt.on')}</span>
+            <div class="ligs__row">{ligatures.map(op => <span>{op}</span>)}</div>
+            <span class="label">{t('family.calt.off')}</span>
+            <div class="ligs__row ligs__row--off">{ligatures.map(op => <span>{op}</span>)}</div>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <section class="band">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('home.specimen')} />
+        <p class="intro">{family.intro[locale]}</p>
+        <ol class="waterfall" style={face}>
+          {waterfall.map(size => (
+            <li>
+              <span class="label">{size}</span>
+              <span class:list={['waterfall__line', { 'is-pixel': pixel }]} style={`font-size:${size}px`}>{family.sample}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
     </section>
 
-    <section class="page section">
-      <SectionHead n={next()} label={t('family.upstream')} title={t('family.upstream')} />
-      <div class="folio">
-        <div class="folio__body">
+    <section class="band band--ink">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('family.spec')} />
+        <dl class="spec">
+          {family.spec.map(row => (
+            <div>
+              <dt class="label">{row.label[locale]}</dt>
+              <dd>{row.value[locale]}</dd>
+            </div>
+          ))}
+          <div>
+            <dt class="label">{t('family.weights')}</dt>
+            <dd>{family.weights.join(' · ')}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('family.preview')} />
+        <FontPreview locale={locale} initial={family.id} only={[family.id]} />
+      </div>
+    </section>
+
+    <section class="band band--tint">
+      <div class="wrap two">
+        <div>
+          <Head locale={locale} n={next()} title={t('family.upstream')} />
           <p class="prose">{t('family.derived')}</p>
           <ul class="ruled">
             {related.map(upstream => (
@@ -155,96 +195,227 @@ const next = () => String(++section).padStart(2, '0')
               </li>
             ))}
           </ul>
+          {siblings.length > 0 && (
+            <>
+              <p class="label related__label">{t('family.related')}</p>
+              <ul class="ruled">
+                {siblings.map(sibling => (
+                  <li>
+                    <a class="ruled__name" href={localePath(locale, `/family/${sibling.id}`)}>{sibling.name[locale]}</a>
+                    <span class="ruled__text">{sibling.tagline[locale]}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
+        {family.faq.length > 0 && (
+          <div>
+            <Head locale={locale} n={next()} title={t('family.faq')} />
+            <dl class="faq">
+              {family.faq.map(item => (
+                <div>
+                  <dt>{item.q[locale]}</dt>
+                  <dd>{item.a[locale]}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
       </div>
     </section>
-
-    {family.faq.length > 0 && (
-      <section class="page section">
-        <SectionHead n={next()} label={t('family.faq')} title={t('family.faq')} />
-        <dl class="faq">
-          {family.faq.map(item => (
-            <div class="folio faq__item">
-              <dt class="folio__body">{item.q[locale]}</dt>
-              <dd class="folio__body">{item.a[locale]}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-    )}
-
-    {siblings.length > 0 && (
-      <section class="page section">
-        <SectionHead n={next()} label={t('family.related')} />
-        <div class="folio">
-          <ul class="ruled folio__body">
-            {siblings.map(sibling => (
-              <li>
-                <a class="ruled__name" href={localePath(locale, `/family/${sibling.id}`)}>{sibling.name[locale]}</a>
-                <span class="ruled__text">{sibling.tagline[locale]}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-    )}
   </article>
 </Base>
 
 <style>
-  .marks {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .seal {
+    color: var(--seal);
   }
 
-  .marks li {
-    padding-block: 6px;
-    border-bottom: 1px solid var(--rule-soft);
+  .cover {
+    --px: 240px;
+    padding-block: clamp(48px, 7vw, 104px);
   }
 
-  .page-head .lead {
-    margin-block: var(--s-3) var(--s-4);
+  .cover__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(32px, 5vw, 80px);
+  }
+
+  .cover h1 {
+    margin-top: 20px;
+  }
+
+  .cover .lead {
+    margin: 24px 0 32px;
+  }
+
+  .cover :global(.cover__glyph) {
+    color: var(--paper);
+  }
+
+  .cover__download {
+    background: var(--seal);
+    border-color: var(--seal);
+    color: var(--paper);
+  }
+
+  .cover__download:hover {
+    background: var(--paper);
+    border-color: var(--paper);
+    color: var(--ink);
   }
 
   .tag {
-    opacity: 0.6;
+    opacity: 0.7;
+  }
+
+  .facts {
+    margin: 0 0 32px;
+    border-top: 1px solid var(--rule);
+    max-width: 40em;
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: 7em minmax(0, 1fr);
+    gap: 16px;
+    align-items: baseline;
+    padding-block: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .facts dd {
+    margin: 0;
+    font-family: var(--font-label);
+    font-size: var(--t-s);
+  }
+
+  /* Glyph overview: every character in a cell of its own. */
+  .glyphs__row {
+    display: grid;
+    grid-template-columns: 5em minmax(0, 1fr);
+    gap: 16px;
+    padding-block: 4px;
+  }
+
+  .glyphs__label {
+    padding-top: 14px;
+  }
+
+  .glyphs__cells {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+
+  .glyphs__cells span {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    font-size: 34px;
+    line-height: 1;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    transition: background 0.1s;
+  }
+
+  .glyphs__cells.is-pixel span {
+    font-size: 36px;
+  }
+
+  .glyphs__cells span:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .ligs {
+    display: grid;
+    grid-template-columns: 7em minmax(0, 1fr);
+    gap: 18px 16px;
+    align-items: center;
+  }
+
+  .ligs__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 28px;
+    font-size: clamp(28px, 3.4vw, 44px);
+    line-height: 1.4;
+  }
+
+  .ligs.is-pixel .ligs__row {
+    font-size: 36px;
+  }
+
+  .ligs__row--off {
+    font-feature-settings: 'calt' 0, 'liga' 0;
+    color: var(--fg-mute);
   }
 
   .intro {
-    padding-block: var(--s-5) var(--s-6);
-  }
-
-  .intro p {
-    font-size: var(--t-lead);
-    line-height: 1.8;
-    max-width: var(--measure);
-    margin: 0;
+    font-size: var(--t-l);
+    line-height: 1.85;
+    max-width: 36em;
+    margin-bottom: 56px;
   }
 
   .waterfall {
     list-style: none;
     margin: 0;
     padding: 0;
+    border-top: 1px solid var(--rule);
   }
 
   .waterfall li {
+    display: grid;
+    grid-template-columns: 5em minmax(0, 1fr);
+    gap: 16px;
     align-items: baseline;
-    padding-block: 10px;
-    border-bottom: 1px solid var(--rule-soft);
+    padding-block: 8px;
+    border-bottom: 1px solid var(--rule);
   }
 
   .waterfall__line {
-    line-height: 1.5;
+    line-height: 1.4;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
+  .spec {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(32px, 5vw, 80px);
+  }
+
+  .spec div {
+    padding-block: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .spec dd {
+    margin: 6px 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(19px, 1.8vw, 24px);
+    line-height: 1.4;
+  }
+
+  .two {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+
   .ruled {
     list-style: none;
     padding: 0;
-    margin: var(--s-3) 0 0;
+    margin: 24px 0 0;
     border-top: 1px solid var(--rule);
   }
 
@@ -253,70 +424,99 @@ const next = () => String(++section).padStart(2, '0')
     flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
-    gap: 4px var(--s-3);
+    gap: 4px 20px;
     padding-block: 14px;
-    border-bottom: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule);
   }
 
   .ruled__name {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 19px;
+    font-size: 20px;
     text-decoration: none;
   }
 
   .ruled__name:hover {
-    color: var(--accent);
+    color: var(--seal);
   }
 
   .ruled__text {
-    color: var(--ink-muted);
+    color: var(--fg-2);
     font-size: 15px;
+  }
+
+  .related__label {
+    margin-top: 40px;
   }
 
   .faq {
     margin: 0;
   }
 
-  .faq__item {
-    padding-block: var(--s-3);
-    border-top: 1px solid var(--rule-soft);
+  .faq div {
+    padding-block: 20px;
+    border-bottom: 1px solid var(--rule);
   }
 
-  .faq__item:first-child {
-    border-top: 0;
+  .faq div:first-child {
     padding-top: 0;
   }
 
   .faq dt {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 19px;
-    line-height: 1.5;
-    max-width: var(--measure);
+    font-size: 20px;
+    line-height: 1.45;
   }
 
   .faq dd {
     margin: 10px 0 0;
-    color: var(--ink-muted);
-    max-width: var(--measure);
+    color: var(--fg-2);
+  }
+
+  @media (min-width: 1200px) {
+    .cover {
+      --px: 456px;
+    }
   }
 
   @media (max-width: 860px) {
-    .marks {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0 14px;
-      margin-bottom: var(--s-2);
+    .cover {
+      --px: 192px;
     }
 
-    .marks li {
-      border: 0;
-      padding: 0;
+    .cover__grid,
+    .two,
+    .spec {
+      grid-template-columns: 1fr;
     }
 
-    .waterfall .folio__margin {
-      margin-bottom: -4px;
+    .cover :global(.cover__glyph) {
+      order: -1;
+      --mi: 200px !important;
+    }
+
+    .cover :global(.mi--pixel) {
+      --mi: 192px !important;
+    }
+
+    .glyphs__row,
+    .ligs,
+    .waterfall li {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .glyphs__label {
+      padding-top: 10px;
+    }
+
+    .glyphs__cells {
+      grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    }
+
+    .glyphs__cells span {
+      font-size: 26px;
     }
   }
 </style>

@@ -1,4 +1,4 @@
-<img src="docs/assets/specimen.png" alt="Specimen sheet: the eight AKR families, one ruled row each — 永安Ag set large over its 2:1 cells, then the same line of code with ligatures and Nerd icons, all rendered from the released fonts" width="100%">
+<img src="docs/assets/specimen.png" alt="AKR 字体 — the character 永 set large in a 米字格, beside the vertical title 八套中英混排编程字体，从源码构建。" width="100%">
 
 # font
 
@@ -13,11 +13,35 @@ and a release is built by the same command you run locally.
 [Download a release](https://github.com/AkaraChen/font/releases) ·
 [License](#license--attribution)
 
-<sub>The specimen above is set in the released `.ttf`s themselves, with each
-family's 2:1 cells drawn behind 永安Ag — source:
+## The eight families
+
+<a href="serif"><img src="docs/assets/specimen/slab.png" alt="AKR Slab SC NFM — MonoSlab × 霞鹜新致宋 Opt. Its character 宋 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+<a href="sans"><img src="docs/assets/specimen/sans.png" alt="AKR Sans SC NFM — Lilex × IBM Plex Sans SC. Its character 黑 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+<a href="rounded"><img src="docs/assets/specimen/round.png" alt="AKR Round SC NFM — Iosevka Curly × Resource Han Rounded. Its character 圆 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+<a href="typewriter"><img src="docs/assets/specimen/type.png" alt="AKR Type SC NFM — Courier Prime × 朱雀仿宋 Zhuque. Its character 打 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+<a href="pixel"><img src="docs/assets/specimen/pixel.png" alt="AKR Pixel SC NFM — Fusion Pixel 12px. Its character 像 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+<a href="handwriting"><img src="docs/assets/specimen/hand.png" alt="AKR Hand SC NFM — Monaspace Radon × 霞鹜文楷 LXGW, with the AKR Hand SC Text reading face. Its character 楷 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+<a href="casual"><img src="docs/assets/specimen/casual.png" alt="AKR Casual SC Dual — Recursive Mono Casual × Yozai 悠哉. Its character 随 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+<a href="dwg"><img src="docs/assets/specimen/dwg.png" alt="AKR DWG SC NFM — Cascadia Code × 阿里巴巴普惠体 3.0 — 大弯勾. Its character 弯 set large in a 米字格, then a line of code in the face itself" width="100%"></a>
+
+<sub>Every glyph above is set in the released `.ttf`s themselves. Each family
+is introduced by one character from its Chinese name, standing in a 米字格 as
+wide as one CJK cell — source:
 [`docs/assets/specimen.html`](docs/assets/specimen.html).</sub>
 
-## The eight families
+Every product is named **`AKR <Style> <Region> <Variant> [<Weight>]`**.
+`<Region>` is a build axis, not a separate recipe: `SC` `TC` `HK` `JP` `KR` come
+out of one Latin build and several CJK masters. `<Variant>` is `NFM` (Nerd Font
+Mono coding face), `Text` (reading face) or `Dual` (dual-width coding face with
+no icons).
+
+Some of the things a family does are measured rather than guessed —
+handwriting shears its CJK **7.5°** to match Radon's lean and pairs Light with
+WenKai *Regular*, typewriter emboldens Zhuque by stem width, pixel pixelizes the
+`calt` ligatures but not the Nerd icons.
+
+<details>
+<summary><b>All eight, in one table</b> — directory, Latin, CJK, dual width, weights</summary>
 
 | | family | Latin × CJK | dual width | weights |
 | --: | --- | --- | --- | --- |
@@ -31,23 +55,7 @@ family's 2:1 cells drawn behind 永安Ag — source:
 | 07 | **AKR Casual** SC Dual · [`casual/`](casual) | Recursive Mono Casual × Yozai 悠哉 | 2:1 | Regular · Bold |
 | 08 | **AKR DWG** SC NFM · 大弯勾 · [`dwg/`](dwg) | Cascadia Code (Nerd Fonts v3.5.1) × 阿里巴巴普惠体 3.0 | 500 / 1000 | Light · Regular · Bold |
 
-Every product is named **`AKR <Style> <Region> <Variant> [<Weight>]`**.
-`<Region>` is a build axis, not a separate recipe: `SC` `TC` `HK` `JP` `KR` come
-out of one Latin build and several CJK masters. `<Variant>` is `NFM` (Nerd Font
-Mono coding face), `Text` (reading face) or `Dual` (dual-width coding face with
-no icons).
-
-Some of the things a family does are measured rather than guessed —
-handwriting shears its CJK **7.5°** to match Radon's lean and pairs Light with
-WenKai *Regular*, typewriter emboldens Zhuque by stem width, pixel pixelizes the
-`calt` ligatures but not the Nerd icons.
-
-## Docs
-
-- [`docs/build-toolchain.md`](docs/build-toolchain.md) — how the derivations fit together
-- [`docs/caching.md`](docs/caching.md) — what is cached, and what invalidates it
-- [`docs/naming-migration.md`](docs/naming-migration.md) — moving a config off the pre-`AKR` family names
-- each family's own README — the design decisions behind that face
+</details>
 
 ## Build one
 
@@ -70,6 +78,13 @@ just verify sans             # diff the products against the committed fingerpri
 just release sans coding sc  # the release zip (depends on the gate)
 just notes sans coding sc    # the release notes that zip ships with
 ```
+
+## Docs
+
+- [`docs/build-toolchain.md`](docs/build-toolchain.md) — how the derivations fit together
+- [`docs/caching.md`](docs/caching.md) — what is cached, and what invalidates it
+- [`docs/naming-migration.md`](docs/naming-migration.md) — moving a config off the pre-`AKR` family names
+- each family's own README — the design decisions behind that face
 
 <details>
 <summary><b>Formats</b> — <code>.ttf</code>, <code>.woff2</code>, <code>.otf</code>, and why they are not interchangeable</summary>

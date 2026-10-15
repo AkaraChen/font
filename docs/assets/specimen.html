@@ -1,21 +1,24 @@
 <!doctype html>
 <!--
-  Source of docs/assets/specimen.png.
-
-  It renders the real release products, so it needs the fonts next to it:
+  Source of the README's images: docs/assets/specimen.png (the cover, also
+  the site's Open Graph image) and docs/assets/specimen/<family>.png, one band
+  per family. Every glyph is set in the released fonts, so they need to sit
+  next to this file:
 
       mkdir -p fonts
       gh release download <tag> --pattern 'AKR*SC*.zip' --dir zips
       for z in zips/*.zip; do unzip -o -j "$z" '*.ttf' -d fonts; done
 
-  Then screenshot it at 1600x1120, device scale factor 2:
+  Then screenshot each element at device scale factor 2 — #cover is
+  1600x900, every .band is 1600x420:
 
       agent-browser --allow-file-access open "file://$PWD/specimen.html"
-      agent-browser set viewport 1600 1120 2
-      agent-browser screenshot specimen.png
+      agent-browser set viewport 1600 900 2
+      agent-browser screenshot '#cover' specimen.png
+      agent-browser screenshot '#slab' specimen/slab.png   # …and so on
 
-  It is set the way the website is: warm paper, ink rules instead of boxes, a
-  margin column for numbers, and the 2:1 cells drawn behind each 永安Ag.
+  Each family's character stands in a 米字格, the calligrapher's practice
+  square. Its width is one CJK cell: 1.1 em on Sans, 1.2 em on Type.
 -->
 <html lang="zh-Hans">
 <head>
@@ -24,7 +27,6 @@
   @font-face { font-family: "Slab";   src: url("fonts/AKRSlabSCNFM-Regular.ttf");   font-weight: 400; }
   @font-face { font-family: "Slab";   src: url("fonts/AKRSlabSCNFM-Bold.ttf");      font-weight: 700; }
   @font-face { font-family: "Sans";   src: url("fonts/AKRSansSCNFM-Regular.ttf");   font-weight: 400; }
-  @font-face { font-family: "Sans";   src: url("fonts/AKRSansSCNFM-Bold.ttf");      font-weight: 700; }
   @font-face { font-family: "Round";  src: url("fonts/AKRRoundSCNFM-Regular.ttf");  font-weight: 400; }
   @font-face { font-family: "Type";   src: url("fonts/AKRTypeSCNFM-Regular.ttf");   font-weight: 400; }
   @font-face { font-family: "Pixel";  src: url("fonts/AKRPixelSCNFM-Regular.ttf");  font-weight: 400; }
@@ -35,160 +37,181 @@
   @font-face { font-family: "Casual"; src: url("fonts/AKRCasualSCDual-Regular.ttf");font-weight: 400; }
   @font-face { font-family: "DWG";    src: url("fonts/AKRDWGSCNFM-Regular.ttf");    font-weight: 400; }
 
-  :root {
-    --paper: #f8f4ec;
-    --ink: #1a1815;
-    --muted: #4f483f;
-    --faint: #8a8073;
-    --rule: #d8d0c1;
-    --rule-soft: #e8e1d4;
-    --accent: #8a3d1f;
-    --cell: rgba(138, 61, 31, 0.22);
-  }
+  :root { --paper: #f2eee5; --ink: #141311; --mute: #847a6c; --seal: #c23b20; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 1600px; height: 1120px; }
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: "Sans", ui-monospace, monospace;
-    -webkit-font-smoothing: antialiased;
-    padding: 48px 64px 36px;
-    display: flex; flex-direction: column;
-  }
+  body { width: 1600px; background: #888; font-family: "Sans", monospace; -webkit-font-smoothing: antialiased; }
+  .paper { background: var(--paper); color: var(--ink); --rule: rgba(20,19,17,.14); --fg2: #3f3a33; }
+  .ink { background: var(--ink); color: var(--paper); --rule: rgba(242,238,229,.16); --fg2: #cfc8ba; }
 
-  header { display: grid; grid-template-columns: 1fr auto; align-items: end; padding-bottom: 22px; border-bottom: 1.5px solid var(--ink); }
-  header h1 { font-family: "Slab"; font-weight: 700; font-size: 64px; line-height: 1; letter-spacing: -0.03em; }
-  header h1 span { font-size: 40px; margin-left: 14px; letter-spacing: 0; }
-  header p { font-family: "HandText"; font-size: 21px; color: var(--muted); margin-top: 14px; }
-  .marks { text-align: right; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); line-height: 2.1; }
-  .marks b { color: var(--ink); font-weight: 400; }
+  .f-slab { font-family: "Slab"; } .f-sans { font-family: "Sans"; } .f-round { font-family: "Round"; }
+  .f-type { font-family: "Type"; } .f-pixel { font-family: "Pixel"; -webkit-font-smoothing: none; }
+  .f-hand { font-family: "Hand"; } .f-text { font-family: "HandText"; } .f-casual { font-family: "Casual"; }
+  .f-dwg { font-family: "DWG"; }
 
-  main { flex: 1; display: flex; flex-direction: column; }
-  .row {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 40px 290px 270px 1fr 170px;
-    column-gap: 28px;
-    align-items: center;
-    border-bottom: 1px solid var(--rule);
-  }
-  .no { font-size: 12px; color: var(--accent); letter-spacing: .04em; }
-  .name { font-family: "Slab"; font-weight: 700; font-size: 19px; }
-  .recipe { font-size: 11.5px; letter-spacing: .06em; color: var(--faint); margin-top: 5px; }
+  /* 米字格 */
+  .mi { position: relative; width: calc(var(--mi) * var(--w, 1)); height: var(--mi); font-size: var(--mi); line-height: 1; flex: none; }
+  .mi svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: var(--seal); overflow: visible; }
+  .mi rect, .mi path { vector-effect: non-scaling-stroke; stroke-width: 1.2px; }
+  .mi path { stroke-dasharray: 5 6; opacity: .6; }
+  .mi span { position: absolute; inset: 0; display: grid; place-items: center; transform: translateY(0.05em); }
 
-  .pair { font-size: 72px; line-height: 1; white-space: nowrap; }
-  .pair span {
-    display: inline-block;
-    background-image: repeating-linear-gradient(to right, var(--cell) 0 1px, transparent 1px var(--cell-w, 0.5em));
-    box-shadow: inset 0 1px 0 var(--cell), inset 0 -1px 0 var(--cell), inset -1px 0 0 var(--cell);
-    padding-block: 6px;
-  }
-  .line { font-size: 21px; line-height: 1.5; white-space: nowrap; overflow: hidden; }
-  .line .dim { color: var(--faint); }
-  .icons { color: var(--accent); letter-spacing: .2em; margin-left: 8px; }
-  .also { font-size: 15px; color: var(--muted); margin-top: 4px; }
-  .also .tag { font-family: "Sans"; font-size: 11px; letter-spacing: .1em; color: var(--faint); margin-right: 12px; }
-  .grid { text-align: right; font-size: 11.5px; letter-spacing: .06em; color: var(--faint); line-height: 1.8; }
-  .grid b { color: var(--ink); font-weight: 400; font-size: 13px; }
+  /* the bitmap face sits higher in its em box */
+  .mi.f-pixel span { transform: translateY(-0.05em); }
 
-  .f-slab   { font-family: "Slab"; }
-  .f-sans   { font-family: "Sans"; }
-  .f-round  { font-family: "Round"; }
-  .f-type   { font-family: "Type"; }
-  .f-pixel  { font-family: "Pixel"; -webkit-font-smoothing: none; }
-  .f-hand   { font-family: "Hand"; }
-  .f-text   { font-family: "HandText"; }
-  .f-casual { font-family: "Casual"; }
-  .f-dwg    { font-family: "DWG"; }
-  /* a 12px bitmap face: whole multiples only */
-  .pair.f-sans {  --cell-w: 0.55em; }
-  .pair.f-type {  --cell-w: 0.6em; }
-  .pair.f-pixel { font-size: 72px; }
-  .line.f-type { font-size: 18px; }
-  .line.f-pixel { font-size: 24px; }
+  /* cover */
+  #cover { width: 1600px; height: 900px; padding: 72px 96px; display: grid; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; column-gap: 96px; }
+  #cover .mi { grid-row: 1 / 3; align-self: center; }
+  .title { display: flex; justify-content: flex-end; }
+  .title h1 { writing-mode: vertical-rl; font-family: "Slab"; font-weight: 700; font-size: 84px; line-height: 1.25; letter-spacing: .06em; }
+  .title h1 span { display: block; }
+  .title h1 span:last-child { color: var(--seal); }
+  .cover-foot { align-self: end; border-top: 1px solid var(--rule); padding-top: 22px; }
+  .cover-foot .en { font-family: "HandText"; font-size: 26px; color: var(--fg2); }
+  .cover-foot .marks { display: flex; gap: 22px; white-space: nowrap; margin-top: 16px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+  .cover-foot .marks b { color: var(--seal); font-weight: 400; }
+  .seal-mark { position: absolute; }
 
-  footer { display: flex; justify-content: space-between; align-items: baseline; padding-top: 16px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
-  footer b { color: var(--ink); font-weight: 400; }
+  /* family bands */
+  .band { width: 1600px; height: 420px; padding: 0 96px; display: grid; grid-template-columns: 330px 1fr 300px; column-gap: 64px; align-items: center; }
+  .band .mi { justify-self: center; }
+  .folio { font-size: 13px; letter-spacing: .14em; color: var(--mute); }
+  .folio .seal { color: var(--seal); }
+  .band h2 { font-family: "Slab"; font-weight: 700; font-size: 52px; line-height: 1.1; margin-top: 10px; letter-spacing: -.02em; }
+  .recipe { font-size: 15px; letter-spacing: .06em; color: var(--mute); margin-top: 10px; }
+  .proof { margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 26px; line-height: 1.55; white-space: nowrap; }
+  .proof .dim { color: var(--mute); }
+  .proof.f-pixel { font-size: 24px; }
+  .ic { color: var(--seal); letter-spacing: .2em; margin-left: 10px; }
+  .also { margin-top: 10px; font-size: 18px; color: var(--fg2); }
+  .meta { text-align: right; white-space: nowrap; font-size: 14px; letter-spacing: .06em; color: var(--mute); line-height: 1.8; }
+  .meta b { display: block; font-family: "Slab"; font-size: 34px; letter-spacing: 0; color: inherit; font-weight: 700; margin-bottom: 6px; }
+  .ink .meta b { color: var(--paper); }
+  .paper .meta b { color: var(--ink); }
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>AKR<span>字体</span></h1>
-    <p>Eight CJK coding fonts, built from source — Latin × CJK on a strict 2:1 grid.</p>
+<section class="ink" id="cover">
+  <div class="mi f-hand" style="--mi:640px;--w:1.0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>永</span></div>
+  <div class="title"><h1><span>八套中英混排</span><span>编程字体，</span><span>从源码构建。</span></h1></div>
+  <div class="cover-foot">
+    <p class="en">Eight CJK coding fonts, built from source — Latin × CJK on a strict 2:1 grid.</p>
+    <p class="marks"><b>AKR 字体</b><span>Nerd Font Mono</span><span>SC · TC · HK · JP · KR</span><span>Nix · gated · fingerprinted</span></p>
   </div>
-  <div class="marks">
-    <div><b>Nerd Font Mono</b> · hinted · ttf / woff2 / otf</div>
-    <div>SC · TC · HK · JP · KR from one build</div>
-    <div>every family a Nix derivation</div>
-  </div>
-</header>
+</section>
 
-<main>
-  <div class="row">
-    <div class="no">01</div>
-    <div class="who"><div class="name">AKR Slab SC NFM</div><div class="recipe">MonoSlab × 霞鹜新致宋 Opt</div></div>
-    <div class="pair f-slab"><span>永安Ag</span></div>
-    <div class="line f-slab"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span> <span class="icons">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></div></div>
-    <div class="grid"><b>2:1</b><br>Regular · Bold</div>
+<section class="band paper" id="slab">
+  <div class="mi f-slab" style="--mi:270px;--w:1.0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>宋</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">01</span> / 08 · serif/</p>
+    <h2>AKR Slab SC NFM</h2>
+    <p class="recipe">MonoSlab × 霞鹜新致宋 Opt</p>
+    <div class="proof f-slab">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt; <span class="ic">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></p>
+    </div>
+    
   </div>
-  <div class="row">
-    <div class="no">02</div>
-    <div class="who"><div class="name">AKR Sans SC NFM</div><div class="recipe">Lilex × IBM Plex Sans SC</div></div>
-    <div class="pair f-sans"><span>永安Ag</span></div>
-    <div class="line f-sans"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span> <span class="icons">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></div></div>
-    <div class="grid"><b>550 / 1100</b><br>Regular · Bold</div>
+  <div class="meta"><b>2:1</b><span>Regular · Bold</span></div>
+</section>
+<section class="band ink" id="sans">
+  <div class="mi f-sans" style="--mi:270px;--w:1.1"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>黑</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">02</span> / 08 · sans/</p>
+    <h2>AKR Sans SC NFM</h2>
+    <p class="recipe">Lilex × IBM Plex Sans SC</p>
+    <div class="proof f-sans">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt; <span class="ic">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></p>
+    </div>
+    
   </div>
-  <div class="row">
-    <div class="no">03</div>
-    <div class="who"><div class="name">AKR Round SC NFM</div><div class="recipe">Iosevka Curly × Resource Han Rounded</div></div>
-    <div class="pair f-round"><span>永安Ag</span></div>
-    <div class="line f-round"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span> <span class="icons">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></div></div>
-    <div class="grid"><b>500 / 1000</b><br>Regular · Bold</div>
+  <div class="meta"><b>550 / 1100</b><span>Regular · Bold</span></div>
+</section>
+<section class="band paper" id="round">
+  <div class="mi f-round" style="--mi:270px;--w:1.0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>圆</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">03</span> / 08 · rounded/</p>
+    <h2>AKR Round SC NFM</h2>
+    <p class="recipe">Iosevka Curly × Resource Han Rounded</p>
+    <div class="proof f-round">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt; <span class="ic">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></p>
+    </div>
+    
   </div>
-  <div class="row">
-    <div class="no">04</div>
-    <div class="who"><div class="name">AKR Type SC NFM</div><div class="recipe">Courier Prime × 朱雀仿宋 Zhuque</div></div>
-    <div class="pair f-type"><span>永安Ag</span></div>
-    <div class="line f-type"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span> <span class="icons">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></div></div>
-    <div class="grid"><b>600 / 1200</b><br>Regular · Bold</div>
+  <div class="meta"><b>500 / 1000</b><span>Regular · Bold</span></div>
+</section>
+<section class="band ink" id="type">
+  <div class="mi f-type" style="--mi:270px;--w:1.2"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>打</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">04</span> / 08 · typewriter/</p>
+    <h2>AKR Type SC NFM</h2>
+    <p class="recipe">Courier Prime × 朱雀仿宋 Zhuque</p>
+    <div class="proof f-type">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt; <span class="ic">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></p>
+    </div>
+    
   </div>
-  <div class="row">
-    <div class="no">05</div>
-    <div class="who"><div class="name">AKR Pixel SC NFM</div><div class="recipe">Fusion Pixel 12px × Fusion Pixel 12px</div></div>
-    <div class="pair f-pixel"><span>永安Ag</span></div>
-    <div class="line f-pixel"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span> <span class="icons">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></div></div>
-    <div class="grid"><b>2:1</b><br>Regular</div>
+  <div class="meta"><b>600 / 1200</b><span>Regular · Bold</span></div>
+</section>
+<section class="band paper" id="pixel">
+  <div class="mi f-pixel" style="--mi:264px;--w:1.0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>像</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">05</span> / 08 · pixel/</p>
+    <h2>AKR Pixel SC NFM</h2>
+    <p class="recipe">Fusion Pixel 12px × Fusion Pixel 12px</p>
+    <div class="proof f-pixel">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt; <span class="ic">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></p>
+    </div>
+    
   </div>
-  <div class="row">
-    <div class="no">06</div>
-    <div class="who"><div class="name">AKR Hand SC NFM</div><div class="recipe">Monaspace Radon × 霞鹜文楷 LXGW</div></div>
-    <div class="pair f-hand"><span>永安Ag</span></div>
-    <div class="line f-hand"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span> <span class="icons">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></div>
-      <div class="also"><span class="tag">+ AKR Hand SC Text</span><span class="f-text"><span style="font-weight:300">排版是看不见的艺术，</span>reading face · <b>Light / Regular / Bold</b></span></div></div>
-    <div class="grid"><b>500 / 1000</b><br>Regular · Bold</div>
+  <div class="meta"><b>2:1</b><span>Regular</span></div>
+</section>
+<section class="band ink" id="hand">
+  <div class="mi f-hand" style="--mi:270px;--w:1.0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>楷</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">06</span> / 08 · handwriting/</p>
+    <h2>AKR Hand SC NFM</h2>
+    <p class="recipe">Monaspace Radon × 霞鹜文楷 LXGW</p>
+    <div class="proof f-hand">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt; <span class="ic">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></p>
+    </div>
+    <p class="also f-text">+ AKR Hand SC Text — <span style="font-weight:300">Light</span> · Regular · <b>Bold</b>，正文阅读用的一套</p>
   </div>
-  <div class="row">
-    <div class="no">07</div>
-    <div class="who"><div class="name">AKR Casual SC Dual</div><div class="recipe">Recursive Mono Casual × Yozai 悠哉</div></div>
-    <div class="pair f-casual"><span>永安Ag</span></div>
-    <div class="line f-casual"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span></div></div>
-    <div class="grid"><b>2:1</b><br>Regular · Bold</div>
+  <div class="meta"><b>500 / 1000</b><span>Regular · Bold<br>+ Text: Light · Regular · Bold</span></div>
+</section>
+<section class="band paper" id="casual">
+  <div class="mi f-casual" style="--mi:270px;--w:1.0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>随</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">07</span> / 08 · casual/</p>
+    <h2>AKR Casual SC Dual</h2>
+    <p class="recipe">Recursive Mono Casual × Yozai 悠哉</p>
+    <div class="proof f-casual">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt;</p>
+    </div>
+    
   </div>
-  <div class="row">
-    <div class="no">08</div>
-    <div class="who"><div class="name">AKR DWG SC NFM</div><div class="recipe">Cascadia Code × 阿里巴巴普惠体 3.0</div></div>
-    <div class="pair f-dwg"><span>永安Ag</span></div>
-    <div class="line f-dwg"><div>列宽 != 0 &amp;&amp; 半角 &lt;= 全角 <span class="dim">// 一字 === 两格</span> <span class="icons">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></div></div>
-    <div class="grid"><b>500 / 1000</b><br>Light · Regular · Bold</div>
+  <div class="meta"><b>2:1</b><span>Regular · Bold</span></div>
+</section>
+<section class="band ink" id="dwg">
+  <div class="mi f-dwg" style="--mi:270px;--w:1.0"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="100"/><path d="M50 0V100M0 50H100M0 0L100 100M100 0L0 100"/></svg><span>弯</span></div>
+  <div class="text">
+    <p class="folio"><span class="seal">08</span> / 08 · dwg/</p>
+    <h2>AKR DWG SC NFM</h2>
+    <p class="recipe">Cascadia Code × 阿里巴巴普惠体 3.0</p>
+    <div class="proof f-dwg">
+      <p>const 宽度对齐 = "字体 font"; // != === &lt;= &gt;=</p>
+      <p class="dim">永安 Ag 0Oo 1lI {} -&gt; =&gt; <span class="ic">&#xf09b; &#xe0a0; &#xf07b; &#xf121;</span></p>
+    </div>
+    
   </div>
-</main>
-
-<footer>
-  <span><b>github.com/AkaraChen/font</b></span>
-  <span>永安Ag · set in the released .ttf files · cells drawn one Latin advance apart</span>
-</footer>
+  <div class="meta"><b>500 / 1000</b><span>Light · Regular · Bold</span></div>
+</section>
 
 </body>
 </html>
