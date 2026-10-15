@@ -3,34 +3,71 @@
  * grid, rules instead of boxes. The page furniture stays quiet so the specimens
  * carry the visual weight.
  *
- * Only tokens, reset, font faces and a few shared primitives live here. Page
+ * The house is set in its own fonts, each with one job:
+ *
+ *   AKR Slab      — headings. Song CJK, slab Latin: the bookish voice.
+ *   AKR Hand Text — running prose. The one proportional AKR face, made for reading.
+ *   AKR Sans      — labels, numbers, tables, controls. Small and monospaced.
+ *
+ * Every page is built from the same few parts: a type scale with five steps,
+ * a spacing scale with six, the folio (a margin column for labels beside a body
+ * column for content), a numbered section head, and the plate — a ruled frame
+ * that holds a specimen. Page components compose these; they do not invent
+ * their own sizes.
+ *
+ * Only tokens, reset, font faces and these shared primitives live here. Page
  * and component styling belongs in the component that owns it.
  */
 
 :root {
-  --paper: #faf7f1;
-  --paper-raised: #fffdf8;
+  --paper: #f8f4ec;
+  --paper-raised: #fdfaf4;
   --ink: #1a1815;
-  --ink-muted: #5d564c;
+  --ink-muted: #4f483f;
   --ink-faint: #8a8073;
-  --rule: #ddd6c9;
-  --rule-soft: #ece5d9;
+  --rule: #d8d0c1;
+  --rule-soft: #e8e1d4;
   --accent: #8a3d1f;
+  /* The 2:1 cell lines drawn behind plates. */
+  --cell: rgba(138, 61, 31, 0.22);
 
-  /* The dark surface is borrowed from direction B and stays scoped to code and
-     the preview canvas — it never takes over a page. */
+  /* The dark surface stays scoped to code and the preview canvas — it never
+     takes over a page. */
   --dark-bg: #14120f;
   --dark-ink: #e8e2d6;
   --dark-muted: #8f877a;
   --dark-rule: #2a2621;
 
-  --font-sans: 'AKR Sans', ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-display: 'AKR Slab', var(--font-sans);
+  --font-label: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-text: 'AKR Hand Text', 'LXGW WenKai', ui-serif, Georgia, 'Songti SC', serif;
+  --font-display: 'AKR Slab', ui-serif, Georgia, 'Songti SC', serif;
   --font-mono: 'AKR Slab', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Kept for components that predate the split. */
+  --font-sans: var(--font-label);
 
-  --measure: 68ch;
-  --page: 1180px;
-  --gutter: clamp(20px, 5vw, 40px);
+  /* Type scale. Labels and meta are fixed; the steps above body scale with
+     the viewport between a phone and a 1440 desktop. */
+  --t-label: 11px;
+  --t-meta: 13px;
+  --t-body: 17px;
+  --t-lead: clamp(18px, 1.6vw, 21px);
+  --t-h2: clamp(26px, 3.2vw, 38px);
+  --t-h1: clamp(40px, 6.4vw, 84px);
+  --t-plate: clamp(96px, 25vw, 330px);
+
+  /* Spacing scale. Sections are always --s-6 apart; nothing in between. */
+  --s-1: 8px;
+  --s-2: 16px;
+  --s-3: 24px;
+  --s-4: 40px;
+  --s-5: 64px;
+  --s-6: clamp(72px, 9vw, 120px);
+
+  --measure: 36em;
+  --page: 1240px;
+  --gutter: clamp(20px, 5vw, 48px);
+  --margin-col: minmax(0, 3fr);
+  --body-col: minmax(0, 9fr);
 }
 
 *,
@@ -61,9 +98,10 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.75;
+  font-family: var(--font-text);
+  font-size: var(--t-body);
+  line-height: 1.8;
+  font-kerning: normal;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -74,24 +112,24 @@ h3,
 h4 {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.02em;
   line-height: 1.2;
   text-wrap: balance;
   margin: 0;
 }
 
 h1 {
-  font-size: clamp(34px, 5.4vw, 60px);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
+  font-size: var(--t-h1);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: clamp(24px, 3.2vw, 32px);
+  font-size: var(--t-h2);
+  letter-spacing: -0.02em;
 }
 
 h3 {
-  font-size: 18px;
+  font-size: 19px;
 }
 
 p {
@@ -100,7 +138,8 @@ p {
 
 a {
   color: inherit;
-  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
   text-decoration-color: var(--rule);
 }
 
@@ -115,7 +154,7 @@ pre {
 }
 
 code {
-  font-size: 0.92em;
+  font-size: 0.9em;
 }
 
 img {
@@ -127,6 +166,11 @@ hr {
   border: 0;
   border-top: 1px solid var(--rule);
   margin: 0;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 :focus-visible {
@@ -142,19 +186,136 @@ hr {
   padding-inline: var(--gutter);
 }
 
-.eyebrow {
+/* The folio: a margin column for labels and numbers, a body column for the
+   content. Every page header and section sits on it, so the left edges of
+   every page line up with every other page. */
+.folio {
+  display: grid;
+  grid-template-columns: var(--margin-col) var(--body-col);
+  column-gap: var(--s-4);
+}
+
+.folio > .folio__margin {
+  grid-column: 1;
+}
+
+.folio > .folio__body,
+.folio > :not(.folio__margin) {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.folio > .folio__wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 860px) {
+  .folio {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .folio > .folio__margin,
+  .folio > .folio__body,
+  .folio > :not(.folio__margin),
+  .folio > .folio__wide {
+    grid-column: 1;
+  }
+}
+
+/* Small capitals of the house: what a thing is, where it sits. */
+.label {
   display: block;
-  font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: 0.18em;
+  font-family: var(--font-label);
+  font-size: var(--t-label);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
-  margin-bottom: 14px;
+}
+
+.label b,
+.label strong {
+  color: var(--ink);
+  font-weight: 400;
+}
+
+/* Kept as an alias so older markup still reads as a label. */
+.eyebrow {
+  display: block;
+  font-family: var(--font-label);
+  font-size: var(--t-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--s-2);
+}
+
+.num {
+  font-family: var(--font-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* Page head: the label in the margin, the title and lead in the body. */
+.page-head {
+  padding-block: var(--s-5) var(--s-5);
+  row-gap: var(--s-2);
+}
+
+.page-head .folio__margin {
+  padding-top: 0.9em;
+}
+
+.page-head h1 {
+  max-width: 14em;
+}
+
+.page-head .lead {
+  margin-top: var(--s-3);
+}
+
+@media (max-width: 860px) {
+  .page-head {
+    padding-block: var(--s-4);
+  }
+}
+
+/* Section: a full-width ink rule, the number and label in the margin, the
+   heading in the body. Sections are the only vertical rhythm a page has. */
+.section {
+  padding-block: 0 var(--s-6);
+}
+
+.section-head {
+  border-top: 1px solid var(--ink);
+  padding-top: var(--s-2);
+  margin-bottom: var(--s-4);
+  row-gap: var(--s-1);
+  align-items: baseline;
+}
+
+.section-head--bare {
+  margin-bottom: var(--s-2);
+}
+
+.section-head .label {
+  display: flex;
+  gap: 1.2em;
+}
+
+.section-head .num {
+  letter-spacing: 0.04em;
+}
+
+.section-head h2 {
+  max-width: 18em;
 }
 
 .lead {
   color: var(--ink-muted);
-  font-size: 16.5px;
+  font-size: var(--t-lead);
+  line-height: 1.75;
   max-width: var(--measure);
 }
 
@@ -170,11 +331,14 @@ hr {
 }
 
 .button {
-  display: inline-block;
-  font-family: var(--font-display);
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-family: var(--font-label);
+  font-size: var(--t-meta);
   line-height: 1;
-  padding: 13px 22px;
+  letter-spacing: 0.02em;
+  padding: 14px 22px;
   border: 1px solid var(--ink);
   background: var(--ink);
   color: var(--paper);
@@ -191,29 +355,102 @@ hr {
 }
 
 .button--ghost:hover {
-  background: var(--rule-soft);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* The plate: a ruled frame around one specimen. A caption runs along the top
+   rule, the glyphs sit in the middle, and on coding faces the 2:1 cells are
+   drawn behind them, one Latin cell apart. --cell-w is that cell in em (most
+   faces are 0.5em; the Plate component sets the exceptions). Set --cells: none
+   to drop them on proportional faces. */
+.plate {
+  border-block: 1px solid var(--ink);
+}
+
+.plate__caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  padding-block: 10px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.plate__glyphs {
+  margin: 0;
+  padding-block: var(--s-3);
+  font-size: var(--t-plate);
+  line-height: 1.12;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.plate__glyphs > span {
+  display: inline-block;
+  background-image: var(
+    --cells,
+    repeating-linear-gradient(to right, var(--cell) 0 1px, transparent 1px var(--cell-w, 0.5em))
+  );
+  box-shadow:
+    inset 0 1px 0 var(--cell),
+    inset 0 -1px 0 var(--cell),
+    inset -1px 0 0 var(--cell);
+}
+
+.plate__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  padding-block: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+/* Bitmap faces only look right at whole multiples of their pixel size. */
+.is-pixel {
+  -webkit-font-smoothing: none;
+  font-smooth: never;
 }
 
 .spec-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .spec-table th,
 .spec-table td {
   text-align: left;
-  padding: 10px 12px 10px 0;
+  padding: 12px var(--s-2) 12px 0;
   border-bottom: 1px solid var(--rule-soft);
-  vertical-align: top;
+  vertical-align: baseline;
+}
+
+.spec-table tr:first-child > * {
+  border-top: 1px solid var(--rule);
 }
 
 .spec-table th {
-  font-family: var(--font-display);
+  font-family: var(--font-label);
+  font-size: var(--t-label);
   font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--ink-faint);
   white-space: nowrap;
-  width: 12em;
+  width: 11em;
+}
+
+.spec-table thead th {
+  border-top: 0;
+  border-bottom: 1px solid var(--ink);
 }
 
 .skip-link {

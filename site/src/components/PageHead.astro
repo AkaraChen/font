@@ -1,0 +1,55 @@
+---
+// The head every inner page opens with: marks in the margin, title and lead in
+// the body. Whatever is slotted goes under the lead.
+
+interface Props {
+  /** Margin lines, top first. The first one is set in ink. */
+  marks: string[]
+  title: string
+  lead?: string
+}
+
+const { marks, title, lead } = Astro.props
+---
+
+<header class="page folio page-head">
+  <ul class="folio__margin page-head__marks">
+    {marks.filter(Boolean).map(mark => <li class="label">{mark}</li>)}
+  </ul>
+  <div class="folio__body">
+    <h1>{title}</h1>
+    {lead && <p class="lead">{lead}</p>}
+    <slot />
+  </div>
+</header>
+
+<style>
+  .page-head__marks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page-head__marks li {
+    padding-block: 6px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .page-head__marks li:first-child {
+    color: var(--ink);
+  }
+
+  @media (max-width: 860px) {
+    .page-head__marks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 14px;
+      margin-bottom: var(--s-2);
+    }
+
+    .page-head__marks li {
+      border: 0;
+      padding: 0;
+    }
+  }
+</style>

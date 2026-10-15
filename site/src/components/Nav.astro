@@ -39,20 +39,21 @@ const links = [
 
 <style>
   .nav {
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid var(--ink);
   }
 
   .nav__inner {
     display: flex;
-    align-items: center;
-    gap: 24px;
-    padding-block: 20px;
+    align-items: baseline;
+    gap: var(--s-3);
+    padding-block: 22px 18px;
   }
 
   .nav__logo {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 19px;
+    font-size: 20px;
+    line-height: 1;
     letter-spacing: -0.01em;
     text-decoration: none;
     margin-right: auto;
@@ -60,46 +61,54 @@ const links = [
 
   .nav__links {
     display: flex;
-    gap: 22px;
+    gap: var(--s-3);
     flex-wrap: wrap;
   }
 
-  .nav__links a {
-    font-size: 13.5px;
+  .nav__links a,
+  .nav__lang {
+    font-family: var(--font-label);
+    font-size: var(--t-meta);
+    line-height: 1;
     color: var(--ink-muted);
     text-decoration: none;
+    padding-bottom: 4px;
+    border-bottom: 1px solid transparent;
   }
 
   .nav__links a:hover,
+  .nav__lang:hover {
+    color: var(--ink);
+  }
+
   .nav__links a[aria-current='page'] {
     color: var(--ink);
+    border-bottom-color: var(--ink);
   }
 
   .nav__lang {
-    font-family: var(--font-display);
-    font-size: 11.5px;
-    letter-spacing: 0.04em;
-    border: 1px solid var(--rule);
-    padding: 4px 9px;
-    color: var(--ink-muted);
-    text-decoration: none;
+    padding-left: var(--s-3);
+    border-left: 1px solid var(--rule);
   }
 
-  .nav__lang:hover {
-    border-color: var(--ink);
-    color: var(--ink);
-  }
-
-  @media (max-width: 720px) {
+  @media (max-width: 860px) {
     .nav__inner {
       flex-wrap: wrap;
-      gap: 12px;
+      row-gap: var(--s-2);
+      padding-block: 18px 14px;
     }
 
     .nav__links {
       order: 3;
       width: 100%;
-      gap: 16px;
+      gap: 6px 18px;
+      padding-top: 12px;
+      border-top: 1px solid var(--rule-soft);
+    }
+
+    .nav__lang {
+      padding-left: 0;
+      border-left: 0;
     }
   }
 </style>

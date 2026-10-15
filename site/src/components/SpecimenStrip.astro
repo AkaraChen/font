@@ -1,7 +1,10 @@
 ---
-// The specimen rows on the home page. Each sample is rendered in its own
-// subsetted face, so the strip costs a few hundred KB in total rather than the
-// ~60 MB the full fonts would.
+// The specimen rows on the home and families pages. Each sample is rendered in
+// its own subsetted face, so the strip costs a few hundred KB in total rather
+// than the ~60 MB the full fonts would.
+//
+// Every row sits on the folio: number and facts in the margin, the family's
+// own glyphs in the body — first the house pair large, then its sample line.
 
 import { families } from '../data/families'
 import { cssFamily, hasFonts } from '../data/fonts'
@@ -19,79 +22,125 @@ interface Props {
 const { locale } = Astro.props
 ---
 
-<div class="specimen">
-  {families.map(family => (
-    <a class="specimen__row" href={localePath(locale, `/family/${family.id}`)}>
-      <span class="specimen__name">
-        {family.name[locale]}
-        <em>{shortName(family.latin)} × {shortName(family.cjk)}</em>
-      </span>
-      <span
-        class="specimen__sample"
-        style={hasFonts ? `font-family:"${cssFamily(family.id)}", ui-monospace, monospace` : undefined}
-      >{family.sample}</span>
-      <span class="specimen__meta">{family.weights.map(weight => weight[0]).join(' · ')}</span>
-    </a>
+<ol class="specimen">
+  {families.map((family, index) => (
+    <li>
+      <a class="folio specimen__row" href={localePath(locale, `/family/${family.id}`)}>
+        <span class="folio__margin specimen__facts">
+          <span class="label"><span class="num">{String(index + 1).padStart(2, '0')}</span></span>
+          <span class="specimen__name">{family.name[locale]}</span>
+          <span class="label">{shortName(family.latin)} × {shortName(family.cjk)}</span>
+          <span class="label">{family.grid} · {family.weights.join(' / ')}</span>
+        </span>
+        <span
+          class:list={['folio__body', 'specimen__type', { 'is-pixel': family.id === 'pixel' }]}
+          style={hasFonts ? `font-family:"${cssFamily(family.id)}", ui-monospace, monospace` : undefined}
+        >
+          <span class="specimen__pair" aria-hidden="true">永安Ag</span>
+          <span class="specimen__sample">{family.sample}</span>
+        </span>
+      </a>
+    </li>
   ))}
-</div>
+</ol>
 
 <style>
   .specimen {
-    border-top: 1px solid var(--rule);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--rule);
   }
 
   .specimen__row {
-    display: grid;
-    grid-template-columns: 200px minmax(0, 1fr) 60px;
-    gap: 24px;
-    align-items: baseline;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--rule-soft);
+    padding-block: var(--s-3) var(--s-3);
+    border-top: 1px solid var(--rule);
     text-decoration: none;
+    align-items: start;
   }
 
-  .specimen__row:hover {
-    background: var(--rule-soft);
+  .specimen__facts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 6px;
   }
 
   .specimen__name {
     font-family: var(--font-display);
-    font-size: 13.5px;
     font-weight: 700;
+    font-size: 19px;
+    line-height: 1.3;
+    margin: 6px 0 6px;
   }
 
-  .specimen__name em {
-    display: block;
-    font-style: normal;
-    font-weight: 400;
-    font-size: 11px;
-    color: var(--ink-faint);
-    margin-top: 4px;
+  .specimen__type {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .specimen__pair {
+    font-size: 72px;
+    line-height: 1.15;
+    letter-spacing: 0;
+    transition: color 0.15s;
   }
 
   .specimen__sample {
-    font-size: clamp(18px, 2.2vw, 26px);
-    line-height: 1.5;
+    font-size: 22px;
+    line-height: 1.6;
+    color: var(--ink-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .specimen__meta {
-    font-family: var(--font-display);
-    font-size: 11px;
-    color: var(--ink-faint);
-    text-align: right;
+  .specimen__type.is-pixel .specimen__sample {
+    font-size: 24px;
   }
 
-  @media (max-width: 840px) {
+  .specimen__row:hover .specimen__pair {
+    color: var(--accent);
+  }
+
+  .specimen__row:hover .specimen__name {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  @media (max-width: 860px) {
     .specimen__row {
-      grid-template-columns: 1fr;
-      gap: 8px;
+      row-gap: var(--s-1);
     }
 
-    .specimen__meta {
-      text-align: left;
+    .specimen__facts {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 12px;
+      padding-top: 0;
+    }
+
+    .specimen__facts > :first-child {
+      grid-row: span 3;
+      padding-top: 8px;
+    }
+
+    .specimen__name {
+      margin: 0;
+    }
+
+    .specimen__pair {
+      font-size: 60px;
+    }
+
+    .specimen__type.is-pixel .specimen__pair {
+      font-size: 60px;
+    }
+
+    .specimen__sample {
+      font-size: 17px;
     }
   }
 </style>

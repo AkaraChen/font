@@ -34,52 +34,75 @@ const jsonLd = {
   jsonLd={jsonLd}
   markdown={false}
 >
-  <article class="page post">
-    <header>
-      <a class="post__back" href={localePath(locale, '/blog')}>← {t('blog.title')}</a>
-      <h1>{post.data.title}</h1>
-      <time class="post__date" datetime={post.data.date.toISOString()}>
-        {post.data.date.toISOString().slice(0, 10)}
-      </time>
+  <article class="page">
+    <header class="folio page-head">
+      <div class="folio__margin post__marks">
+        <a class="label" href={localePath(locale, '/blog')}>← {t('blog.title')}</a>
+        <time class="label" datetime={post.data.date.toISOString()}>
+          {post.data.date.toISOString().slice(0, 10)}
+        </time>
+      </div>
+      <div class="folio__body">
+        <h1>{post.data.title}</h1>
+        <p class="lead">{post.data.description}</p>
+      </div>
     </header>
-    <div class="post__body">
-      <Content />
+    <div class="folio post">
+      <div class="folio__body post__body">
+        <Content />
+      </div>
     </div>
   </article>
 </Base>
 
 <style>
-  .post {
-    padding-block: clamp(40px, 6vw, 64px) 0;
-    max-width: 780px;
+  .post__marks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  .post__back {
-    font-family: var(--font-display);
-    font-size: 12px;
-    color: var(--ink-faint);
+  .post__marks a {
     text-decoration: none;
   }
 
-  .post h1 {
-    margin-top: 16px;
+  .post__marks a:hover {
+    color: var(--ink);
   }
 
-  .post__date {
-    display: block;
-    font-size: 12px;
-    color: var(--ink-faint);
-    margin-top: 14px;
+  .page-head h1 {
+    font-size: clamp(34px, 5vw, 64px);
+  }
+
+  .post {
+    border-top: 1px solid var(--ink);
+    padding-top: var(--s-5);
   }
 
   .post__body {
-    margin-top: 36px;
     color: var(--ink-muted);
+    max-width: var(--measure);
+    font-size: 18px;
+    line-height: 1.9;
+  }
+
+  .post__body > :global(p:first-child) {
+    color: var(--ink);
+    font-size: var(--t-lead);
   }
 
   .post__body :global(h2) {
-    margin-top: 48px;
-    margin-bottom: 12px;
+    font-size: clamp(22px, 2.4vw, 28px);
+    margin-top: var(--s-5);
+    margin-bottom: var(--s-2);
+    padding-top: var(--s-2);
+    border-top: 1px solid var(--rule);
+    color: var(--ink);
+  }
+
+  .post__body :global(h3) {
+    margin-top: var(--s-4);
+    margin-bottom: var(--s-1);
     color: var(--ink);
   }
 
@@ -87,37 +110,53 @@ const jsonLd = {
     margin-bottom: 1.2em;
   }
 
+  .post__body :global(strong) {
+    color: var(--ink);
+  }
+
   .post__body :global(table) {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
-    margin-bottom: 1.5em;
+    font-size: 15px;
+    margin: var(--s-3) 0 var(--s-4);
+    border-top: 1px solid var(--ink);
   }
 
   .post__body :global(th),
   .post__body :global(td) {
     text-align: left;
-    padding: 9px 12px 9px 0;
+    padding: 10px var(--s-2) 10px 0;
     border-bottom: 1px solid var(--rule-soft);
-    vertical-align: top;
+    vertical-align: baseline;
   }
 
   .post__body :global(th) {
-    font-family: var(--font-display);
+    font-family: var(--font-label);
+    font-size: var(--t-label);
     font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: var(--ink-faint);
   }
 
   .post__body :global(pre) {
     background: var(--dark-bg);
     color: var(--dark-ink);
-    padding: 18px 20px;
+    padding: var(--s-3);
+    margin: var(--s-3) 0 var(--s-4);
     overflow-x: auto;
     font-size: 14px;
     line-height: 1.7;
   }
 
   .post__body :global(code) {
-    font-size: 0.94em;
+    font-size: 0.88em;
+  }
+
+  .post__body :global(blockquote) {
+    margin: var(--s-3) 0;
+    padding-left: var(--s-3);
+    border-left: 2px solid var(--accent);
+    color: var(--ink);
   }
 </style>

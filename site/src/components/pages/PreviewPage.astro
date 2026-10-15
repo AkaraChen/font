@@ -2,6 +2,7 @@
 import { useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
 import FontPreview from '../FontPreview.astro'
+import PageHead from '../PageHead.astro'
 
 interface Props {
   locale: Locale
@@ -16,23 +17,9 @@ const description = locale === 'zh'
 ---
 
 <Base locale={locale} title={t('preview.title')} description={description} path="/preview">
-  <section class="page head">
-    <span class="eyebrow">{t('nav.preview')}</span>
-    <h1>{t('preview.title')}</h1>
-    <p class="lead">{t('preview.intro')}</p>
-  </section>
+  <PageHead marks={[t('nav.preview')]} title={t('preview.title')} lead={t('preview.intro')} />
 
-  <div class="page body">
+  <div class="page">
     <FontPreview locale={locale} autoload syncUrl />
   </div>
 </Base>
-
-<style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 28px;
-  }
-
-  .body {
-    padding-bottom: clamp(40px, 6vw, 72px);
-  }
-</style>

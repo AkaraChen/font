@@ -3,6 +3,8 @@ import { families } from '../../data/families'
 import { manifest } from '../../data/fonts'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
+import PageHead from '../PageHead.astro'
+import SectionHead from '../SectionHead.astro'
 import SpecimenStrip from '../SpecimenStrip.astro'
 
 interface Props {
@@ -18,67 +20,70 @@ const description = locale === 'zh'
 ---
 
 <Base locale={locale} title={t('nav.families')} description={description} path="/families">
-  <section class="page head">
-    <span class="eyebrow">{manifest.tag || t('nav.families')}</span>
-    <h1>{t('home.families.heading')}</h1>
-    <p class="lead">{t('home.specimen.note')}</p>
-  </section>
-
-  <div class="page">
-    <SpecimenStrip locale={locale} />
-  </div>
+  <PageHead
+    marks={[t('nav.families'), manifest.tag]}
+    title={t('home.families.heading')}
+    lead={t('home.specimen.note')}
+  />
 
   <section class="page section">
-    <table class="spec-table">
-      <thead>
-        <tr>
-          <th scope="col">{t('nav.families')}</th>
-          <th scope="col">Latin</th>
-          <th scope="col">CJK</th>
-          <th scope="col">{t('family.grid')}</th>
-          <th scope="col">{t('family.weights')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {families.map(family => (
+    <SectionHead n="01" label={t('home.specimen')} />
+    <SpecimenStrip locale={locale} />
+  </section>
+
+  <section class="page section">
+    <SectionHead n="02" label={t('family.spec')} />
+    <div class="table-wrap">
+      <table class="spec-table">
+        <thead>
           <tr>
-            <td><a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a></td>
-            <td>{family.latin}</td>
-            <td>{family.cjk}</td>
-            <td>{family.grid}</td>
-            <td>{family.weights.join(' · ')}</td>
+            <th scope="col">{t('nav.families')}</th>
+            <th scope="col">Latin</th>
+            <th scope="col">CJK</th>
+            <th scope="col">{t('family.grid')}</th>
+            <th scope="col">{t('family.weights')}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {families.map(family => (
+            <tr>
+              <td><a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a></td>
+              <td>{family.latin}</td>
+              <td>{family.cjk}</td>
+              <td>{family.grid}</td>
+              <td>{family.weights.join(' · ')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   </section>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 32px;
-  }
-
-  .section {
-    padding-block: clamp(36px, 5vw, 56px);
+  .table-wrap {
     overflow-x: auto;
   }
 
   .spec-table th {
     width: auto;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
   }
 
   .spec-table td {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--ink-muted);
   }
 
   .spec-table td:first-child {
     font-family: var(--font-display);
+    font-weight: 700;
     color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .spec-table td:nth-child(4) {
+    font-family: var(--font-label);
+    font-size: var(--t-meta);
     white-space: nowrap;
   }
 </style>

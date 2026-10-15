@@ -9,44 +9,77 @@ interface Props {
 
 const { locale } = Astro.props
 const t = useTranslations(locale)
+
+const colophon = [
+  { role: t('footer.set.display'), name: 'AKR Slab', font: 'var(--font-display)' },
+  { role: t('footer.set.text'), name: 'AKR Hand Text', font: 'var(--font-text)' },
+  { role: t('footer.set.label'), name: 'AKR Sans', font: 'var(--font-label)' },
+]
 ---
 
 <footer class="footer">
-  <div class="page footer__inner">
-    <p class="footer__line">{t('footer.derived')}</p>
-    <p class="footer__credits">
-      {locale === 'zh' ? '上游致谢：' : 'Upstream credits: '}
-      {upstreams.map((upstream, index) => (
-        <>
-          {index > 0 && <span aria-hidden="true"> · </span>}
-          <a href={upstream.url} rel="noopener">{upstream.name[locale]}</a>
-        </>
-      ))}
-    </p>
-    <p class="footer__meta">
+  <div class="page folio footer__inner">
+    <div class="folio__margin">
+      <a class="footer__logo" href={localePath(locale, '/')}>{t('site.title')}</a>
       {manifest.tag && (
-        <>
-          <a href={manifest.releaseUrl} rel="noopener">{t('common.release')} {manifest.tag}</a>
-          <span aria-hidden="true"> · </span>
-        </>
+        <a class="label footer__release" href={manifest.releaseUrl} rel="noopener">{t('common.release')} {manifest.tag}</a>
       )}
-      <a href={localePath(locale, '/license')}>{t('nav.license')}</a>
-      <span aria-hidden="true"> · </span>
-      <a href="https://github.com/AkaraChen/font" rel="noopener">GitHub</a>
-    </p>
+    </div>
+    <div class="folio__body">
+      <p class="footer__line">{t('footer.derived')}</p>
+      <dl class="footer__colophon">
+        <dt class="label">{t('footer.colophon')}</dt>
+        {colophon.map(item => (
+          <dd>
+            <span class="label">{item.role}</span>
+            <span class="footer__face" style={`font-family:${item.font}`}>{item.name}</span>
+          </dd>
+        ))}
+      </dl>
+      <p class="footer__credits">
+        <span class="label">{locale === 'zh' ? '上游致谢' : 'Upstream credits'}</span>
+        {upstreams.map((upstream, index) => (
+          <>
+            {index > 0 && <span aria-hidden="true"> · </span>}
+            <a href={upstream.url} rel="noopener">{upstream.name[locale]}</a>
+          </>
+        ))}
+      </p>
+      <p class="footer__meta label">
+        <a href={localePath(locale, '/license')}>{t('nav.license')}</a>
+        <span aria-hidden="true"> · </span>
+        <a href="https://github.com/AkaraChen/font" rel="noopener">GitHub</a>
+      </p>
+    </div>
   </div>
 </footer>
 
 <style>
   .footer {
-    border-top: 1px solid var(--rule);
-    margin-top: 80px;
+    border-top: 1px solid var(--ink);
+    margin-top: var(--s-6);
   }
 
   .footer__inner {
-    padding-block: 40px 64px;
-    font-size: 12.5px;
+    padding-block: var(--s-4) var(--s-5);
+    row-gap: var(--s-3);
+    font-size: 14px;
     color: var(--ink-faint);
+  }
+
+  .footer__logo {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--ink);
+    text-decoration: none;
+    margin-bottom: 12px;
+  }
+
+  .footer__release {
+    text-decoration: none;
   }
 
   .footer__line {
@@ -54,9 +87,40 @@ const t = useTranslations(locale)
     max-width: var(--measure);
   }
 
-  .footer__credits,
-  .footer__meta {
+  .footer__colophon {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px var(--s-4);
+    margin: var(--s-3) 0;
+    padding-block: var(--s-2);
+    border-block: 1px solid var(--rule);
+  }
+
+  .footer__colophon dd {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .footer__face {
+    font-size: 19px;
+    color: var(--ink);
+  }
+
+  .footer__credits {
     line-height: 2;
+    max-width: 48em;
+  }
+
+  .footer__credits .label {
+    display: inline;
+    margin-right: 10px;
+  }
+
+  .footer__meta {
+    margin: 0;
   }
 
   .footer a {

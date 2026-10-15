@@ -3,6 +3,8 @@ import { families } from '../../data/families'
 import { upstreams } from '../../data/upstreams'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
+import PageHead from '../PageHead.astro'
+import SectionHead from '../SectionHead.astro'
 
 interface Props {
   locale: Locale
@@ -17,73 +19,72 @@ const description = locale === 'zh'
 ---
 
 <Base locale={locale} title={t('license.title')} description={description} path="/license">
-  <section class="page head">
-    <span class="eyebrow">{t('license.title')}</span>
-    <h1>{t('license.title')}</h1>
-    <p class="lead">{t('license.fonts')}</p>
+  <PageHead marks={[t('license.title'), 'SIL OFL 1.1', 'MIT']} title={t('license.title')} lead={t('license.fonts')}>
     <p class="prose">{t('license.rfn')}</p>
-  </section>
+  </PageHead>
 
   <section class="page section">
-    <h2>{t('license.thanks')}</h2>
-    <table class="spec-table">
-      <thead>
-        <tr>
-          <th scope="col">{t('upstream.title')}</th>
-          <th scope="col">{locale === 'zh' ? '作者' : 'Author'}</th>
-          <th scope="col">{locale === 'zh' ? '许可' : 'License'}</th>
-          <th scope="col">{t('upstream.families')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {upstreams.map(upstream => (
+    <SectionHead n="01" label={t('license.thanks')} title={t('license.thanks')} />
+    <div class="table-wrap">
+      <table class="spec-table">
+        <thead>
           <tr>
-            <td><a href={upstream.url} rel="noopener">{upstream.name[locale]}</a></td>
-            <td>{upstream.author}</td>
-            <td>{upstream.license}</td>
-            <td>
-              {upstream.families.map((id, index) => {
-                const family = families.find(f => f.id === id)
-                return family
-                  ? (
-                      <>
-                        {index > 0 && <span aria-hidden="true"> · </span>}
-                        <a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a>
-                      </>
-                    )
-                  : null
-              })}
-            </td>
+            <th scope="col">{t('upstream.title')}</th>
+            <th scope="col">{locale === 'zh' ? '作者' : 'Author'}</th>
+            <th scope="col">{locale === 'zh' ? '许可' : 'License'}</th>
+            <th scope="col">{t('upstream.families')}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {upstreams.map(upstream => (
+            <tr>
+              <td><a href={upstream.url} rel="noopener">{upstream.name[locale]}</a></td>
+              <td>{upstream.author}</td>
+              <td>{upstream.license}</td>
+              <td>
+                {upstream.families.map((id, index) => {
+                  const family = families.find(f => f.id === id)
+                  return family
+                    ? (
+                        <>
+                          {index > 0 && <span aria-hidden="true"> · </span>}
+                          <a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a>
+                        </>
+                      )
+                    : null
+                })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   </section>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 0;
-  }
-
-  .section {
-    padding-block: clamp(36px, 5vw, 56px);
+  .table-wrap {
     overflow-x: auto;
-  }
-
-  .section h2 {
-    margin-bottom: 18px;
   }
 
   .spec-table th {
     width: auto;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
   }
 
   .spec-table td {
-    font-size: 13.5px;
+    font-size: 14.5px;
     color: var(--ink-muted);
+  }
+
+  .spec-table td:first-child {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .spec-table td:nth-child(3) {
+    font-family: var(--font-label);
+    font-size: var(--t-meta);
+    white-space: nowrap;
   }
 </style>

@@ -91,6 +91,10 @@ export const ui = {
     'common.viewSource': '查看源码',
     'common.otherLang': 'English',
     'footer.derived': 'AKR 为衍生产品，非上游官方发布。字体 SIL OFL 1.1，构建脚本 MIT。',
+    'footer.colophon': '本站排版',
+    'footer.set.display': '标题',
+    'footer.set.text': '正文',
+    'footer.set.label': '标注',
   },
   en: {
     'site.title': 'AKR Fonts',
@@ -174,6 +178,10 @@ export const ui = {
     'common.viewSource': 'View source',
     'common.otherLang': '中文',
     'footer.derived': 'AKR is a derivative, not an official upstream release. Fonts SIL OFL 1.1, recipes MIT.',
+    'footer.colophon': 'Colophon',
+    'footer.set.display': 'Headings',
+    'footer.set.text': 'Text',
+    'footer.set.label': 'Labels',
   },
 } as const satisfies Record<Locale, Record<string, string>>
 
