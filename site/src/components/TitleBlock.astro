@@ -1,0 +1,96 @@
+---
+// The title block from the corner of a drawing sheet: what the part is, its
+// sheet number, then its particulars in ruled cells.
+
+interface Props {
+  title: string
+  /** Sheet number, e.g. "03 / 08". */
+  sheet?: string
+  rows: { label: string, value: string | undefined }[]
+  class?: string
+}
+
+const { title, sheet, rows, class: className } = Astro.props
+---
+
+<dl class:list={['tb', className]}>
+  <div class="tb__title">
+    <dt class="label">{sheet ? 'Title' : ''}</dt>
+    <dd>{title}</dd>
+  </div>
+  {sheet && (
+    <div class="tb__sheet">
+      <dt class="label">Sheet</dt>
+      <dd>{sheet}</dd>
+    </div>
+  )}
+  {rows.filter(row => row.value).map(row => (
+    <div>
+      <dt class="label">{row.label}</dt>
+      <dd>{row.value}</dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .tb {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    border: 1.5px solid var(--fg);
+  }
+
+  .tb > div {
+    padding: 8px 12px 10px;
+    border-right: 1px solid var(--rule-strong);
+    border-bottom: 1px solid var(--rule-strong);
+    min-width: 0;
+  }
+
+  .tb > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .tb__title {
+    grid-column: span 3;
+  }
+
+  .tb__sheet {
+    border-right: 0 !important;
+  }
+
+  .tb dd {
+    margin: 2px 0 0;
+    font-family: var(--font-label);
+    font-size: var(--t-s);
+    line-height: 1.5;
+    color: var(--fg);
+    overflow-wrap: anywhere;
+  }
+
+  .tb__title dd {
+    font-weight: 700;
+    font-size: 17px;
+  }
+
+  .tb__sheet dd {
+    color: var(--mark);
+    font-weight: 700;
+    font-size: 17px;
+  }
+
+  .tb > div:not(.tb__title):not(.tb__sheet) {
+    grid-column: span 2;
+  }
+
+  .tb > div:not(.tb__title):not(.tb__sheet):nth-child(odd) {
+    border-right: 0;
+  }
+
+  @media (max-width: 560px) {
+    .tb > div:not(.tb__title):not(.tb__sheet) {
+      grid-column: span 4;
+      border-right: 0;
+    }
+  }
+</style>

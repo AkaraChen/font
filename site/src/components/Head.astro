@@ -1,0 +1,20 @@
+---
+// A section head: the seal-coloured numeral, the title, one rule above both.
+
+import { numeral } from '../data/specimen'
+import type { Locale } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+  n: number
+  title: string
+}
+
+const { locale, n, title } = Astro.props
+---
+
+<header class="head">
+  <span class="head__no" aria-hidden="true">{numeral(locale, n)}</span>
+  <h2>{title}</h2>
+  {Astro.slots.has('default') && <div class="head__aside"><slot /></div>}
+</header>

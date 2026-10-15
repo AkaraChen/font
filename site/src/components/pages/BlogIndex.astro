@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
+import Cover from '../Cover.astro'
 
 interface Props {
   locale: Locale
@@ -20,64 +21,84 @@ const description = locale === 'zh'
 
 <Base locale={locale} title={t('blog.title')} description={description} path="/blog"
   markdown={false}>
-  <section class="page head">
-    <span class="eyebrow">{t('blog.title')}</span>
-    <h1>{t('blog.title')}</h1>
-    <p class="lead">{description}</p>
-  </section>
+  <Cover locale={locale} marks={[t('blog.title')]} title={t('blog.title')} lead={description} char="文" />
 
-  <div class="page">
-    {posts.length === 0
-      ? <p class="lead">{t('blog.empty')}</p>
-      : (
-          <ul class="list">
-            {posts.map(post => (
-              <li class="list__item">
-                <a class="list__title" href={localePath(locale, `/blog/${post.data.pair ?? post.id}`)}>{post.data.title}</a>
-                <p class="list__desc">{post.data.description}</p>
-                <time class="list__date" datetime={post.data.date.toISOString()}>
-                  {post.data.date.toISOString().slice(0, 10)}
-                </time>
-              </li>
-            ))}
-          </ul>
-        )}
-  </div>
+  <section class="band">
+    <div class="wrap">
+      {posts.length === 0
+        ? <p class="lead">{t('blog.empty')}</p>
+        : (
+            <ol class="list">
+              {posts.map((post, index) => (
+                <li>
+                  <a class="entry" href={localePath(locale, `/blog/${post.data.pair ?? post.id}`)}>
+                    <span class="entry__no">{String(index + 1).padStart(2, '0')}</span>
+                    <span class="entry__body">
+                      <time class="label" datetime={post.data.date.toISOString()}>
+                        {post.data.date.toISOString().slice(0, 10)}
+                      </time>
+                      <span class="entry__title">{post.data.title}</span>
+                      <span class="entry__desc">{post.data.description}</span>
+                      <span class="label entry__more">{t('blog.readMore')} →</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          )}
+    </div>
+  </section>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 24px;
-  }
-
   .list {
     list-style: none;
     padding: 0;
     margin: 0;
-    border-top: 1px solid var(--rule);
   }
 
-  .list__item {
-    padding: 24px 0;
-    border-bottom: 1px solid var(--rule-soft);
-  }
-
-  .list__title {
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: 700;
+  .entry {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: clamp(24px, 4vw, 64px);
+    padding-block: 40px;
+    border-top: 1px solid var(--fg);
     text-decoration: none;
   }
 
-  .list__desc {
-    max-width: var(--measure);
-    color: var(--ink-muted);
-    font-size: 14.5px;
-    margin: 8px 0;
+  .entry__no {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(64px, 10vw, 140px);
+    line-height: 0.8;
+    color: var(--mark);
   }
 
-  .list__date {
-    font-size: 11.5px;
-    color: var(--ink-faint);
+  .entry__title {
+    display: block;
+    margin: 8px 0 16px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-xl);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    max-width: 18em;
+  }
+
+  .entry__desc {
+    display: block;
+    max-width: var(--measure);
+    color: var(--fg-2);
+    font-size: var(--t-l);
+    line-height: 1.7;
+  }
+
+  .entry__more {
+    margin-top: 20px;
+    color: var(--fg);
+  }
+
+  .entry:hover .entry__title {
+    color: var(--mark);
   }
 </style>

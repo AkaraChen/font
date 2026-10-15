@@ -1,36 +1,65 @@
 /*
- * Design direction A —「字谱 Specimen」: warm paper, near-black ink, editorial
- * grid, rules instead of boxes. The page furniture stays quiet so the specimens
- * carry the visual weight.
+ * 蓝图 — the site as an engineering drawing.
  *
- * Only tokens, reset, font faces and a few shared primitives live here. Page
+ * These fonts are measured, not eyeballed: a strict 2:1 grid, slant taken off
+ * the stems, weight off stroke width, every build gated and fingerprinted. So
+ * the site draws them the way a part is drawn: white line on blueprint blue,
+ * over graph paper, with dimension lines, centre lines and a title block.
+ *
+ * Three grounds, all of them drawing stock:
+ *
+ *   blueprint (default) — cyanotype blue, white line, chalk-yellow marks.
+ *   .band--ink          — the same at night: a deeper blue.
+ *   .band--tint         — whiteprint: cool white stock, blue line, red-pencil
+ *                         marks, for pages that are mostly reading.
+ *
+ * One family of type throughout, AKR Sans — drafting lettering is gothic.
+ * Only tokens, reset, and the primitives every page shares live here. Page
  * and component styling belongs in the component that owns it.
  */
 
 :root {
-  --paper: #faf7f1;
-  --paper-raised: #fffdf8;
-  --ink: #1a1815;
-  --ink-muted: #5d564c;
-  --ink-faint: #8a8073;
-  --rule: #ddd6c9;
-  --rule-soft: #ece5d9;
-  --accent: #8a3d1f;
+  --blueprint: #13438f;
+  --blueprint-deep: #0b2f6b;
+  --whiteprint: #eaf0f8;
+  --chalk: #ffd23f;
+  --redline: #d8362b;
+  --white: #f2f6fc;
 
-  /* The dark surface is borrowed from direction B and stays scoped to code and
-     the preview canvas — it never takes over a page. */
-  --dark-bg: #14120f;
-  --dark-ink: #e8e2d6;
-  --dark-muted: #8f877a;
-  --dark-rule: #2a2621;
+  /* Ground-relative names. Every band redefines these, so components never
+     ask which stock they are drawn on. */
+  --bg: var(--blueprint);
+  --fg: var(--white);
+  --fg-2: rgba(242, 246, 252, 0.8);
+  --fg-mute: rgba(242, 246, 252, 0.55);
+  --rule: rgba(242, 246, 252, 0.24);
+  --rule-strong: rgba(242, 246, 252, 0.6);
+  --grid-minor: rgba(242, 246, 252, 0.055);
+  --grid-major: rgba(242, 246, 252, 0.12);
+  --mark: var(--chalk);
+  --on-mark: var(--blueprint-deep);
+  /* Kept so older names still resolve. */
+  --paper: var(--white);
+  --ink: var(--blueprint-deep);
 
-  --font-sans: 'AKR Sans', ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-display: 'AKR Slab', var(--font-sans);
-  --font-mono: 'AKR Slab', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-label: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-text: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: 'AKR Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-label);
 
-  --measure: 68ch;
-  --page: 1180px;
-  --gutter: clamp(20px, 5vw, 40px);
+  --t-xs: 11px;
+  --t-s: 13px;
+  --t-m: 16px;
+  --t-l: clamp(18px, 1.6vw, 21px);
+  --t-xl: clamp(28px, 3.8vw, 48px);
+  --t-xxl: clamp(42px, 7vw, 104px);
+
+  --wrap: 1360px;
+  --gutter: clamp(20px, 4vw, 56px);
+  --band: clamp(64px, 9vw, 128px);
+  --measure: 38em;
+  --cell: 8px;
 }
 
 *,
@@ -59,11 +88,12 @@ html {
 
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.75;
+  background-color: var(--blueprint);
+  color: var(--fg);
+  font-family: var(--font-text);
+  font-size: var(--t-m);
+  line-height: 1.85;
+  font-kerning: normal;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -74,24 +104,24 @@ h3,
 h4 {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: 1.15;
   text-wrap: balance;
   margin: 0;
 }
 
 h1 {
-  font-size: clamp(34px, 5.4vw, 60px);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
+  font-size: var(--t-xxl);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
 }
 
 h2 {
-  font-size: clamp(24px, 3.2vw, 32px);
+  font-size: var(--t-xl);
+  letter-spacing: -0.02em;
 }
 
 h3 {
-  font-size: 18px;
+  font-size: 20px;
 }
 
 p {
@@ -100,12 +130,13 @@ p {
 
 a {
   color: inherit;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--rule);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--rule-strong);
 }
 
 a:hover {
-  text-decoration-color: currentColor;
+  text-decoration-color: var(--mark);
 }
 
 code,
@@ -115,7 +146,7 @@ pre {
 }
 
 code {
-  font-size: 0.92em;
+  font-size: 0.9em;
 }
 
 img {
@@ -129,91 +160,219 @@ hr {
   margin: 0;
 }
 
+::selection {
+  background: var(--chalk);
+  color: var(--blueprint-deep);
+}
+
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--mark);
   outline-offset: 2px;
 }
 
-/* Shared primitives ------------------------------------------------------- */
+/* Grounds ---------------------------------------------------------------- */
 
+.wrap,
 .page {
-  max-width: var(--page);
-  margin: 0 auto;
+  max-width: var(--wrap);
+  margin-inline: auto;
   padding-inline: var(--gutter);
 }
 
-.eyebrow {
+/* Graph paper: a hairline every --cell, a heavier one every five. These are
+   ruled lines with hard edges, not shading. */
+.paper-grid,
+.band,
+body {
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
+  background-size:
+    calc(var(--cell) * 5) calc(var(--cell) * 5),
+    calc(var(--cell) * 5) calc(var(--cell) * 5),
+    var(--cell) var(--cell),
+    var(--cell) var(--cell);
+  background-position: -1px -1px;
+}
+
+.band {
+  padding-block: var(--band);
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+.band--ink {
+  --bg: var(--blueprint-deep);
+  --grid-minor: rgba(242, 246, 252, 0.04);
+  --grid-major: rgba(242, 246, 252, 0.09);
+}
+
+.band--tint {
+  --bg: var(--whiteprint);
+  --fg: var(--blueprint);
+  --fg-2: rgba(19, 67, 143, 0.85);
+  --fg-mute: rgba(19, 67, 143, 0.6);
+  --rule: rgba(19, 67, 143, 0.22);
+  --rule-strong: rgba(19, 67, 143, 0.6);
+  --grid-minor: rgba(19, 67, 143, 0.06);
+  --grid-major: rgba(19, 67, 143, 0.13);
+  --mark: var(--redline);
+  --on-mark: var(--white);
+}
+
+/* Type helpers ------------------------------------------------------------ */
+
+.label {
   display: block;
-  font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: 0.18em;
+  font-family: var(--font-label);
+  font-size: var(--t-xs);
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: 14px;
+  color: var(--fg-mute);
+}
+
+.label b,
+.label strong {
+  color: var(--fg);
+  font-weight: 400;
 }
 
 .lead {
-  color: var(--ink-muted);
-  font-size: 16.5px;
+  font-size: var(--t-l);
+  line-height: 1.75;
+  color: var(--fg-2);
   max-width: var(--measure);
 }
 
 .prose {
   max-width: var(--measure);
-  color: var(--ink-muted);
+  color: var(--fg-2);
 }
 
 .prose strong,
 .prose b {
-  color: var(--ink);
-  font-weight: 700;
+  color: var(--fg);
 }
 
-.button {
-  display: inline-block;
-  font-family: var(--font-display);
-  font-size: 14px;
+/* Vertical setting for Chinese titles. English keeps horizontal lines. */
+.tate:lang(zh) {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Section head: a detail bubble — the circled number a drawing uses to call
+   out a detail — then the title, on a full-width line. */
+.head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--fg);
+  margin-bottom: clamp(32px, 4vw, 56px);
+}
+
+.head__no {
+  display: inline-grid;
+  place-items: center;
+  width: 2.4em;
+  height: 2.4em;
+  border: 1.5px solid var(--mark);
+  border-radius: 50%;
+  font-family: var(--font-label);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mark);
   line-height: 1;
-  padding: 13px 22px;
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+}
+
+.head h2 {
+  line-height: 1;
+}
+
+.head__aside {
+  margin-left: auto;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .head__aside {
+    margin-left: 0;
+    text-align: left;
+    width: 100%;
+  }
+}
+
+/* Links that read as actions. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  font-family: var(--font-label);
+  font-size: var(--t-s);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  padding: 15px 24px;
+  border: 1px solid var(--fg);
+  background: var(--fg);
+  color: var(--bg);
   text-decoration: none;
 }
 
 .button:hover {
-  background: #000;
+  background: var(--mark);
+  border-color: var(--mark);
+  color: var(--on-mark);
 }
 
 .button--ghost {
   background: transparent;
-  color: var(--ink);
+  color: var(--fg);
 }
 
-.button--ghost:hover {
-  background: var(--rule-soft);
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
+/* Tables: ruled, never boxed. */
 .spec-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .spec-table th,
 .spec-table td {
   text-align: left;
-  padding: 10px 12px 10px 0;
-  border-bottom: 1px solid var(--rule-soft);
-  vertical-align: top;
+  padding: 14px 20px 14px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: baseline;
 }
 
 .spec-table th {
-  font-family: var(--font-display);
+  font-family: var(--font-label);
+  font-size: var(--t-xs);
   font-weight: 400;
-  color: var(--ink-faint);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
   white-space: nowrap;
-  width: 12em;
+}
+
+.spec-table thead th {
+  border-bottom: 1px solid var(--fg);
+}
+
+/* Bitmap faces only look right at whole multiples of their pixel size. */
+.is-pixel {
+  -webkit-font-smoothing: none;
+  font-smooth: never;
 }
 
 .skip-link {

@@ -3,7 +3,9 @@ import { families } from '../../data/families'
 import { manifest } from '../../data/fonts'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
-import SpecimenStrip from '../SpecimenStrip.astro'
+import Cover from '../Cover.astro'
+import Head from '../Head.astro'
+import { faceStyle, glyphOf, isPixel } from '../../data/specimen'
 
 interface Props {
   locale: Locale
@@ -15,70 +17,174 @@ const t = useTranslations(locale)
 const description = locale === 'zh'
   ? `AKR 的八套中英混排编程字体：${families.map(f => f.product).join('、')}。每套都列出拉丁与汉字上游、网格、字重与许可。`
   : `The eight AKR CJK coding fonts: ${families.map(f => f.product).join(', ')}. Latin and CJK upstream, grid, weights and license for each.`
+
+// The comparison wall: the same characters, one row per family.
+const columns = ['永', '安', '字', 'A', 'g', 'a', '0', '&', '{', '→']
 ---
 
 <Base locale={locale} title={t('nav.families')} description={description} path="/families">
-  <section class="page head">
-    <span class="eyebrow">{manifest.tag || t('nav.families')}</span>
-    <h1>{t('home.families.heading')}</h1>
-    <p class="lead">{t('home.specimen.note')}</p>
+  <Cover
+    locale={locale}
+    marks={[t('nav.families'), manifest.tag]}
+    title={t('home.families.heading')}
+    lead={t('home.specimen.note')}
+    char="族"
+  />
+
+  <section class="band">
+    <div class="wrap">
+      <Head locale={locale} n={1} title={t('home.specimen')} />
+      <div class="wall-scroll">
+        <table class="wall">
+          <thead>
+            <tr>
+              <th scope="col"><span class="visually-hidden">{t('nav.families')}</span></th>
+              <th scope="col"><span class="label">{locale === 'zh' ? '代表字' : 'Mark'}</span></th>
+              {columns.map(ch => <th scope="col"><span class="label">{ch}</span></th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {families.map((family, index) => (
+              <tr>
+                <th scope="row">
+                  <a href={localePath(locale, `/family/${family.id}`)}>
+                    <span class="label"><span class="seal">{String(index + 1).padStart(2, '0')}</span></span>
+                    <span class="wall__name">{family.name[locale]}</span>
+                    <span class="label">{family.grid}</span>
+                  </a>
+                </th>
+                <td class:list={['wall__mark', { 'is-pixel': isPixel(family.id) }]} style={faceStyle(family.id)}>{glyphOf[family.id]}</td>
+                {columns.map(ch => (
+                  <td class:list={{ 'is-pixel': isPixel(family.id) }} style={faceStyle(family.id)}>{ch}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
-  <div class="page">
-    <SpecimenStrip locale={locale} />
-  </div>
-
-  <section class="page section">
-    <table class="spec-table">
-      <thead>
-        <tr>
-          <th scope="col">{t('nav.families')}</th>
-          <th scope="col">Latin</th>
-          <th scope="col">CJK</th>
-          <th scope="col">{t('family.grid')}</th>
-          <th scope="col">{t('family.weights')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {families.map(family => (
-          <tr>
-            <td><a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a></td>
-            <td>{family.latin}</td>
-            <td>{family.cjk}</td>
-            <td>{family.grid}</td>
-            <td>{family.weights.join(' · ')}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+  <section class="band band--tint">
+    <div class="wrap">
+      <Head locale={locale} n={2} title={t('family.spec')} />
+      <div class="wall-scroll">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th scope="col">{t('nav.families')}</th>
+              <th scope="col">Latin</th>
+              <th scope="col">CJK</th>
+              <th scope="col">{t('family.grid')}</th>
+              <th scope="col">{t('family.weights')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {families.map(family => (
+              <tr>
+                <td><a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a></td>
+                <td>{family.latin}</td>
+                <td>{family.cjk}</td>
+                <td>{family.grid}</td>
+                <td>{family.weights.join(' · ')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 32px;
-  }
-
-  .section {
-    padding-block: clamp(36px, 5vw, 56px);
+  .wall-scroll {
     overflow-x: auto;
   }
 
-  .spec-table th {
-    width: auto;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+  .wall {
+    width: 100%;
+    min-width: 860px;
+    border-collapse: collapse;
+  }
+
+  .wall th,
+  .wall td {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .wall thead th {
+    padding: 0 0 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--fg);
+  }
+
+  .wall tbody th {
+    text-align: left;
+    font-weight: 400;
+    width: 220px;
+    padding: 14px 16px 14px 0;
+  }
+
+  .wall tbody th a {
+    display: block;
+    text-decoration: none;
+  }
+
+  .wall__name {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.3;
+    margin-block: 2px;
+  }
+
+  .wall tbody tr:hover .wall__name,
+  .wall tbody tr:hover td {
+    color: var(--mark);
+  }
+
+  .wall td {
+    text-align: center;
+    font-size: 48px;
+    line-height: 1;
+    padding: 14px 4px;
+    border-left: 1px solid var(--rule);
+  }
+
+  .wall td.is-pixel {
+    font-size: 48px;
+  }
+
+  .wall__mark {
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  .wall tbody tr:hover .wall__mark {
+    color: var(--on-mark);
+    background: var(--mark);
+  }
+
+  .seal {
+    color: var(--mark);
   }
 
   .spec-table td {
-    font-size: 13px;
-    color: var(--ink-muted);
+    font-size: 14px;
+    color: var(--fg-2);
   }
 
   .spec-table td:first-child {
     font-family: var(--font-display);
-    color: var(--ink);
+    font-weight: 700;
+    color: var(--fg);
+    white-space: nowrap;
+  }
+
+  .spec-table td:nth-child(4) {
+    font-family: var(--font-label);
+    font-size: var(--t-s);
     white-space: nowrap;
   }
 </style>

@@ -3,6 +3,7 @@ import { families } from '../../data/families'
 import { upstreams } from '../../data/upstreams'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
+import Cover from '../Cover.astro'
 
 interface Props {
   locale: Locale
@@ -17,63 +18,104 @@ const description = locale === 'zh'
 ---
 
 <Base locale={locale} title={t('upstream.title')} description={description} path="/upstream">
-  <section class="page head">
-    <span class="eyebrow">{t('upstream.title')}</span>
-    <h1>{t('home.upstream.heading')}</h1>
-    <p class="lead">{t('home.upstream.intro')}</p>
-  </section>
+  <Cover locale={locale} marks={[t('upstream.title')]} title={t('home.upstream.heading')} lead={t('home.upstream.intro')} char="源" />
 
-  <div class="page">
-    <ul class="list">
-      {upstreams.map(upstream => (
-        <li class="list__item">
-          <a class="list__name" href={localePath(locale, `/upstream/${upstream.slug}`)}>{upstream.name[locale]}</a>
-          <p class="list__what">{upstream.what[locale]}</p>
-          <p class="list__meta">
-            {upstream.author} · {upstream.license} ·
-            {' '}
-            {upstream.families.map(id => families.find(f => f.id === id)?.product).filter(Boolean).join(' · ')}
-          </p>
-        </li>
-      ))}
-    </ul>
-  </div>
+  <section class="band">
+    <div class="wrap">
+      <ol class="index">
+        {upstreams.map((upstream, index) => (
+          <li>
+            <a class="index__line" href={localePath(locale, `/upstream/${upstream.slug}`)}>
+              <span class="index__no">{String(index + 1).padStart(2, '0')}</span>
+              <span class="index__name">{upstream.name[locale]}</span>
+              <span class="index__dots" aria-hidden="true"></span>
+              <span class="index__where">{upstream.families.map(id => families.find(f => f.id === id)?.product).filter(Boolean).join(' · ')}</span>
+            </a>
+            <p class="index__what">{upstream.what[locale]}</p>
+            <p class="label">{upstream.author} · {upstream.license}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 24px;
-  }
-
-  .list {
+  .index {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(40px, 6vw, 96px);
+  }
+
+  .index li {
+    padding-block: 28px;
     border-top: 1px solid var(--rule);
   }
 
-  .list__item {
-    padding: 24px 0;
-    border-bottom: 1px solid var(--rule-soft);
-  }
-
-  .list__name {
-    font-family: var(--font-display);
-    font-size: 19px;
-    font-weight: 700;
+  .index__line {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
     text-decoration: none;
   }
 
-  .list__what {
-    max-width: var(--measure);
-    color: var(--ink-muted);
-    font-size: 14.5px;
-    margin: 8px 0;
+  .index__no {
+    font-family: var(--font-label);
+    font-size: var(--t-s);
+    color: var(--mark);
   }
 
-  .list__meta {
-    margin: 0;
-    font-size: 11.5px;
-    color: var(--ink-faint);
+  .index__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(24px, 2.6vw, 34px);
+    line-height: 1.2;
+  }
+
+  .index__dots {
+    flex: 1;
+    min-width: 20px;
+    border-bottom: 2px dotted var(--rule-strong);
+    transform: translateY(-6px);
+  }
+
+  .index__where {
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+    color: var(--fg-2);
+    text-align: right;
+  }
+
+  .index__line:hover .index__name {
+    color: var(--mark);
+  }
+
+  .index__what {
+    margin: 14px 0 10px;
+    color: var(--fg-2);
+    max-width: var(--measure);
+  }
+
+  @media (max-width: 860px) {
+    .index {
+      grid-template-columns: 1fr;
+    }
+
+    .index__line {
+      flex-wrap: wrap;
+    }
+
+    .index__dots {
+      display: none;
+    }
+
+    .index__where {
+      width: 100%;
+      text-align: left;
+    }
   }
 </style>

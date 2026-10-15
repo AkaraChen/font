@@ -3,6 +3,7 @@ import { families } from '../../data/families'
 import { upstreams } from '../../data/upstreams'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
+import Head from '../Head.astro'
 
 interface Props {
   locale: Locale
@@ -17,73 +18,117 @@ const description = locale === 'zh'
 ---
 
 <Base locale={locale} title={t('license.title')} description={description} path="/license">
-  <section class="page head">
-    <span class="eyebrow">{t('license.title')}</span>
-    <h1>{t('license.title')}</h1>
-    <p class="lead">{t('license.fonts')}</p>
-    <p class="prose">{t('license.rfn')}</p>
-  </section>
+  <header class="band band--ink cover">
+    <div class="wrap">
+      <p class="label"><span class="seal">{t('license.title')}</span></p>
+      <h1 class="visually-hidden">{t('license.title')}</h1>
+      <div class="pair" aria-hidden="true">
+        <div>
+          <span class="pair__big">OFL 1.1</span>
+          <span class="label">{locale === 'zh' ? '字体' : 'Fonts'}</span>
+        </div>
+        <div>
+          <span class="pair__big">MIT</span>
+          <span class="label">{locale === 'zh' ? '构建脚本' : 'Recipes'}</span>
+        </div>
+      </div>
+      <p class="lead">{t('license.fonts')}</p>
+      <p class="prose">{t('license.rfn')}</p>
+    </div>
+  </header>
 
-  <section class="page section">
-    <h2>{t('license.thanks')}</h2>
-    <table class="spec-table">
-      <thead>
-        <tr>
-          <th scope="col">{t('upstream.title')}</th>
-          <th scope="col">{locale === 'zh' ? '作者' : 'Author'}</th>
-          <th scope="col">{locale === 'zh' ? '许可' : 'License'}</th>
-          <th scope="col">{t('upstream.families')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {upstreams.map(upstream => (
-          <tr>
-            <td><a href={upstream.url} rel="noopener">{upstream.name[locale]}</a></td>
-            <td>{upstream.author}</td>
-            <td>{upstream.license}</td>
-            <td>
-              {upstream.families.map((id, index) => {
-                const family = families.find(f => f.id === id)
-                return family
-                  ? (
-                      <>
-                        {index > 0 && <span aria-hidden="true"> · </span>}
-                        <a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a>
-                      </>
-                    )
-                  : null
-              })}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+  <section class="band">
+    <div class="wrap">
+      <Head locale={locale} n={1} title={t('license.thanks')} />
+      <div class="table-wrap">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th scope="col">{t('upstream.title')}</th>
+              <th scope="col">{locale === 'zh' ? '作者' : 'Author'}</th>
+              <th scope="col">{locale === 'zh' ? '许可' : 'License'}</th>
+              <th scope="col">{t('upstream.families')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {upstreams.map(upstream => (
+              <tr>
+                <td><a href={upstream.url} rel="noopener">{upstream.name[locale]}</a></td>
+                <td>{upstream.author}</td>
+                <td>{upstream.license}</td>
+                <td>
+                  {upstream.families.map((id, index) => {
+                    const family = families.find(f => f.id === id)
+                    return family
+                      ? (
+                          <>
+                            {index > 0 && <span aria-hidden="true"> · </span>}
+                            <a href={localePath(locale, `/family/${family.id}`)}>{family.product}</a>
+                          </>
+                        )
+                      : null
+                  })}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 0;
+  .seal {
+    color: var(--mark);
   }
 
-  .section {
-    padding-block: clamp(36px, 5vw, 56px);
+  .cover {
+    padding-block: clamp(48px, 7vw, 104px);
+  }
+
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 clamp(32px, 6vw, 96px);
+    margin: 24px 0 40px;
+  }
+
+  .pair > div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pair__big {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(64px, 13vw, 200px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+  }
+
+  .pair > div:first-child .pair__big {
+    color: var(--mark);
+  }
+
+  .table-wrap {
     overflow-x: auto;
   }
 
-  .section h2 {
-    margin-bottom: 18px;
-  }
-
-  .spec-table th {
-    width: auto;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
   .spec-table td {
-    font-size: 13.5px;
-    color: var(--ink-muted);
+    font-size: 14.5px;
+    color: var(--fg-2);
+  }
+
+  .spec-table td:first-child {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--fg);
+  }
+
+  .spec-table td:nth-child(3) {
+    font-family: var(--font-label);
+    font-size: var(--t-s);
+    white-space: nowrap;
   }
 </style>

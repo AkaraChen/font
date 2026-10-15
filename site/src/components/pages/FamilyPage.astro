@@ -1,11 +1,15 @@
 ---
 import type { Family } from '../../data/families'
 import { families } from '../../data/families'
-import { cssFamily, downloadUrl, hasFonts, manifest } from '../../data/fonts'
+import { downloadUrl, manifest } from '../../data/fonts'
 import { upstreams } from '../../data/upstreams'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
 import FontPreview from '../FontPreview.astro'
+import Glyph from '../Glyph.astro'
+import Head from '../Head.astro'
+import TitleBlock from '../TitleBlock.astro'
+import { faceStyle, glyphOf, glyphSet, icons, isProportional, ligatures } from '../../data/specimen'
 
 interface Props {
   locale: Locale
@@ -54,161 +58,477 @@ const faqJsonLd = family.faq.length
   : undefined
 
 const jsonLdBlocks = faqJsonLd ? [jsonLd, faqJsonLd] : [jsonLd]
+
+const pixel = family.id === 'pixel'
+const proportional = isProportional(family.id)
+const index = families.findIndex(f => f.id === family.id) + 1
+// The waterfall: the same line at the sizes a coding face actually lives at.
+// Pixel only renders cleanly at whole multiples of its 12px bitmap.
+const waterfall = pixel ? [12, 24, 36, 48, 72] : [13, 16, 22, 32, 48, 72]
+const face = faceStyle(family.id)
+
+const rows = [
+  { label: 'A–Z', chars: glyphSet.upper },
+  { label: 'a–z', chars: glyphSet.lower },
+  { label: '0–9', chars: glyphSet.figures + glyphSet.marks },
+  { label: locale === 'zh' ? '汉字' : 'CJK', chars: glyphSet.cjk + glyphSet.cjkMarks },
+  ...(family.nerd ? [{ label: 'Nerd', chars: icons.join('') }] : []),
+]
+
+let section = 0
+const next = () => ++section
 ---
 
 <Base locale={locale} title={title} description={description} path={`/family/${family.id}`} jsonLd={jsonLdBlocks}>
   <article>
-    <header class="page head">
-      <span class="eyebrow">{family.product}</span>
-      <h1>{family.name[locale]}</h1>
-      <p class="lead">{family.tagline[locale]}</p>
-      <p
-        class="head__sample"
-        style={hasFonts ? `font-family:"${cssFamily(family.id)}", ui-monospace, monospace` : undefined}
-      >{family.sample}</p>
-      <div class="head__cta">
-        {manifest.tag && (
-          <a class="button" href={downloadUrl(manifest.tag, family.product)} rel="noopener">
-            {t('family.download')} · {manifest.tag}
-          </a>
-        )}
-        <a class="button button--ghost" href={localePath(locale, `/preview?family=${family.id}`)}>{t('family.preview')}</a>
-        <a class="button button--ghost" href={`https://github.com/${manifest.repo}/tree/main/${family.dir}`} rel="noopener">
-          {t('family.source')}
-        </a>
+    <header class="band band--ink cover">
+      <div class="wrap cover__grid">
+        <div class="cover__text">
+          <h1>{family.name[locale]}</h1>
+          <p class="lead">{family.tagline[locale]}</p>
+          <TitleBlock
+            class="cover__tb"
+            title={family.product}
+            sheet={`${String(index).padStart(2, '0')} / ${String(families.length).padStart(2, '0')}`}
+            rows={[
+              { label: 'Latin', value: family.latin },
+              { label: 'CJK', value: family.cjk },
+              { label: t('family.grid'), value: family.grid },
+              { label: t('family.weights'), value: family.weights.join(' · ') },
+              { label: t('common.release'), value: manifest.tag },
+              { label: t('family.source'), value: `${family.dir}/` },
+            ]}
+          />
+          <div class="actions">
+            {manifest.tag && (
+              <a class="button cover__download" href={downloadUrl(manifest.tag, family.product)} rel="noopener">
+                {t('family.download')}<span class="tag">{manifest.tag}</span>
+              </a>
+            )}
+            <a class="button button--ghost" href={localePath(locale, `/preview?family=${family.id}`)}>{t('family.preview')}</a>
+            <a class="button button--ghost" href={`https://github.com/${manifest.repo}/tree/main/${family.dir}`} rel="noopener">
+              {t('family.source')}
+            </a>
+          </div>
+        </div>
+        <Glyph family={family.id} char={glyphOf[family.id] ?? '永'} size={pixel ? 'var(--px)' : 'clamp(220px, 36vw, 500px)'} class="cover__glyph" />
       </div>
     </header>
 
-    <section class="page section">
-      <p class="prose">{family.intro[locale]}</p>
+    <section class="band">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('family.glyphs')}>
+          <span class="label">{family.product} · Regular</span>
+        </Head>
+        <div class="glyphs" style={face}>
+          {rows.map(row => (
+            <div class="glyphs__row">
+              <span class="label glyphs__label">{row.label}</span>
+              <div class:list={['glyphs__cells', { 'is-pixel': pixel }]}>
+                {[...row.chars].map(ch => <span>{ch}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
 
-    <section class="page section">
-      <span class="eyebrow">{t('family.spec')}</span>
-      <h2>{t('family.spec')}</h2>
-      <table class="spec-table">
-        <tbody>
+    {!proportional && (
+      <section class="band band--tint">
+        <div class="wrap">
+          <Head locale={locale} n={next()} title={t('preview.ligatures')}>
+            <span class="label">calt</span>
+          </Head>
+          <div class:list={['ligs', { 'is-pixel': pixel }]} style={face}>
+            <span class="label">{t('family.calt.on')}</span>
+            <div class="ligs__row">{ligatures.map(op => <span>{op}</span>)}</div>
+            <span class="label">{t('family.calt.off')}</span>
+            <div class="ligs__row ligs__row--off">{ligatures.map(op => <span>{op}</span>)}</div>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <section class="band">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('home.specimen')} />
+        <p class="intro">{family.intro[locale]}</p>
+        <ol class="waterfall" style={face}>
+          {waterfall.map(size => (
+            <li>
+              <span class="label">{size}</span>
+              <span class:list={['waterfall__line', { 'is-pixel': pixel }]} style={`font-size:${size}px`}>{family.sample}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="band band--ink">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('family.spec')} />
+        <dl class="spec">
           {family.spec.map(row => (
-            <tr>
-              <th scope="row">{row.label[locale]}</th>
-              <td>{row.value[locale]}</td>
-            </tr>
+            <div>
+              <dt class="label">{row.label[locale]}</dt>
+              <dd>{row.value[locale]}</dd>
+            </div>
           ))}
-          <tr>
-            <th scope="row">{t('family.weights')}</th>
-            <td>{family.weights.join(' · ')}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="page section">
-      <span class="eyebrow">{t('family.preview')}</span>
-      <h2>{t('family.preview')}</h2>
-      <FontPreview locale={locale} initial={family.id} only={[family.id]} />
-    </section>
-
-    <section class="page section">
-      <span class="eyebrow">{t('family.upstream')}</span>
-      <h2>{t('family.upstream')}</h2>
-      <p class="prose">{t('family.derived')}</p>
-      <ul class="upstream-list">
-        {related.map(upstream => (
-          <li>
-            <a href={localePath(locale, `/upstream/${upstream.slug}`)}>{upstream.name[locale]}</a>
-            <span> — {upstream.author} · <a href={upstream.url} rel="noopener">{upstream.url.replace('https://', '')}</a></span>
-          </li>
-        ))}
-      </ul>
-    </section>
-
-    {family.faq.length > 0 && (
-      <section class="page section">
-        <span class="eyebrow">{t('family.faq')}</span>
-        <h2>{t('family.faq')}</h2>
-        <dl class="faq">
-          {family.faq.map(item => (
-            <>
-              <dt>{item.q[locale]}</dt>
-              <dd>{item.a[locale]}</dd>
-            </>
-          ))}
+          <div>
+            <dt class="label">{t('family.weights')}</dt>
+            <dd>{family.weights.join(' · ')}</dd>
+          </div>
         </dl>
-      </section>
-    )}
+      </div>
+    </section>
 
-    {siblings.length > 0 && (
-      <section class="page section">
-        <span class="eyebrow">{t('family.related')}</span>
-        <ul class="siblings">
-          {siblings.map(sibling => (
-            <li><a href={localePath(locale, `/family/${sibling.id}`)}>{sibling.name[locale]}</a> — {sibling.tagline[locale]}</li>
-          ))}
-        </ul>
-      </section>
-    )}
+    <section class="band">
+      <div class="wrap">
+        <Head locale={locale} n={next()} title={t('family.preview')} />
+        <FontPreview locale={locale} initial={family.id} only={[family.id]} />
+      </div>
+    </section>
+
+    <section class="band band--tint">
+      <div class="wrap two">
+        <div>
+          <Head locale={locale} n={next()} title={t('family.upstream')} />
+          <p class="prose">{t('family.derived')}</p>
+          <ul class="ruled">
+            {related.map(upstream => (
+              <li>
+                <a class="ruled__name" href={localePath(locale, `/upstream/${upstream.slug}`)}>{upstream.name[locale]}</a>
+                <span class="label">{upstream.author} · <a href={upstream.url} rel="noopener">{upstream.url.replace('https://', '')}</a></span>
+              </li>
+            ))}
+          </ul>
+          {siblings.length > 0 && (
+            <>
+              <p class="label related__label">{t('family.related')}</p>
+              <ul class="ruled">
+                {siblings.map(sibling => (
+                  <li>
+                    <a class="ruled__name" href={localePath(locale, `/family/${sibling.id}`)}>{sibling.name[locale]}</a>
+                    <span class="ruled__text">{sibling.tagline[locale]}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+        {family.faq.length > 0 && (
+          <div>
+            <Head locale={locale} n={next()} title={t('family.faq')} />
+            <dl class="faq">
+              {family.faq.map(item => (
+                <div>
+                  <dt>{item.q[locale]}</dt>
+                  <dd>{item.a[locale]}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+      </div>
+    </section>
   </article>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 0;
+  .seal {
+    color: var(--mark);
   }
 
-  .head__sample {
-    font-size: clamp(20px, 3vw, 34px);
-    line-height: 1.6;
-    margin: 32px 0 0;
-    padding-block: 20px;
-    border-block: 1px solid var(--rule);
-    overflow-x: auto;
-    white-space: nowrap;
+  .cover {
+    --px: 240px;
+    padding-block: clamp(48px, 7vw, 104px);
   }
 
-  .head__cta {
+  .cover__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(32px, 5vw, 80px);
+  }
+
+  .cover h1 {
+    margin-top: 0;
+  }
+
+  .cover :global(.cover__tb) {
+    margin-bottom: 32px;
+    max-width: 40em;
+  }
+
+  .cover .lead {
+    margin: 24px 0 32px;
+  }
+
+  .cover :global(.cover__glyph) {
+    color: var(--fg);
+  }
+
+  .cover__download {
+    background: var(--mark);
+    border-color: var(--mark);
+    color: var(--on-mark);
+  }
+
+  .cover__download:hover {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+  }
+
+  .tag {
+    opacity: 0.7;
+  }
+
+  .facts {
+    margin: 0 0 32px;
+    border-top: 1px solid var(--rule);
+    max-width: 40em;
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: 7em minmax(0, 1fr);
+    gap: 16px;
+    align-items: baseline;
+    padding-block: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .facts dd {
+    margin: 0;
+    font-family: var(--font-label);
+    font-size: var(--t-s);
+  }
+
+  /* Glyph overview: every character in a cell of its own. */
+  .glyphs__row {
+    display: grid;
+    grid-template-columns: 5em minmax(0, 1fr);
+    gap: 16px;
+    padding-block: 4px;
+  }
+
+  .glyphs__label {
+    padding-top: 14px;
+  }
+
+  .glyphs__cells {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+
+  .glyphs__cells span {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    font-size: 34px;
+    line-height: 1;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    transition: background 0.1s;
+  }
+
+  .glyphs__cells.is-pixel span {
+    font-size: 36px;
+  }
+
+  .glyphs__cells span:hover {
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  .ligs {
+    display: grid;
+    grid-template-columns: 7em minmax(0, 1fr);
+    gap: 18px 16px;
+    align-items: center;
+  }
+
+  .ligs__row {
     display: flex;
-    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 28px;
+    gap: 6px 28px;
+    font-size: clamp(28px, 3.4vw, 44px);
+    line-height: 1.4;
   }
 
-  .section {
-    padding-block: clamp(36px, 5vw, 56px);
+  .ligs.is-pixel .ligs__row {
+    font-size: 36px;
   }
 
-  .section h2 {
-    margin-bottom: 16px;
+  .ligs__row--off {
+    font-feature-settings: 'calt' 0, 'liga' 0;
+    color: var(--fg-mute);
   }
 
-  .upstream-list,
-  .siblings {
+  .intro {
+    font-size: var(--t-l);
+    line-height: 1.85;
+    max-width: 36em;
+    margin-bottom: 56px;
+  }
+
+  .waterfall {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .waterfall li {
+    display: grid;
+    grid-template-columns: 5em minmax(0, 1fr);
+    gap: 16px;
+    align-items: baseline;
+    padding-block: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .waterfall__line {
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .spec {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(32px, 5vw, 80px);
+  }
+
+  .spec div {
+    padding-block: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .spec dd {
+    margin: 6px 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(19px, 1.8vw, 24px);
+    line-height: 1.4;
+  }
+
+  .two {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+
+  .ruled {
     list-style: none;
     padding: 0;
-    margin: 20px 0 0;
-    font-size: 14px;
-    color: var(--ink-muted);
-    max-width: var(--measure);
+    margin: 24px 0 0;
+    border-top: 1px solid var(--rule);
   }
 
-  .upstream-list li,
-  .siblings li {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--rule-soft);
+  .ruled li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 20px;
+    padding-block: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .ruled__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    text-decoration: none;
+  }
+
+  .ruled__name:hover {
+    color: var(--mark);
+  }
+
+  .ruled__text {
+    color: var(--fg-2);
+    font-size: 15px;
+  }
+
+  .related__label {
+    margin-top: 40px;
   }
 
   .faq {
-    max-width: var(--measure);
-    margin: 20px 0 0;
+    margin: 0;
+  }
+
+  .faq div {
+    padding-block: 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .faq div:first-child {
+    padding-top: 0;
   }
 
   .faq dt {
     font-family: var(--font-display);
     font-weight: 700;
-    margin-top: 22px;
+    font-size: 20px;
+    line-height: 1.45;
   }
 
   .faq dd {
-    margin: 8px 0 0;
-    color: var(--ink-muted);
+    margin: 10px 0 0;
+    color: var(--fg-2);
+  }
+
+  @media (min-width: 1200px) {
+    .cover {
+      --px: 456px;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .cover {
+      --px: 192px;
+    }
+
+    .cover__grid,
+    .two,
+    .spec {
+      grid-template-columns: 1fr;
+    }
+
+    .cover :global(.cover__glyph) {
+      order: -1;
+      --mi: 200px !important;
+    }
+
+    .cover :global(.mi--pixel) {
+      --mi: 192px !important;
+    }
+
+    .glyphs__row,
+    .ligs,
+    .waterfall li {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .glyphs__label {
+      padding-top: 10px;
+    }
+
+    .glyphs__cells {
+      grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    }
+
+    .glyphs__cells span {
+      font-size: 26px;
+    }
   }
 </style>

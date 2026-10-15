@@ -1,0 +1,202 @@
+---
+// One family as one sheet of the drawing set: its character drawn and
+// dimensioned on one side, its name, recipe and code set in its own face on
+// the other. Sheets alternate blueprint and night blue, and flip sides.
+
+import type { Family } from '../data/families'
+import { faceStyle, glyphOf, isPixel, proofLine } from '../data/specimen'
+import { localePath, type Locale } from '../i18n/ui'
+import Glyph from './Glyph.astro'
+
+/** Drops version pins and secondary names so the recipe stays one short line. */
+function shortName(value: string): string {
+  return value.split('·')[0]!.replace(/\s+v?\d[\d.]*(\s|$)/i, ' ').replace(/\s*\(.*?\)/, '').trim()
+}
+
+interface Props {
+  locale: Locale
+  family: Family
+  /** 1-based position and count, for the folio. */
+  index: number
+  total: number
+  tone?: 'paper' | 'tint' | 'ink'
+  flip?: boolean
+}
+
+const { locale, family, index, total, tone = 'paper', flip = false } = Astro.props
+const pixel = isPixel(family.id)
+const href = localePath(locale, `/family/${family.id}`)
+---
+
+<section class:list={['band', 'fband', { 'band--ink': tone === 'ink', 'band--tint': tone === 'tint', 'fband--flip': flip }]}>
+  <div class="wrap fband__grid">
+    <a class="fband__glyph" href={href} tabindex="-1" aria-hidden="true">
+      <Glyph family={family.id} char={glyphOf[family.id] ?? '永'} size={pixel ? 'var(--px-size)' : 'clamp(200px, 34vw, 480px)'} />
+    </a>
+    <div class="fband__text">
+      <p class="label fband__folio"><span class="seal">{String(index).padStart(2, '0')}</span> / {String(total).padStart(2, '0')} · {family.product}</p>
+      <h2><a href={href}>{family.name[locale]}</a></h2>
+      <p class="fband__tagline">{family.tagline[locale]}</p>
+      <dl class="fband__facts">
+        <div><dt class="label">Latin</dt><dd>{shortName(family.latin)}</dd></div>
+        <div><dt class="label">CJK</dt><dd>{shortName(family.cjk)}</dd></div>
+        <div><dt class="label">{locale === 'zh' ? '网格' : 'Grid'}</dt><dd>{family.grid}</dd></div>
+        <div><dt class="label">{locale === 'zh' ? '字重' : 'Weights'}</dt><dd>{family.weights.join(' · ')}</dd></div>
+      </dl>
+      <div class:list={['fband__proof', { 'is-pixel': pixel }]} style={faceStyle(family.id)}>
+        <p>{family.sample}</p>
+        <p>{proofLine}</p>
+      </div>
+      <a class="fband__more label" href={href}>{family.product} →</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .fband {
+    --px-size: 240px;
+    padding-block: clamp(56px, 8vw, 112px);
+  }
+
+  .fband__grid {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(32px, 6vw, 96px);
+  }
+
+  .fband--flip .fband__grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fband--flip .fband__glyph {
+    order: 2;
+  }
+
+  .fband__glyph {
+    display: block;
+    color: var(--fg);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .fband__glyph:hover {
+    color: var(--mark);
+  }
+
+  .fband__folio {
+    margin-bottom: 18px;
+  }
+
+  .seal {
+    color: var(--mark);
+  }
+
+  .fband h2 {
+    font-size: clamp(36px, 5vw, 68px);
+    line-height: 1.05;
+  }
+
+  .fband h2 a {
+    text-decoration: none;
+  }
+
+  .fband h2 a:hover {
+    color: var(--mark);
+  }
+
+  .fband__tagline {
+    margin: 16px 0 28px;
+    font-size: var(--t-l);
+    line-height: 1.6;
+    color: var(--fg-2);
+    max-width: 28em;
+  }
+
+  .fband__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 28px;
+    margin: 0 0 28px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .fband__facts div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding-block: 9px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .fband__facts dd {
+    margin: 0;
+    font-family: var(--font-label);
+    font-size: var(--t-s);
+    text-align: right;
+  }
+
+  .fband__proof {
+    font-size: clamp(18px, 1.8vw, 24px);
+    line-height: 1.6;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .fband__proof p {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fband__proof p + p {
+    color: var(--fg-mute);
+  }
+
+  .fband__proof.is-pixel {
+    font-size: 24px;
+  }
+
+  .fband__more {
+    display: inline-block;
+    margin-top: 28px;
+    color: var(--fg);
+    text-decoration: none;
+    border-bottom: 1px solid var(--mark);
+    padding-bottom: 2px;
+  }
+
+  @media (min-width: 1200px) {
+    .fband {
+      --px-size: 432px;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .fband {
+      --px-size: 192px;
+    }
+
+    .fband__grid,
+    .fband--flip .fband__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fband--flip .fband__glyph {
+      order: 0;
+    }
+
+    .fband__glyph :global(.mi) {
+      --mi: 200px !important;
+    }
+
+    .fband__glyph :global(.mi--pixel) {
+      --mi: 192px !important;
+    }
+
+    .fband__facts {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

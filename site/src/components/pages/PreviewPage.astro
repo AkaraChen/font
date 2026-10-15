@@ -1,6 +1,7 @@
 ---
 import { useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
+
 import FontPreview from '../FontPreview.astro'
 
 interface Props {
@@ -16,23 +17,40 @@ const description = locale === 'zh'
 ---
 
 <Base locale={locale} title={t('preview.title')} description={description} path="/preview">
-  <section class="page head">
-    <span class="eyebrow">{t('nav.preview')}</span>
-    <h1>{t('preview.title')}</h1>
-    <p class="lead">{t('preview.intro')}</p>
+  <section class="band band--ink bench">
+    <div class="wrap">
+      <header class="bench__head">
+        <h1>{t('preview.title')}</h1>
+        <p class="lead">{t('preview.intro')}</p>
+      </header>
+      <FontPreview locale={locale} autoload syncUrl layout="bench" />
+    </div>
   </section>
-
-  <div class="page body">
-    <FontPreview locale={locale} autoload syncUrl />
-  </div>
 </Base>
 
 <style>
-  .head {
-    padding-block: clamp(40px, 6vw, 64px) 28px;
+  .bench {
+    padding-block: clamp(32px, 4vw, 56px) clamp(48px, 6vw, 80px);
+    min-height: calc(100svh - 64px);
   }
 
-  .body {
-    padding-bottom: clamp(40px, 6vw, 72px);
+  .bench__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px 40px;
+    padding-bottom: 24px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .bench__head h1 {
+    font-size: clamp(36px, 5vw, 64px);
+  }
+
+  .bench__head .lead {
+    margin: 0;
+    font-size: var(--t-m);
   }
 </style>

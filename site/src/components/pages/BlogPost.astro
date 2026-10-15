@@ -4,6 +4,7 @@ import { render } from 'astro:content'
 import { localePath, useTranslations, type Locale } from '../../i18n/ui'
 import Base from '../../layouts/Base.astro'
 
+
 interface Props {
   locale: Locale
   post: CollectionEntry<'blog'>
@@ -34,90 +35,157 @@ const jsonLd = {
   jsonLd={jsonLd}
   markdown={false}
 >
-  <article class="page post">
-    <header>
-      <a class="post__back" href={localePath(locale, '/blog')}>← {t('blog.title')}</a>
-      <h1>{post.data.title}</h1>
-      <time class="post__date" datetime={post.data.date.toISOString()}>
-        {post.data.date.toISOString().slice(0, 10)}
-      </time>
+  <article>
+    <header class="band band--ink post__head">
+      <div class="wrap">
+        <p class="label post__marks">
+          <a href={localePath(locale, '/blog')}>← {t('blog.title')}</a>
+          <span aria-hidden="true">·</span>
+          <time datetime={post.data.date.toISOString()}>{post.data.date.toISOString().slice(0, 10)}</time>
+        </p>
+        <h1>{post.data.title}</h1>
+        <p class="lead">{post.data.description}</p>
+      </div>
     </header>
-    <div class="post__body">
-      <Content />
+    <div class="band">
+      <div class="wrap post">
+        <div class="post__body">
+          <Content />
+        </div>
+      </div>
     </div>
   </article>
 </Base>
 
 <style>
-  .post {
-    padding-block: clamp(40px, 6vw, 64px) 0;
-    max-width: 780px;
+  .post__head {
+    padding-block: clamp(48px, 7vw, 104px);
   }
 
-  .post__back {
-    font-family: var(--font-display);
-    font-size: 12px;
-    color: var(--ink-faint);
+  .post__marks {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .post__marks a {
     text-decoration: none;
+    color: var(--mark);
   }
 
-  .post h1 {
-    margin-top: 16px;
+  .post__head h1 {
+    font-size: clamp(38px, 6vw, 84px);
+    max-width: 14em;
   }
 
-  .post__date {
-    display: block;
-    font-size: 12px;
-    color: var(--ink-faint);
-    margin-top: 14px;
+  .post__head .lead {
+    margin: 28px 0 0;
+  }
+
+  .post {
+    display: flex;
+    justify-content: center;
   }
 
   .post__body {
-    margin-top: 36px;
-    color: var(--ink-muted);
+    width: 100%;
+    max-width: 36em;
+    color: var(--fg-2);
+    font-size: 18px;
+    line-height: 1.95;
+  }
+
+  /* The opening paragraph is set larger, its first character a seal-red
+     initial, as a chapter would begin. */
+  .post__body > :global(p:first-child) {
+    color: var(--fg);
+    font-size: var(--t-l);
+    line-height: 1.8;
+  }
+
+  .post__body > :global(p:first-child::first-letter) {
+    float: left;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 3.6em;
+    line-height: 0.9;
+    margin: 0.08em 0.12em 0 0;
+    color: var(--mark);
   }
 
   .post__body :global(h2) {
-    margin-top: 48px;
-    margin-bottom: 12px;
-    color: var(--ink);
+    font-size: clamp(24px, 2.6vw, 32px);
+    margin-top: 72px;
+    margin-bottom: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--fg);
+    color: var(--fg);
+  }
+
+  .post__body :global(h3) {
+    margin-top: 40px;
+    margin-bottom: 8px;
+    color: var(--fg);
   }
 
   .post__body :global(p) {
     margin-bottom: 1.2em;
   }
 
+  .post__body :global(strong) {
+    color: var(--fg);
+  }
+
   .post__body :global(table) {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
-    margin-bottom: 1.5em;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 32px 0 40px;
   }
 
   .post__body :global(th),
   .post__body :global(td) {
     text-align: left;
-    padding: 9px 12px 9px 0;
-    border-bottom: 1px solid var(--rule-soft);
-    vertical-align: top;
+    padding: 10px 16px 10px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: baseline;
   }
 
   .post__body :global(th) {
-    font-family: var(--font-display);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
     font-weight: 400;
-    color: var(--ink-faint);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg-mute);
+    border-bottom-color: var(--fg);
   }
 
   .post__body :global(pre) {
-    background: var(--dark-bg);
-    color: var(--dark-ink);
-    padding: 18px 20px;
+    background: var(--blueprint-deep) !important;
+    color: var(--white);
+    padding: 24px;
+    margin: 32px 0 40px;
     overflow-x: auto;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.7;
+    border-left: 3px solid var(--mark);
+  }
+
+  .post__body :global(pre code) {
+    font-family: var(--font-mono);
+    font-size: 1em;
   }
 
   .post__body :global(code) {
-    font-size: 0.94em;
+    font-size: 0.88em;
+  }
+
+  .post__body :global(blockquote) {
+    margin: 32px 0;
+    padding-left: 24px;
+    border-left: 3px solid var(--mark);
+    color: var(--fg);
   }
 </style>

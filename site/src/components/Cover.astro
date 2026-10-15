@@ -1,0 +1,90 @@
+---
+// The title sheet every inner page opens on: title and lead on the left, the
+// page's own character drawn and dimensioned on the right.
+
+import type { Locale } from '../i18n/ui'
+import Glyph from './Glyph.astro'
+
+interface Props {
+  locale: Locale
+  /** Small lines above the title, top first. */
+  marks?: (string | undefined)[]
+  title: string
+  lead?: string
+  /** The chapter character, set in AKR Sans. */
+  char: string
+  /** Family whose face sets the character. */
+  face?: string
+}
+
+const { marks = [], title, lead, char, face = 'sans' } = Astro.props
+---
+
+<header class="band cover">
+  <div class="wrap cover__grid">
+    <div class="cover__text">
+      <ul class="cover__marks">
+        {marks.filter(Boolean).map(mark => <li class="label">{mark}</li>)}
+      </ul>
+      <h1>{title}</h1>
+      {lead && <p class="lead">{lead}</p>}
+      <slot />
+    </div>
+    <Glyph family={face} char={char} size="clamp(140px, 22vw, 320px)" class="cover__glyph" />
+  </div>
+</header>
+
+<style>
+  .cover {
+    padding-block: clamp(48px, 7vw, 96px);
+    border-bottom: 1px solid var(--fg);
+  }
+
+  .cover__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 48px;
+  }
+
+  .cover__marks {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    margin: 0 0 24px;
+    padding: 0;
+  }
+
+  .cover__marks li:first-child {
+    color: var(--mark);
+  }
+
+  .cover {
+    border-bottom: 1.5px solid var(--fg);
+  }
+
+  .cover h1 {
+    max-width: 12em;
+  }
+
+  .cover .lead {
+    margin-top: 28px;
+    margin-bottom: 0;
+  }
+
+  .cover :global(.cover__glyph) {
+    color: var(--fg);
+  }
+
+  @media (max-width: 860px) {
+    .cover__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cover :global(.cover__glyph) {
+      order: -1;
+      --mi: 120px !important;
+    }
+  }
+</style>

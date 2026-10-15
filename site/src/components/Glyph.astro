@@ -1,0 +1,201 @@
+---
+// One character drawn as a part: its cell outlined, centre lines through it,
+// and dimension lines giving the cell in font units — the CJK cell across
+// the top, its two Latin halves underneath. This is how the site introduces
+// every family, and the 2:1 grid is the first thing it shows.
+
+import { families } from '../data/families'
+import { cellEm, centreShift, faceStyle, isPixel } from '../data/specimen'
+
+interface Props {
+  /** Family id whose face sets the character. */
+  family: string
+  char: string
+  /** CSS length for one em; the cell is this tall. */
+  size?: string
+  /** 2 for a CJK cell, 1 for a Latin one. */
+  cells?: 1 | 2
+  /** Draw dimension lines. */
+  dims?: boolean
+  class?: string
+}
+
+const { family, char, size = '1em', cells = 2, dims = true, class: className } = Astro.props
+const pixel = isPixel(family)
+const width = cells * (cellEm[family] ?? 0.5)
+
+// "500 / 1000" → Latin and CJK advances. Proportional faces have none.
+const grid = families.find(f => f.id === family)?.grid.match(/(\d+)\s*\/\s*(\d+)/)
+const latin = grid?.[1]
+const cjk = grid?.[2]
+const showDims = dims && Boolean(grid)
+---
+
+<span
+  class:list={['mi', className, { 'is-pixel': pixel, 'mi--pixel': pixel, 'mi--dims': showDims }]}
+  style={faceStyle(family, `--mi:${size};--mi-w:${width};--mi-shift:${centreShift[family] ?? 0}em`)}
+  aria-hidden="true"
+>
+  <svg class="mi__grid" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <rect x="0" y="0" width="100" height="100" />
+    {cells === 2 && <path class="mi__centre" d="M50 -6V106" />}
+    <path class="mi__centre" d="M-6 50H106" />
+  </svg>
+  <span class="mi__char">{char}</span>
+  {showDims && (
+    <>
+      <span class="dim dim--top">
+        <span class="dim__line"><b>{cells === 2 ? cjk : latin}</b></span>
+      </span>
+      {cells === 2 && (
+        <span class="dim dim--bottom">
+          <span class="dim__line dim__line--a"><b>{latin}</b></span>
+          <span class="dim__line dim__line--b"><b>{latin}</b></span>
+        </span>
+      )}
+    </>
+  )}
+</span>
+
+<style>
+  .mi {
+    position: relative;
+    display: inline-block;
+    width: calc(var(--mi) * var(--mi-w, 1));
+    height: var(--mi);
+    font-size: var(--mi);
+    line-height: 1;
+    flex: none;
+  }
+
+  .mi--dims {
+    margin-block: 40px;
+  }
+
+  .mi__grid {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    overflow: visible;
+  }
+
+  .mi__grid rect {
+    stroke: var(--fg-2);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Centre lines: long dash, dot, long dash, as drafting draws them. */
+  .mi__centre {
+    stroke: var(--mark);
+    stroke-width: 1px;
+    stroke-dasharray: 14 4 2 4;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .mi__char {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+    /* Each face places its ink differently in a line-height-1 box; the
+       measured shift centres it in the cell. */
+    transform: translateY(var(--mi-shift, 0));
+  }
+
+  /* Dimension lines: extension lines off the cell edges, a line with an
+     arrowhead at each end, the figure riding on it. */
+  .dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 32px;
+    border-inline: 1px solid var(--rule-strong);
+    font-family: var(--font-label);
+    font-size: 12px;
+    line-height: 1;
+    color: var(--fg-2);
+    pointer-events: none;
+  }
+
+  .dim--top {
+    bottom: calc(100% + 4px);
+  }
+
+  .dim--bottom {
+    top: calc(100% + 4px);
+  }
+
+  .dim--bottom::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--rule-strong);
+  }
+
+  .dim__line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12px;
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid var(--fg-2);
+  }
+
+  .dim--bottom .dim__line {
+    top: auto;
+    bottom: 12px;
+    border-top: 0;
+    border-bottom: 1px solid var(--fg-2);
+  }
+
+  .dim__line--a {
+    right: 50%;
+  }
+
+  .dim__line--b {
+    left: 50%;
+  }
+
+  .dim__line::before,
+  .dim__line::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    border: 4.5px solid transparent;
+  }
+
+  .dim--bottom .dim__line::before,
+  .dim--bottom .dim__line::after {
+    top: auto;
+    bottom: -5px;
+  }
+
+  .dim__line::before {
+    left: -4.5px;
+    border-right-color: var(--fg-2);
+  }
+
+  .dim__line::after {
+    right: -4.5px;
+    border-left-color: var(--fg-2);
+  }
+
+  .dim__line b {
+    font-weight: 400;
+    color: var(--mark);
+    background: var(--bg);
+    padding: 0 6px;
+    transform: translateY(-50%);
+  }
+
+  .dim--bottom .dim__line b {
+    transform: translateY(50%);
+  }
+</style>

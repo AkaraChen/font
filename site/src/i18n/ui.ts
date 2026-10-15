@@ -24,6 +24,7 @@ export const ui = {
 
     'home.eyebrow': '八套家族 · 2:1 网格 · Nerd 图标 · Nix 构建',
     'home.heading': '八套中英混排编程字体，从源码构建。',
+    'home.heading.columns': '八套中英混排|编程字体，|从源码构建。',
     'home.intro': '拉丁设计与中日韩字体在严格 2:1 网格上合并，补 Nerd 图标、加 hinting、逐项校验。每个家族都是一个 Nix derivation，一条命令就能复现发布产物。',
     'home.cta.download': '下载字体',
     'home.cta.preview': '在线预览',
@@ -45,6 +46,9 @@ export const ui = {
     'family.nerd': 'Nerd 图标',
     'family.source': '构建源码',
     'family.related': '相关家族',
+    'family.glyphs': '字符',
+    'family.calt.on': '连字开',
+    'family.calt.off': '连字关',
     'family.derived': '本页说明的是衍生产品。上游字体的著作权归上游作者，AKR 不是上游的官方发布。',
 
     'preview.title': '在线预览',
@@ -91,6 +95,10 @@ export const ui = {
     'common.viewSource': '查看源码',
     'common.otherLang': 'English',
     'footer.derived': 'AKR 为衍生产品，非上游官方发布。字体 SIL OFL 1.1，构建脚本 MIT。',
+    'footer.colophon': '本站排版',
+    'footer.set.display': '标题',
+    'footer.set.text': '正文',
+    'footer.set.label': '标注',
   },
   en: {
     'site.title': 'AKR Fonts',
@@ -107,6 +115,7 @@ export const ui = {
 
     'home.eyebrow': 'Eight families · 2:1 grid · Nerd icons · Nix builds',
     'home.heading': 'Eight CJK coding fonts, built from source.',
+    'home.heading.columns': 'Eight CJK coding fonts, built from source.',
     'home.intro': 'Latin designs married to CJK masters on a strict 2:1 grid, patched with Nerd icons, hinted and gated. Every family is a Nix derivation, and one command reproduces the release.',
     'home.cta.download': 'Download',
     'home.cta.preview': 'Preview',
@@ -128,6 +137,9 @@ export const ui = {
     'family.nerd': 'Nerd icons',
     'family.source': 'Build source',
     'family.related': 'Related families',
+    'family.glyphs': 'Glyphs',
+    'family.calt.on': 'calt on',
+    'family.calt.off': 'calt off',
     'family.derived': 'This page describes a derivative product. Upstream fonts remain the work of their authors; AKR is not an official upstream release.',
 
     'preview.title': 'Preview',
@@ -174,6 +186,10 @@ export const ui = {
     'common.viewSource': 'View source',
     'common.otherLang': '中文',
     'footer.derived': 'AKR is a derivative, not an official upstream release. Fonts SIL OFL 1.1, recipes MIT.',
+    'footer.colophon': 'Colophon',
+    'footer.set.display': 'Headings',
+    'footer.set.text': 'Text',
+    'footer.set.label': 'Labels',
   },
 } as const satisfies Record<Locale, Record<string, string>>
 
