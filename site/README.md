@@ -29,7 +29,7 @@ character list. `src/data/fonts.generated.json` records what was produced and is
 what the pages read; the site still renders (with system fonts) if it is absent.
 
 ```bash
-FONT_RELEASE_TAG=v1.0.0-beta.1 pnpm fonts   # pin a release instead of latest
+FONT_RELEASE_TAG=v1.1.0 pnpm fonts           # pin a release instead of latest
 GITHUB_TOKEN=…                              # only needed if you hit rate limits
 ```
 
